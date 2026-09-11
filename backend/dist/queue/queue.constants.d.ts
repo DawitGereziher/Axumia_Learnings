@@ -1,0 +1,11 @@
+export declare const QUEUE_NOTIFICATIONS = "notifications";
+export declare const QUEUE_TRANSCODING = "transcoding";
+export declare const QUEUE_PAYOUTS = "payouts";
+export declare const JOB_EMAIL = "send_email";
+export declare const JOB_SMS = "send_sms";
+export declare const JOB_BOOKING_NEW = "booking_new";
+export declare const JOB_BOOKING_CONFIRMED = "booking_confirmed";
+export declare const JOB_BOOKING_REMINDER_24H = "booking_reminder_24h";
+export declare const JOB_BOOKING_REMINDER_1H = "booking_reminder_1h";
+export declare const JOB_PAYMENT_RECEIVED = "payment_received";
+export declare const JOB_PAYOUT_PROCESSED = "payout_processed";

@@ -1,0 +1,36 @@
+next.config.ts(1,33): error TS7016: Could not find a declaration file for module 'next'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/dist/server/next.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next';`
+src/app/courses/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/link.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/link';`
+src/app/dashboard/page.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/link.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/link';`
+src/app/dashboard/page.tsx(7,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/navigation.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/navigation';`
+src/app/forgot-password/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/link.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/link';`
+src/app/layout.tsx(1,31): error TS7016: Could not find a declaration file for module 'next'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/dist/server/next.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next';`
+src/app/layout.tsx(2,23): error TS7016: Could not find a declaration file for module 'next/font/google'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/font/google/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/font/google';`
+src/app/login/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/navigation.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/navigation';`
+src/app/login/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/link.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/link';`
+src/app/oauth-success/page.tsx(4,44): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/navigation.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/navigation';`
+src/app/page.tsx(2,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/link.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/link';`
+src/app/register/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/navigation.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/navigation';`
+src/app/register/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/link.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/link';`
+src/components/Navbar.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/link.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/link';`
+src/components/Navbar.tsx(6,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/navigation.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/navigation';`
+src/components/Navbar.tsx(38,27): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/Navbar.tsx(39,27): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/Navbar.tsx(43,27): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/Navbar.tsx(44,27): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/context/AuthContext.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/kingd19/Desktop/my projects/online learning/web/node_modules/next/navigation.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/next` if it exists or add a new declaration (.d.ts) file containing `declare module 'next/navigation';`

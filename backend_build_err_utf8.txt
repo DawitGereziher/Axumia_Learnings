@@ -1,0 +1,40 @@
+﻿docker : --progress is 
+a global compose flag, 
+better use `docker 
+compose --progress xx 
+build ...
+At line:1 char:1
++ docker compose build 
+--no-cache 
+--progress=plain 
+backend 2> backend_b ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo      
+        : NotSpecified: 
+(--p    rogress is 
+a...ss xx b    uild 
+...:String) [], R    
+emoteException
+    + 
+FullyQualifiedErrorI    
+d : NativeCommandError
+ 
+time="2026-07-31T14:17:0
+7+03:00" level=warning m
+sg="C:\\Users\\kingd19\\
+Desktop\\my 
+projects\\online learnin
+g\\docker-compose.yml: 
+the attribute `version` 
+is obsolete, it will be 
+ignored, please remove 
+it to avoid potential 
+confusion"
+ Image 
+onlinelearning-backend 
+Building 
+ Image 
+onlinelearning-backend 
+Built 

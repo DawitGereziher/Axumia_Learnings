@@ -1,0 +1,756 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
+import { ContentService, ContentType } from '../content/content.service';
+import { ContentSecurityService } from '../content/content-security.service';
+import { RateLimitService } from '../common/services/rate-limit.service';
+import { AccessLogService } from '../common/services/access-log.service';
+export declare class CoursesService {
+    private prisma;
+    private storage;
+    private contentService;
+    private contentSecurity;
+    private rateLimit;
+    private accessLog;
+    constructor(prisma: PrismaService, storage: StorageService, contentService: ContentService, contentSecurity: ContentSecurityService, rateLimit: RateLimitService, accessLog: AccessLogService);
+    create(instructorUserId: string, dto: {
+        title: string;
+        description?: string;
+        price: number;
+        category_id?: string;
+        level?: string;
+        language?: string;
+        tags?: string[];
+        thumbnail?: string;
+    }): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        instructor_id: string;
+        status: string;
+        category_id: string | null;
+        title: string;
+        slug: string;
+        description: string | null;
+        price: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        thumbnail: string | null;
+        level: string;
+        language: string;
+        tags: string[];
+        search_vector: string | null;
+        estimated_hours: number | null;
+        skill_level: string | null;
+        prerequisites: string[];
+        learning_objectives: string[];
+        promo_video_id: string | null;
+        thumbnail_url: string | null;
+        total_lessons: number;
+        total_materials: number;
+        version: number;
+        last_published_at: Date | null;
+    }>;
+    findAll(query: {
+        search?: string;
+        category?: string;
+        level?: string;
+        language?: string;
+        priceRange?: string;
+        minPrice?: number;
+        maxPrice?: number;
+        minRating?: number;
+        sort?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{
+        data: {
+            avgRating: number;
+            category: {
+                id: string;
+                name: string;
+                slug: string;
+                icon: string | null;
+            } | null;
+            _count: {
+                reviews: number;
+                purchases: number;
+            };
+            instructor: {
+                user: {
+                    id: string;
+                    email: string;
+                    role: string;
+                    password_hash: string | null;
+                    first_name: string | null;
+                    last_name: string | null;
+                    image: string | null;
+                    is_email_verified: boolean;
+                    created_at: Date;
+                    updated_at: Date;
+                };
+            } & {
+                id: string;
+                created_at: Date;
+                updated_at: Date;
+                user_id: string;
+                bio: string | null;
+                headline: string | null;
+                kyc_status: string;
+                kyc_docs: string[];
+                hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+                is_active: boolean;
+                cover_image: string | null;
+                profile_image: string | null;
+                skills: string[];
+                languages: string[];
+                experience_years: number | null;
+                location: string | null;
+                website_url: string | null;
+                linkedin_url: string | null;
+                twitter_url: string | null;
+                youtube_url: string | null;
+                total_students: number;
+                total_sessions: number;
+                avg_rating: import("@prisma/client-runtime-utils").Decimal;
+            };
+            id: string;
+            created_at: Date;
+            updated_at: Date;
+            instructor_id: string;
+            status: string;
+            category_id: string | null;
+            title: string;
+            slug: string;
+            description: string | null;
+            price: import("@prisma/client-runtime-utils").Decimal;
+            currency: string;
+            thumbnail: string | null;
+            level: string;
+            language: string;
+            tags: string[];
+            search_vector: string | null;
+            estimated_hours: number | null;
+            skill_level: string | null;
+            prerequisites: string[];
+            learning_objectives: string[];
+            promo_video_id: string | null;
+            thumbnail_url: string | null;
+            total_lessons: number;
+            total_materials: number;
+            version: number;
+            last_published_at: Date | null;
+        }[];
+        total: number;
+        page: number;
+        limit: number;
+    }>;
+    findOne(slug: string): Promise<{
+        category: {
+            id: string;
+            name: string;
+            slug: string;
+            icon: string | null;
+        } | null;
+        reviews: ({
+            user: {
+                id: string;
+                email: string;
+                role: string;
+                password_hash: string | null;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+                is_email_verified: boolean;
+                created_at: Date;
+                updated_at: Date;
+            };
+        } & {
+            id: string;
+            created_at: Date;
+            user_id: string;
+            course_id: string | null;
+            booking_id: string | null;
+            rating: number;
+            comment: string | null;
+        })[];
+        instructor: {
+            user: {
+                id: string;
+                email: string;
+                role: string;
+                password_hash: string | null;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+                is_email_verified: boolean;
+                created_at: Date;
+                updated_at: Date;
+            };
+        } & {
+            id: string;
+            created_at: Date;
+            updated_at: Date;
+            user_id: string;
+            bio: string | null;
+            headline: string | null;
+            kyc_status: string;
+            kyc_docs: string[];
+            hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+            is_active: boolean;
+            cover_image: string | null;
+            profile_image: string | null;
+            skills: string[];
+            languages: string[];
+            experience_years: number | null;
+            location: string | null;
+            website_url: string | null;
+            linkedin_url: string | null;
+            twitter_url: string | null;
+            youtube_url: string | null;
+            total_students: number;
+            total_sessions: number;
+            avg_rating: import("@prisma/client-runtime-utils").Decimal;
+        };
+        sections: {
+            id: string;
+            created_at: Date;
+            updated_at: Date;
+            course_id: string;
+            title: string;
+            description: string | null;
+            position: number;
+        }[];
+        lessons: ({
+            materials: {
+                id: string;
+                created_at: Date;
+                updated_at: Date;
+                title: string;
+                description: string | null;
+                file_size: number | null;
+                file_name: string | null;
+                position: number;
+                is_free_preview: boolean;
+                lesson_id: string;
+                material_type: string;
+                file_url: string | null;
+                is_downloadable: boolean;
+                download_limit: number | null;
+            }[];
+        } & {
+            id: string;
+            created_at: Date;
+            updated_at: Date;
+            course_id: string;
+            title: string;
+            description: string | null;
+            version: number;
+            content_type: string;
+            storage_type: string;
+            youtube_video_id: string | null;
+            video_key: string | null;
+            hls_key: string | null;
+            external_url: string | null;
+            embed_code: string | null;
+            duration_s: number | null;
+            section_id: string | null;
+            position: number;
+            is_encrypted: boolean;
+            access_level: string;
+            is_published: boolean;
+            published_at: Date | null;
+            is_free_preview: boolean;
+        })[];
+    } & {
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        instructor_id: string;
+        status: string;
+        category_id: string | null;
+        title: string;
+        slug: string;
+        description: string | null;
+        price: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        thumbnail: string | null;
+        level: string;
+        language: string;
+        tags: string[];
+        search_vector: string | null;
+        estimated_hours: number | null;
+        skill_level: string | null;
+        prerequisites: string[];
+        learning_objectives: string[];
+        promo_video_id: string | null;
+        thumbnail_url: string | null;
+        total_lessons: number;
+        total_materials: number;
+        version: number;
+        last_published_at: Date | null;
+    }>;
+    update(courseId: string, instructorUserId: string, dto: Partial<{
+        title: string;
+        description: string;
+        price: number;
+        status: string;
+        level: string;
+        tags: string[];
+        thumbnail: string;
+    }>): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        instructor_id: string;
+        status: string;
+        category_id: string | null;
+        title: string;
+        slug: string;
+        description: string | null;
+        price: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        thumbnail: string | null;
+        level: string;
+        language: string;
+        tags: string[];
+        search_vector: string | null;
+        estimated_hours: number | null;
+        skill_level: string | null;
+        prerequisites: string[];
+        learning_objectives: string[];
+        promo_video_id: string | null;
+        thumbnail_url: string | null;
+        total_lessons: number;
+        total_materials: number;
+        version: number;
+        last_published_at: Date | null;
+    }>;
+    addLesson(courseId: string, instructorUserId: string, dto: {
+        title: string;
+        description?: string;
+        position?: number;
+        is_free_preview?: boolean;
+        content_type?: ContentType;
+        storage_type?: string;
+        youtube_url?: string;
+        video_key?: string;
+        external_url?: string;
+        embed_code?: string;
+        sectionId?: string;
+    }): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        course_id: string;
+        title: string;
+        description: string | null;
+        version: number;
+        content_type: string;
+        storage_type: string;
+        youtube_video_id: string | null;
+        video_key: string | null;
+        hls_key: string | null;
+        external_url: string | null;
+        embed_code: string | null;
+        duration_s: number | null;
+        section_id: string | null;
+        position: number;
+        is_encrypted: boolean;
+        access_level: string;
+        is_published: boolean;
+        published_at: Date | null;
+        is_free_preview: boolean;
+    }>;
+    getLessonVideoUrl(lessonId: string, userId: string, requestIp?: string, userAgent?: string, referrer?: string): Promise<{
+        url: string;
+        content_type: string;
+    }>;
+    checkOwnership(userId: string, courseId: string): Promise<{
+        id: string;
+        created_at: Date;
+        user_id: string;
+        course_id: string;
+        currency: string;
+        amount_paid: import("@prisma/client-runtime-utils").Decimal;
+    } | null>;
+    enrollFree(userId: string, courseId: string): Promise<{
+        purchase: {
+            id: string;
+            created_at: Date;
+            user_id: string;
+            course_id: string;
+            currency: string;
+            amount_paid: import("@prisma/client-runtime-utils").Decimal;
+        };
+        alreadyEnrolled: boolean;
+    }>;
+    updateProgress(purchaseId: string, lessonId: string, watchedSeconds: number, totalSeconds?: number): Promise<{
+        id: string;
+        updated_at: Date;
+        lesson_id: string;
+        purchase_id: string;
+        completed: boolean;
+        watched_s: number;
+    }>;
+    private recalculateCourseCompletion;
+    getCourseProgress(userId: string, courseId: string): Promise<{
+        purchaseId: string;
+        completionPct: number;
+        completedLessons: number;
+        totalLessons: number;
+        courseCompleted: boolean;
+        sections: any[];
+        lessons: any[];
+        progressMap: {
+            [k: string]: {
+                completed: boolean;
+                pct: any;
+                watchedS: number;
+            };
+        };
+    } | null>;
+    listCategories(): Promise<{
+        id: string;
+        name: string;
+        slug: string;
+        icon: string | null;
+    }[]>;
+    getCourseSections(courseId: string): Promise<({
+        lessons: {
+            id: string;
+            created_at: Date;
+            updated_at: Date;
+            course_id: string;
+            title: string;
+            description: string | null;
+            version: number;
+            content_type: string;
+            storage_type: string;
+            youtube_video_id: string | null;
+            video_key: string | null;
+            hls_key: string | null;
+            external_url: string | null;
+            embed_code: string | null;
+            duration_s: number | null;
+            section_id: string | null;
+            position: number;
+            is_encrypted: boolean;
+            access_level: string;
+            is_published: boolean;
+            published_at: Date | null;
+            is_free_preview: boolean;
+        }[];
+    } & {
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        course_id: string;
+        title: string;
+        description: string | null;
+        position: number;
+    })[]>;
+    addSection(courseId: string, instructorUserId: string, dto: {
+        title: string;
+        description?: string;
+        position?: number;
+    }): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        course_id: string;
+        title: string;
+        description: string | null;
+        position: number;
+    }>;
+    deleteSection(sectionId: string, instructorUserId: string): Promise<void>;
+    addMaterial(lessonId: string, instructorUserId: string, dto: {
+        title: string;
+        description?: string;
+        material_type: string;
+        file_url?: string;
+        file_name?: string;
+        file_size?: number;
+        is_downloadable?: boolean;
+        is_free_preview?: boolean;
+    }): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        title: string;
+        description: string | null;
+        file_size: number | null;
+        file_name: string | null;
+        position: number;
+        is_free_preview: boolean;
+        lesson_id: string;
+        material_type: string;
+        file_url: string | null;
+        is_downloadable: boolean;
+        download_limit: number | null;
+    }>;
+    deleteMaterial(materialId: string, instructorUserId: string): Promise<void>;
+    findInstructorCourses(instructorUserId: string): Promise<({
+        lessons: {
+            id: string;
+            created_at: Date;
+            updated_at: Date;
+            course_id: string;
+            title: string;
+            description: string | null;
+            version: number;
+            content_type: string;
+            storage_type: string;
+            youtube_video_id: string | null;
+            video_key: string | null;
+            hls_key: string | null;
+            external_url: string | null;
+            embed_code: string | null;
+            duration_s: number | null;
+            section_id: string | null;
+            position: number;
+            is_encrypted: boolean;
+            access_level: string;
+            is_published: boolean;
+            published_at: Date | null;
+            is_free_preview: boolean;
+        }[];
+    } & {
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        instructor_id: string;
+        status: string;
+        category_id: string | null;
+        title: string;
+        slug: string;
+        description: string | null;
+        price: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        thumbnail: string | null;
+        level: string;
+        language: string;
+        tags: string[];
+        search_vector: string | null;
+        estimated_hours: number | null;
+        skill_level: string | null;
+        prerequisites: string[];
+        learning_objectives: string[];
+        promo_video_id: string | null;
+        thumbnail_url: string | null;
+        total_lessons: number;
+        total_materials: number;
+        version: number;
+        last_published_at: Date | null;
+    })[]>;
+    updateLesson(lessonId: string, instructorUserId: string, dto: any): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        course_id: string;
+        title: string;
+        description: string | null;
+        version: number;
+        content_type: string;
+        storage_type: string;
+        youtube_video_id: string | null;
+        video_key: string | null;
+        hls_key: string | null;
+        external_url: string | null;
+        embed_code: string | null;
+        duration_s: number | null;
+        section_id: string | null;
+        position: number;
+        is_encrypted: boolean;
+        access_level: string;
+        is_published: boolean;
+        published_at: Date | null;
+        is_free_preview: boolean;
+    }>;
+    deleteLesson(lessonId: string, instructorUserId: string): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        course_id: string;
+        title: string;
+        description: string | null;
+        version: number;
+        content_type: string;
+        storage_type: string;
+        youtube_video_id: string | null;
+        video_key: string | null;
+        hls_key: string | null;
+        external_url: string | null;
+        embed_code: string | null;
+        duration_s: number | null;
+        section_id: string | null;
+        position: number;
+        is_encrypted: boolean;
+        access_level: string;
+        is_published: boolean;
+        published_at: Date | null;
+        is_free_preview: boolean;
+    }>;
+    getMaterialDownloadUrl(materialId: string, userId: string): Promise<{
+        url: string;
+        fileName: string;
+    }>;
+    toggleWishlist(userId: string, courseId: string): Promise<{
+        wishlisted: boolean;
+    }>;
+    getUserWishlist(userId: string): Promise<({
+        category: {
+            id: string;
+            name: string;
+            slug: string;
+            icon: string | null;
+        } | null;
+        instructor: {
+            user: {
+                first_name: string | null;
+                last_name: string | null;
+            };
+        } & {
+            id: string;
+            created_at: Date;
+            updated_at: Date;
+            user_id: string;
+            bio: string | null;
+            headline: string | null;
+            kyc_status: string;
+            kyc_docs: string[];
+            hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+            is_active: boolean;
+            cover_image: string | null;
+            profile_image: string | null;
+            skills: string[];
+            languages: string[];
+            experience_years: number | null;
+            location: string | null;
+            website_url: string | null;
+            linkedin_url: string | null;
+            twitter_url: string | null;
+            youtube_url: string | null;
+            total_students: number;
+            total_sessions: number;
+            avg_rating: import("@prisma/client-runtime-utils").Decimal;
+        };
+    } & {
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        instructor_id: string;
+        status: string;
+        category_id: string | null;
+        title: string;
+        slug: string;
+        description: string | null;
+        price: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        thumbnail: string | null;
+        level: string;
+        language: string;
+        tags: string[];
+        search_vector: string | null;
+        estimated_hours: number | null;
+        skill_level: string | null;
+        prerequisites: string[];
+        learning_objectives: string[];
+        promo_video_id: string | null;
+        thumbnail_url: string | null;
+        total_lessons: number;
+        total_materials: number;
+        version: number;
+        last_published_at: Date | null;
+    })[]>;
+    validateCoupon(code: string): Promise<{
+        code: string;
+        discount_type: string;
+        discount_value: number;
+        valid: boolean;
+    }>;
+    getLessonQuestions(lessonId: string): Promise<({
+        user: {
+            role: string;
+            first_name: string | null;
+            last_name: string | null;
+        };
+        answers: ({
+            user: {
+                role: string;
+                first_name: string | null;
+                last_name: string | null;
+            };
+        } & {
+            id: string;
+            created_at: Date;
+            user_id: string;
+            answer: string;
+            is_accepted: boolean;
+            question_id: string;
+        })[];
+    } & {
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        title: string;
+        lesson_id: string;
+        details: string;
+        upvotes: number;
+    })[]>;
+    addLessonQuestion(userId: string, lessonId: string, title: string, details: string): Promise<{
+        user: {
+            role: string;
+            first_name: string | null;
+            last_name: string | null;
+        };
+        answers: {
+            id: string;
+            created_at: Date;
+            user_id: string;
+            answer: string;
+            is_accepted: boolean;
+            question_id: string;
+        }[];
+    } & {
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        title: string;
+        lesson_id: string;
+        details: string;
+        upvotes: number;
+    }>;
+    addLessonAnswer(userId: string, questionId: string, answer: string): Promise<{
+        user: {
+            role: string;
+            first_name: string | null;
+            last_name: string | null;
+        };
+    } & {
+        id: string;
+        created_at: Date;
+        user_id: string;
+        answer: string;
+        is_accepted: boolean;
+        question_id: string;
+    }>;
+    acceptLessonAnswer(userId: string, answerId: string): Promise<{
+        id: string;
+        created_at: Date;
+        user_id: string;
+        answer: string;
+        is_accepted: boolean;
+        question_id: string;
+    }>;
+    upvoteLessonQuestion(questionId: string): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        title: string;
+        lesson_id: string;
+        details: string;
+        upvotes: number;
+    }>;
+}

@@ -1,0 +1,77 @@
+<svg viewBox="190 50 300 440" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Rich metallic gold gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF4B8" />
+      <stop offset="35%" stop-color="#F3C649" />
+      <stop offset="70%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#996515" />
+    </linearGradient>
+    <!-- Bright inner glow gradient -->
+    <linearGradient id="goldGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="50%" stop-color="#FCE68A" />
+      <stop offset="100%" stop-color="#D4AF37" />
+    </linearGradient>
+    <!-- Subtle drop shadow filter for dark backgrounds -->
+    <filter id="goldGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#D4AF37" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Group with gold glow filter -->
+  <g filter="url(#goldGlowFilter)">
+    <!-- Main Obelisk Body: Filled with Metallic Gold -->
+    <path d="M300 108 Q300 78 340 78 Q380 78 380 108 L369 360 L311 360 Z" 
+          fill="url(#goldGrad)" 
+          stroke="#FFF4B8" 
+          stroke-width="2.5"/>
+
+    <!-- Beam-end brackets (dark accents carved into the gold) -->
+    <g fill="#0A0A10">
+      <rect x="289" y="176" width="12" height="7" rx="1"/>
+      <rect x="376" y="176" width="12" height="7" rx="1"/>
+      <rect x="288" y="212" width="12" height="7" rx="1"/>
+      <rect x="374" y="212" width="12" height="7" rx="1"/>
+      <rect x="287" y="248" width="12" height="7" rx="1"/>
+      <rect x="373" y="248" width="12" height="7" rx="1"/>
+      <rect x="286" y="284" width="12" height="7" rx="1"/>
+      <rect x="371" y="284" width="12" height="7" rx="1"/>
+      <rect x="285" y="320" width="12" height="7" rx="1"/>
+      <rect x="369" y="320" width="12" height="7" rx="1"/>
+    </g>
+
+    <!-- Rows of false windows (crisp dark carvings with gold contrast) -->
+    <g fill="none" stroke="#0A0A10" stroke-width="2.2">
+      <rect x="326" y="120" width="28" height="18" rx="1"/>
+      <line x1="340" y1="120" x2="340" y2="138"/>
+      <rect x="325" y="150" width="30" height="18" rx="1"/>
+      <line x1="340" y1="150" x2="340" y2="168"/>
+      <rect x="324" y="186" width="31" height="18" rx="1"/>
+      <line x1="339" y1="186" x2="339" y2="204"/>
+      <rect x="323" y="222" width="32" height="18" rx="1"/>
+      <line x1="339" y1="222" x2="339" y2="240"/>
+      <rect x="322" y="258" width="33" height="18" rx="1"/>
+      <line x1="338" y1="258" x2="338" y2="276"/>
+      <rect x="321" y="294" width="34" height="18" rx="1"/>
+      <line x1="338" y1="294" x2="338" y2="312"/>
+    </g>
+
+    <!-- Arched False Door at Base -->
+    <path d="M320 360 L360 360 L360 305 Q360 285 340 285 Q320 285 320 305 Z" 
+          fill="#0A0A10" 
+          stroke="url(#goldGlow)" 
+          stroke-width="2"/>
+    <line x1="340" y1="285" x2="340" y2="360" stroke="url(#goldGlow)" stroke-width="1.8"/>
+    <circle cx="333" cy="330" r="2.8" fill="#FCE68A"/>
+    <circle cx="347" cy="330" r="2.8" fill="#FCE68A"/>
+
+    <!-- Base Steps -->
+    <rect x="298" y="360" width="84" height="16" rx="2" fill="url(#goldGrad)" stroke="#FFF4B8" stroke-width="2"/>
+    <rect x="284" y="376" width="112" height="14" rx="2" fill="url(#goldGrad)" stroke="#FFF4B8" stroke-width="2"/>
+
+    <!-- Wordmark Text -->
+    <text x="340" y="442" text-anchor="middle" font-family="Outfit, Arial, sans-serif" font-weight="900" font-size="42" letter-spacing="6" fill="#FFFFFF">AXUMIA</text>
+    <text x="340" y="472" text-anchor="middle" font-family="Outfit, Arial, sans-serif" font-weight="700" font-size="16" letter-spacing="7" fill="#10B981">LEARNINGS</text>
+  </g>
+</svg>

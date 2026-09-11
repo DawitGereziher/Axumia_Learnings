@@ -1,0 +1,29 @@
+# Ignore local Node modules
+**/node_modules
+node_modules
+
+# Ignore build artifacts
+**/dist
+dist
+**/.next
+.next
+**/.next/standalone
+out
+
+# Ignore config and log dumps
+**/*.log
+**/*.txt
+validate_error.txt
+generate_error.txt
+backend_errors.txt
+backend_errors_summary.txt
+ts_errors.txt
+web_errors.txt
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Exclude Git files
+.git
+.gitignore

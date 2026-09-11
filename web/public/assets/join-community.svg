@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 350" width="100%" height="100%">
+  <defs>
+    <linearGradient id="commBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="350" rx="24" fill="url(#commBg)"/>
+  
+  <g transform="translate(60, 60)">
+    <!-- 3 Students working together -->
+    <circle cx="80" cy="80" r="40" fill="#fde047"/>
+    <rect x="40" y="130" width="80" height="90" rx="16" fill="#3b82f6"/>
+    
+    <circle cx="200" cy="70" r="45" fill="#f43f5e"/>
+    <rect x="155" y="125" width="90" height="95" rx="16" fill="#10b981"/>
+
+    <circle cx="320" cy="90" r="38" fill="#a855f7"/>
+    <rect x="280" y="138" width="80" height="80" rx="16" fill="#f59e0b"/>
+
+    <!-- Desk / Laptops -->
+    <rect x="20" y="210" width="380" height="15" rx="7" fill="#64748b"/>
+    <rect x="160" y="175" width="80" height="35" rx="4" fill="#94a3b8"/>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="c2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" rx="20" fill="url(#c2)"/>
+  <circle cx="200" cy="180" r="90" fill="#ffffff" opacity="0.15"/>
+  <text x="200" y="170" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="28" font-weight="bold">Social Media</text>
+  <text x="200" y="210" text-anchor="middle" fill="#a7f3d0" font-family="sans-serif" font-size="18">Marketing 2026</text>
+  
+  <rect x="40" y="320" width="320" height="120" rx="14" fill="rgba(0,0,0,0.4)"/>
+  <circle cx="80" cy="380" r="28" fill="#67e8f9"/>
+  <text x="120" y="375" fill="#ffffff" font-family="sans-serif" font-size="18" font-weight="bold">Yonas Gebre</text>
+  <text x="120" y="400" fill="#6ee7b7" font-family="sans-serif" font-size="14">Digital Strategist</text>
+</svg>

@@ -1,0 +1,158 @@
+﻿docker : time="2026-07-
+31T12:13:37+03:00" 
+level=warning msg="C:\\
+Users\\kingd19\\Desktop
+\\my projects\\online l
+earning\\docker-compose
+.yml: the attribute 
+`version` is obsolete, 
+it will be ignored, 
+please remove it to 
+avoid potential 
+confusion"
+At line:1 char:1
++ docker compose logs 
+--tail=100 > 
+docker_logs.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (time="2026-07   
+ -3...tial confusio    
+n":String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+ethiolearn_backend  |   ^
+ethiolearn_backend  | 
+ethiolearn_backend  | Error: Cannot find module 'jsonwebtoken'
+ethiolearn_backend  | Require stack:
+ethiolearn_backend  | - /usr/src/app/D-auth/utils/jwt.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/common/guards/d-auth.guard.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/users/users.controller.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/users/users.module.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/app.module.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/main.js
+ethiolearn_backend  |     at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+ethiolearn_backend  |     at Module._load (node:internal/modules/cjs/loader:1038:27)
+ethiolearn_backend  |     at Module.require (node:internal/modules/cjs/loader:1289:19)
+ethiolearn_backend  |     at require (node:internal/modules/helpers:182:18)
+ethiolearn_backend  |     at Object.<anonymous> (/usr/src/app/D-auth/utils/jwt.js:1:13)
+ethiolearn_backend  |     at Module._compile (node:internal/modules/cjs/loader:1521:14)
+ethiolearn_backend  |     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+ethiolearn_backend  |     at Module.load (node:internal/modules/cjs/loader:1266:32)
+ethiolearn_backend  |     at Module._load (node:internal/modules/cjs/loader:1091:12)
+ethiolearn_web      | Γû▓ Next.js 16.2.12
+ethiolearn_web      | - Local:         http://localhost:3000
+ethiolearn_web      | - Network:       http://0.0.0.0:3000
+ethiolearn_web      | Γ£ô Ready in 0ms
+ethiolearn_backend  |     at Module.require (node:internal/modules/cjs/loader:1289:19) {
+ethiolearn_backend  |   code: 'MODULE_NOT_FOUND',
+ethiolearn_backend  |   requireStack: [
+ethiolearn_backend  |     '/usr/src/app/D-auth/utils/jwt.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/common/guards/d-auth.guard.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/users/users.controller.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/users/users.module.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/app.module.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/main.js'
+ethiolearn_backend  |   ]
+ethiolearn_backend  | }
+ethiolearn_backend  | 
+ethiolearn_backend  | Node.js v20.20.2
+ethiolearn_backend  | node:internal/modules/cjs/loader:1210
+ethiolearn_backend  |   throw err;
+ethiolearn_backend  |   ^
+ethiolearn_backend  | 
+ethiolearn_backend  | Error: Cannot find module 'jsonwebtoken'
+ethiolearn_backend  | Require stack:
+ethiolearn_backend  | - /usr/src/app/D-auth/utils/jwt.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/common/guards/d-auth.guard.js
+ethiolearn_redis    | 1:C 31 Jul 2026 09:06:54.482 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+ethiolearn_redis    | 1:C 31 Jul 2026 09:06:54.482 * Redis version=7.4.10, bits=64, commit=00000000, modified=0, pid=1, just started
+ethiolearn_backend  | - /usr/src/app/backend/dist/users/users.controller.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/users/users.module.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/app.module.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/main.js
+ethiolearn_backend  |     at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+ethiolearn_gateway  | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+ethiolearn_gateway  | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+ethiolearn_gateway  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+ethiolearn_gateway  | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+ethiolearn_gateway  | 10-listen-on-ipv6-by-default.sh: info: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
+ethiolearn_gateway  | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+ethiolearn_gateway  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+ethiolearn_gateway  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+ethiolearn_gateway  | /docker-entrypoint.sh: Configuration complete; ready for start up
+ethiolearn_redis    | 1:C 31 Jul 2026 09:06:54.482 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+ethiolearn_redis    | 1:M 31 Jul 2026 09:06:54.482 * monotonic clock: POSIX clock_gettime
+ethiolearn_redis    | 1:M 31 Jul 2026 09:06:54.484 * Running mode=standalone, port=6379.
+ethiolearn_redis    | 1:M 31 Jul 2026 09:06:54.485 * Server initialized
+ethiolearn_redis    | 1:M 31 Jul 2026 09:06:54.485 * Ready to accept connections tcp
+ethiolearn_backend  |     at Module._load (node:internal/modules/cjs/loader:1038:27)
+ethiolearn_backend  |     at Module.require (node:internal/modules/cjs/loader:1289:19)
+ethiolearn_backend  |     at require (node:internal/modules/helpers:182:18)
+ethiolearn_backend  |     at Object.<anonymous> (/usr/src/app/D-auth/utils/jwt.js:1:13)
+ethiolearn_backend  |     at Module._compile (node:internal/modules/cjs/loader:1521:14)
+ethiolearn_backend  |     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+ethiolearn_backend  |     at Module.load (node:internal/modules/cjs/loader:1266:32)
+ethiolearn_backend  |     at Module._load (node:internal/modules/cjs/loader:1091:12)
+ethiolearn_backend  |     at Module.require (node:internal/modules/cjs/loader:1289:19) {
+ethiolearn_backend  |   code: 'MODULE_NOT_FOUND',
+ethiolearn_backend  |   requireStack: [
+ethiolearn_backend  |     '/usr/src/app/D-auth/utils/jwt.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/common/guards/d-auth.guard.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/users/users.controller.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/users/users.module.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/app.module.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/main.js'
+ethiolearn_backend  |   ]
+ethiolearn_backend  | }
+ethiolearn_backend  | 
+ethiolearn_backend  | Node.js v20.20.2
+ethiolearn_backend  | node:internal/modules/cjs/loader:1210
+ethiolearn_backend  |   throw err;
+ethiolearn_backend  |   ^
+ethiolearn_backend  | 
+ethiolearn_backend  | Error: Cannot find module 'jsonwebtoken'
+ethiolearn_backend  | Require stack:
+ethiolearn_backend  | - /usr/src/app/D-auth/utils/jwt.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/common/guards/d-auth.guard.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/users/users.controller.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/users/users.module.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/app.module.js
+ethiolearn_backend  | - /usr/src/app/backend/dist/main.js
+ethiolearn_backend  |     at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+ethiolearn_backend  |     at Module._load (node:internal/modules/cjs/loader:1038:27)
+ethiolearn_backend  |     at Module.require (node:internal/modules/cjs/loader:1289:19)
+ethiolearn_backend  |     at require (node:internal/modules/helpers:182:18)
+ethiolearn_backend  |     at Object.<anonymous> (/usr/src/app/D-auth/utils/jwt.js:1:13)
+ethiolearn_backend  |     at Module._compile (node:internal/modules/cjs/loader:1521:14)
+ethiolearn_backend  |     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+ethiolearn_backend  |     at Module.load (node:internal/modules/cjs/loader:1266:32)
+ethiolearn_backend  |     at Module._load (node:internal/modules/cjs/loader:1091:12)
+ethiolearn_backend  |     at Module.require (node:internal/modules/cjs/loader:1289:19) {
+ethiolearn_backend  |   code: 'MODULE_NOT_FOUND',
+ethiolearn_backend  |   requireStack: [
+ethiolearn_backend  |     '/usr/src/app/D-auth/utils/jwt.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/common/guards/d-auth.guard.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/users/users.controller.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/users/users.module.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/app.module.js',
+ethiolearn_backend  |     '/usr/src/app/backend/dist/main.js'
+ethiolearn_backend  |   ]
+ethiolearn_backend  | }
+ethiolearn_backend  | 
+ethiolearn_backend  | Node.js v20.20.2
+ethiolearn_db       | 
+ethiolearn_db       | PostgreSQL Database directory appears to contain a database; Skipping initialization
+ethiolearn_db       | 
+ethiolearn_db       | 2026-07-31 09:13:15.063 UTC [1] LOG:  starting PostgreSQL 15.18 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+ethiolearn_db       | 2026-07-31 09:13:15.063 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+ethiolearn_db       | 2026-07-31 09:13:15.063 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+ethiolearn_db       | 2026-07-31 09:13:15.074 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+ethiolearn_db       | 2026-07-31 09:13:15.086 UTC [29] LOG:  database system was shut down at 2026-07-31 09:11:29 UTC
+ethiolearn_db       | 2026-07-31 09:13:15.094 UTC [1] LOG:  database system is ready to accept connections

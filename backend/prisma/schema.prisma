@@ -1,0 +1,950 @@
+// This is your Prisma schema file
+// D-auth manages: users, accounts, refresh_tokens, password_reset_tokens, email_verifications (via PgAdapter)
+// Prisma manages: all business tables below
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reference to D-auth's users table (read-only from Prisma's perspective)
+// D-auth creates and owns this table via PgAdapter.init()
+// ─────────────────────────────────────────────────────────────────────────────
+model User {
+  id                String   @id @db.Uuid
+  email             String   @unique
+  password_hash     String?
+  first_name        String?
+  last_name         String?
+  role              String   @default("student")
+  image             String?
+  is_email_verified Boolean  @default(false)
+  created_at        DateTime @default(now()) @db.Timestamptz
+  updated_at        DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  // Business relations
+  instructorProfile    InstructorProfile?
+  coursePurchases      CoursePurchase[]
+  bookingsAsStudent    Booking[]      @relation("StudentBookings")
+  sessionReviews       SessionReview[] @relation("StudentSessionReviews")
+  transactions         Transaction[]
+  helpRequests         HelpRequest[]
+  helpSessionsAsStudent HelpSession[] @relation("StudentHelpSessions")
+  courseReviews        CourseReview[]
+  reviewComments       ReviewComment[]
+  reviewHelpfulVotes   ReviewHelpfulVote[]
+  reviewReports         ReviewReport[]
+  reviewCommentHelpfulVotes ReviewCommentHelpfulVote[]
+  wishlists            Wishlist[]
+  lessonQuestions      LessonQuestion[]
+  lessonAnswers        LessonAnswer[]
+  instructorFollows    InstructorFollow[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Instructor Profile
+// ─────────────────────────────────────────────────────────────────────────────
+model InstructorProfile {
+  id               String   @id @default(uuid()) @db.Uuid
+  user_id          String   @unique @db.Uuid
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  bio              String?
+  headline         String?
+  kyc_status       String   @default("pending") // pending | submitted | approved | rejected
+  kyc_docs         String[] // S3 keys for ID documents
+  hourly_rate      Decimal  @default(0) @db.Decimal(10, 2)
+  is_active        Boolean  @default(false)
+
+  // ── Rich Profile ──────────────────────────────────────────────────────────
+  cover_image      String?  // S3 key for banner/cover photo
+  profile_image    String?  // S3 key for profile picture (overrides user.image)
+  skills           String[] // e.g. ["Python", "Machine Learning"]
+  languages        String[] // e.g. ["Amharic", "English"]
+  experience_years Int?
+  location         String?  // city / country freetext
+  website_url      String?
+  linkedin_url     String?
+  twitter_url      String?
+  youtube_url      String?
+
+  // ── Denormalized stats (updated on purchase/booking/review events) ─────────
+  total_students   Int      @default(0)
+  total_sessions   Int      @default(0)
+  avg_rating       Decimal  @default(0) @db.Decimal(3, 2)
+
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  courses              Course[]
+  availabilitySlots    AvailabilitySlot[]
+  bookingsAsInstructor Booking[]    @relation("InstructorBookings")
+  videoAccounts        InstructorVideoAccount[]
+  helpBids             HelpBid[]
+  helpSessions         HelpSession[]
+  instructorResponses  InstructorResponse[]
+  followers            InstructorFollow[]
+  sessionReviews       SessionReview[] @relation("InstructorSessionReviews")
+
+  @@map("instructor_profiles")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Session Monitoring — OAuth Accounts
+// Stores encrypted Zoom / Google tokens per instructor (one row per platform)
+// ─────────────────────────────────────────────────────────────────────────────
+model InstructorVideoAccount {
+  id               String            @id @default(uuid()) @db.Uuid
+  instructor_id    String            @db.Uuid
+  instructor       InstructorProfile @relation(fields: [instructor_id], references: [id], onDelete: Cascade)
+  platform         String            // "zoom" | "google"
+  platform_user_id String            // Zoom userId or Google sub
+  access_token     String            // AES-256 encrypted at rest
+  refresh_token    String?           // AES-256 encrypted at rest
+  token_expires_at DateTime?         @db.Timestamptz
+  scope            String?
+  created_at       DateTime          @default(now()) @db.Timestamptz
+  updated_at       DateTime          @updatedAt @db.Timestamptz
+
+  @@unique([instructor_id, platform]) // one account per platform per instructor
+  @@map("instructor_video_accounts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Session Monitoring — Event Log
+// Append-only audit log of all webhook events received per booking or help session
+// ─────────────────────────────────────────────────────────────────────────────
+model SessionEvent {
+  id                String   @id @default(uuid()) @db.Uuid
+  booking_id        String?  @db.Uuid
+  booking           Booking? @relation(fields: [booking_id], references: [id])
+  help_session_id   String?  @db.Uuid
+  helpSession       HelpSession? @relation(fields: [help_session_id], references: [id])
+  platform          String   // "zoom" | "google"
+  event_type        String   // "session.started" | "participant.joined" | "participant.left" | "session.ended"
+  platform_event_id String?  // Zoom meeting ID or Google event ID
+  payload           Json     // raw trimmed payload for audit trail
+  participant_count Int?     // captured at time of event
+  occurred_at       DateTime @db.Timestamptz
+  created_at        DateTime @default(now()) @db.Timestamptz
+
+  @@map("session_events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Courses & Lessons
+// ─────────────────────────────────────────────────────────────────────────────
+model Category {
+  id       String   @id @default(uuid()) @db.Uuid
+  name     String   @unique
+  slug     String   @unique
+  icon     String?
+  courses  Course[]
+
+  @@map("categories")
+}
+
+model Course {
+  id            String   @id @default(uuid()) @db.Uuid
+  instructor_id String   @db.Uuid
+  instructor    InstructorProfile @relation(fields: [instructor_id], references: [id], onDelete: Cascade)
+  category_id   String?  @db.Uuid
+  category      Category? @relation(fields: [category_id], references: [id])
+  title         String
+  slug          String   @unique
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  currency      String   @default("ETB")
+  thumbnail     String?  // S3 key or external URL
+  status        String   @default("draft") // draft | published | archived
+  level         String   @default("beginner") // beginner | intermediate | advanced
+  language      String   @default("am") // am | en
+  tags          String[]
+  search_vector String?  // Postgres tsvector (managed by trigger)
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @updatedAt @db.Timestamptz
+
+  // New organization fields
+  estimated_hours Int?  // Total estimated course duration
+  skill_level     String? // Beginner, Intermediate, Advanced
+  prerequisites   String[] // Required knowledge/skills
+  learning_objectives String[] // What students will learn
+  
+  // Marketing
+  promo_video_id String? // YouTube video ID for course trailer (encrypted)
+  thumbnail_url   String? // Can be YouTube thumbnail or S3
+  
+  // Content management
+  total_lessons   Int      @default(0) // Denormalized count
+  total_materials Int      @default(0) // Denormalized count
+  
+  // Version control
+  version         Int      @default(1)
+  last_published_at DateTime?
+
+  sections   CourseSection[]
+  lessons    CourseLesson[]
+  purchases     CoursePurchase[]
+  courseReviews CourseReview[]
+  wishlists     Wishlist[]
+
+  @@map("courses")
+}
+
+model CourseLesson {
+  id          String   @id @default(uuid()) @db.Uuid
+  course_id   String   @db.Uuid
+  section_id  String?  @db.Uuid
+  course      Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  section     CourseSection? @relation("SectionLessons", fields: [section_id], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  position    Int      @default(0)
+  
+  // Content type and storage
+  content_type String   @default("youtube") // video | youtube | pdf | audio | text | quiz
+  storage_type String   @default("youtube")     // s3 | youtube | external | embedded
+  
+  // Video specific fields
+  video_key      String?  // S3 key for direct upload
+  hls_key        String?  // S3 key for transcoded HLS
+  youtube_video_id String? // YouTube video ID (encrypted)
+  duration_s     Int?     // seconds
+  
+  // External content fields
+  external_url   String?  // For PDFs, materials, external videos
+  embed_code     String?  // For embedded content (Vimeo, etc.)
+  
+  // Content security
+  is_encrypted   Boolean  @default(false) // For sensitive content
+  access_level   String   @default("paid") // free | paid | premium
+  
+  // Version control
+  version        Int      @default(1)
+  is_published   Boolean  @default(true)
+  published_at   DateTime?
+  
+  // Metadata
+  is_free_preview Boolean @default(false)
+  created_at      DateTime @default(now()) @db.Timestamptz
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  progress        LessonProgress[]
+  materials       LessonMaterial[]
+  questions       LessonQuestion[]
+  quiz            Quiz?              // one optional quiz per lesson
+
+  @@map("course_lessons")
+}
+
+// New: Lesson Materials (PDFs, reading materials, etc.)
+model LessonMaterial {
+  id          String   @id @default(uuid()) @db.Uuid
+  lesson_id   String   @db.Uuid
+  lesson      CourseLesson @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?
+  material_type String // pdf | document | link | zip | image | other
+  file_url    String?  // S3 or external URL
+  file_size   Int?     // bytes
+  file_name   String?  // Original filename
+  
+  // For downloadable materials
+  is_downloadable Boolean @default(true)
+  download_limit Int?     // Optional download limit per user
+  
+  // Access control
+  is_free_preview Boolean @default(false)
+  
+  position    Int      @default(0)
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  @@map("lesson_materials")
+}
+
+// New: Course Sections (for better organization)
+model CourseSection {
+  id          String   @id @default(uuid()) @db.Uuid
+  course_id   String   @db.Uuid
+  course      Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?
+  position    Int      @default(0)
+  
+  lessons     CourseLesson[] @relation("SectionLessons")
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  @@map("course_sections")
+}
+
+// Rate Limiting Records (for distributed rate limiting)
+model RateLimitRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  identifier   String   // User ID or IP address
+  resource_type String  // 'video' | 'material' | 'content'
+  ip_address   String?
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  @@index([identifier, resource_type, created_at])
+  @@map("rate_limit_records")
+}
+
+// Content Access Logs (for security analytics)
+model ContentAccessLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  user_id      String   @db.Uuid
+  lesson_id    String   @db.Uuid
+  course_id    String   @db.Uuid
+  access_type  String   // 'video' | 'material' | 'content'
+  ip_address   String?
+  user_agent   String?
+  referrer     String?
+  success      Boolean  @default(true)
+  duration     Int?     // Time spent in milliseconds
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  @@index([user_id, created_at])
+  @@index([course_id, created_at])
+  @@index([lesson_id, created_at])
+  @@map("content_access_logs")
+}
+
+model CoursePurchase {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  course_id   String   @db.Uuid
+  course      Course   @relation(fields: [course_id], references: [id])
+  amount_paid Decimal  @db.Decimal(10, 2)
+  currency    String   @default("ETB")
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  transaction  Transaction?
+  lessonProgress LessonProgress[]
+
+  @@unique([user_id, course_id])
+  @@map("course_purchases")
+}
+
+model LessonProgress {
+  id          String   @id @default(uuid()) @db.Uuid
+  purchase_id String   @db.Uuid
+  purchase    CoursePurchase @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
+  lesson_id   String   @db.Uuid
+  lesson      CourseLesson   @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
+  completed   Boolean  @default(false)
+  watched_s   Int      @default(0)
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  @@unique([purchase_id, lesson_id])
+  @@map("lesson_progress")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bookings (live tutoring)
+// ─────────────────────────────────────────────────────────────────────────────
+model AvailabilitySlot {
+  id                   String   @id @default(uuid()) @db.Uuid
+  instructor_id        String   @db.Uuid
+  instructor           InstructorProfile @relation(fields: [instructor_id], references: [id], onDelete: Cascade)
+  starts_at            DateTime @db.Timestamptz
+  ends_at              DateTime @db.Timestamptz
+  is_booked            Boolean  @default(false)
+  max_participants     Int      @default(1)
+  current_participants Int      @default(0)
+
+  bookings             Booking[]
+
+  @@map("availability_slots")
+}
+
+model Booking {
+  id                   String   @id @default(uuid()) @db.Uuid
+  student_id           String   @db.Uuid
+  student              User     @relation("StudentBookings", fields: [student_id], references: [id])
+  instructor_id        String   @db.Uuid
+  instructor           InstructorProfile @relation("InstructorBookings", fields: [instructor_id], references: [id])
+  slot_id              String   @db.Uuid
+  slot                 AvailabilitySlot @relation(fields: [slot_id], references: [id])
+  session_type         String   @default("1-on-1") // 1-on-1 | 1-on-many | group-class
+  price_paid           Decimal? @db.Decimal(10, 2)
+  meeting_link         String?  // Zoom/Meet URL — entered by instructor after confirmation
+  status               String   @default("pending") // pending | confirmed | completed | cancelled | no_show
+  notes                String?
+  // ── Session Monitoring fields ──────────────────────────────────────────────
+  platform             String?   // "zoom" | "google" — detected from meeting_link
+  platform_meeting_id  String?   // Zoom meeting ID or Google Meet room code
+  session_started_at   DateTime? @db.Timestamptz
+  session_ended_at     DateTime? @db.Timestamptz
+  session_duration_m   Int?      // actual duration in minutes (computed from events)
+  session_flag         String?   // null | "short_session" | "early_end" | "no_start" | "unmonitored"
+  created_at           DateTime  @default(now()) @db.Timestamptz
+  updated_at           DateTime  @updatedAt @db.Timestamptz
+
+  transaction   Transaction?
+  sessionReview SessionReview?
+  sessionEvents SessionEvent[]
+
+  @@map("bookings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payments — single append-only transaction ledger
+// ─────────────────────────────────────────────────────────────────────────────
+model Transaction {
+  id                String   @id @default(uuid()) @db.Uuid
+  user_id           String   @db.Uuid
+  user              User     @relation(fields: [user_id], references: [id])
+  // One of: booking, course purchase, or help session
+  booking_id        String?  @db.Uuid
+  booking           Booking?     @relation(fields: [booking_id], references: [id])
+  purchase_id       String?  @db.Uuid
+  purchase          CoursePurchase? @relation(fields: [purchase_id], references: [id])
+  help_session_id   String?  @db.Uuid
+  helpSession       HelpSession? @relation(fields: [help_session_id], references: [id])
+  amount            Decimal  @db.Decimal(10, 2)
+  platform_fee      Decimal  @db.Decimal(10, 2) @default(0) // commission
+  currency          String   @default("ETB")
+  provider          String   @default("chapa") // chapa | manual
+  provider_tx_ref   String?  @unique // Chapa reference
+  status            String   @default("pending") // pending | paid | failed | refunded
+  metadata          Json?
+  created_at        DateTime @default(now()) @db.Timestamptz
+  updated_at        DateTime @updatedAt @db.Timestamptz
+
+  payout Payout?
+
+  @@unique([booking_id])
+  @@unique([purchase_id])
+  @@unique([help_session_id])
+  @@map("transactions")
+}
+
+model Payout {
+  id             String   @id @default(uuid()) @db.Uuid
+  transaction_id String?  @unique @db.Uuid
+  transaction    Transaction? @relation(fields: [transaction_id], references: [id])
+  instructor_id  String   @db.Uuid
+  amount         Decimal  @db.Decimal(10, 2)
+  currency       String   @default("ETB")
+  status         String   @default("pending") // pending | processing | paid | failed
+  method         String   @default("bank_transfer") // bank_transfer | telebirr | cbe_birr
+  account_details String?
+  notes          String?
+  paid_at        DateTime? @db.Timestamptz
+  created_at     DateTime @default(now()) @db.Timestamptz
+
+  @@map("payouts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Session Reviews — 1-on-1 Mentorship & Help Sessions
+// Rates the teacher's learning style, communication, and live session quality
+// ─────────────────────────────────────────────────────────────────────────────
+model SessionReview {
+  id                    String            @id @default(uuid()) @db.Uuid
+  student_id            String            @db.Uuid
+  student               User              @relation("StudentSessionReviews", fields: [student_id], references: [id])
+  instructor_id         String            @db.Uuid
+  instructor            InstructorProfile @relation("InstructorSessionReviews", fields: [instructor_id], references: [id])
+
+  // Exactly one of: booking (1-on-1 session) or help session
+  booking_id            String?           @unique @db.Uuid
+  booking               Booking?          @relation(fields: [booking_id], references: [id])
+  help_session_id       String?           @unique @db.Uuid
+  helpSession           HelpSession?      @relation(fields: [help_session_id], references: [id])
+
+  overall_rating        Int               // 1–5
+  teaching_style_rating Int?              // 1–5 (patience, explanation clarity, engagement)
+  communication_rating  Int?              // 1–5 (responsiveness, clarity)
+  comment               String?
+  created_at            DateTime          @default(now()) @db.Timestamptz
+  updated_at            DateTime          @updatedAt @db.Timestamptz
+
+  @@map("session_reviews")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enhanced Course Reviews with detailed criteria
+// ─────────────────────────────────────────────────────────────────────────────
+model CourseReview {
+  id             String   @id @default(uuid()) @db.Uuid
+  user_id        String   @db.Uuid
+  user           User     @relation(fields: [user_id], references: [id])
+  course_id      String   @db.Uuid
+  course         Course   @relation(fields: [course_id], references: [id])
+  
+  // Overall rating (1-5)
+  overall_rating Int
+  
+  // Detailed criteria ratings (1-5 each)
+  content_quality     Int  // Quality of course content
+  instructor_quality  Int  // Teaching quality
+  course_structure    Int  // Organization and structure
+  value_for_money     Int  // Worth the price
+  
+  // Review content
+  title          String?  // Review title/summary
+  comment        String?  // Detailed review text
+  pros           String[] // What they liked
+  cons           String[] // What could be improved
+  
+  // Course completion context
+  completion_percentage Int? // How much of course they completed
+  completed_lessons      Int? // Number of lessons completed
+  total_lessons          Int? // Total lessons in course when reviewed
+  
+  // Review status
+  is_verified    Boolean  @default(false) // Verified purchaser
+  is_featured    Boolean  @default(false) // Featured review
+  is_hidden      Boolean  @default(false) // Hidden by moderation
+  is_flagged     Boolean  @default(false) // Flagged for review
+  
+  // Engagement metrics
+  helpful_count  Int      @default(0) // Number of "helpful" votes
+  reply_count    Int      @default(0) // Number of replies
+  
+  // Instructor response (simplified foreign key, no relation)
+  instructorResponseId String? @unique @db.Uuid
+  
+  // Moderation
+  moderated_by   String?  @db.Uuid // Admin who moderated
+  moderated_at   DateTime?
+  moderation_reason String?
+  
+  created_at     DateTime @default(now()) @db.Timestamptz
+  updated_at     DateTime @updatedAt @db.Timestamptz
+
+  // Relations
+  comments       ReviewComment[]
+  helpfulVotes   ReviewHelpfulVote[]
+  reports        ReviewReport[]
+
+  @@unique([user_id, course_id]) // One review per user per course
+  @@index([course_id, overall_rating])
+  @@index([is_verified, is_hidden])
+  @@map("course_reviews")
+}
+
+// Review Comments (threaded replies)
+model ReviewComment {
+  id          String   @id @default(uuid()) @db.Uuid
+  review_id   String   @db.Uuid
+  review      CourseReview @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  user_id     String   @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  parent_id   String?  @db.Uuid // For threaded replies
+  parent      ReviewComment? @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies     ReviewComment[] @relation("CommentReplies")
+  
+  comment     String
+  is_instructor_response Boolean @default(false)
+  
+  // Engagement
+  helpful_count Int      @default(0)
+  helpfulVotes  ReviewCommentHelpfulVote[]
+  
+  // Moderation
+  is_hidden    Boolean  @default(false)
+  is_flagged   Boolean  @default(false)
+  
+  created_at   DateTime @default(now()) @db.Timestamptz
+  updated_at   DateTime @updatedAt @db.Timestamptz
+
+  @@index([review_id, created_at])
+  @@index([parent_id])
+  @@map("review_comments")
+}
+
+// Review Helpful Votes
+model ReviewHelpfulVote {
+  id          String   @id @default(uuid()) @db.Uuid
+  review_id   String   @db.Uuid
+  review      CourseReview @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  user_id     String   @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  is_helpful  Boolean  // true = helpful, false = not helpful
+  
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  @@unique([review_id, user_id]) // One vote per user per review
+  @@map("review_helpful_votes")
+}
+
+// Review Comment Helpful Votes
+model ReviewCommentHelpfulVote {
+  id          String   @id @default(uuid()) @db.Uuid
+  comment_id  String   @db.Uuid
+  comment     ReviewComment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user_id     String   @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  @@unique([comment_id, user_id], name: "comment_id_user_id") // One vote per user per comment
+  @@map("review_comment_helpful_votes")
+}
+
+// Instructor Responses to Reviews
+model InstructorResponse {
+  id          String   @id @default(uuid()) @db.Uuid
+  courseReviewId String? @unique @db.Uuid
+  instructor_id String   @db.Uuid
+  instructor  InstructorProfile @relation(fields: [instructor_id], references: [id], onDelete: Cascade)
+  
+  response    String
+  is_public   Boolean  @default(true)
+  
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  @@map("instructor_responses")
+}
+
+// Review Reports (for moderation)
+model ReviewReport {
+  id          String   @id @default(uuid()) @db.Uuid
+  review_id   String   @db.Uuid
+  review      CourseReview @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  reporter_id String   @db.Uuid
+  reporter    User     @relation(fields: [reporter_id], references: [id])
+  
+  reason      String   // spam, inappropriate, fake, etc.
+  description String?
+  status      String   @default("pending") // pending, reviewed, resolved, dismissed
+  
+  reviewed_by String?  @db.Uuid // Admin who reviewed
+  reviewed_at DateTime?
+  resolution  String?
+
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  @@index([review_id, status])
+  @@map("review_reports")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Free Resources (downloadable files for students)
+// ─────────────────────────────────────────────────────────────────────────────
+model Resource {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  category    String   // amharic | english | oromiffa | tigrinya | grade12 | sat | it | business | other
+  file_url    String
+  file_size   Int?     // bytes
+  file_type   String?  // pdf | docx | mp3 | zip
+  language    String   @default("en")
+  downloads   Int      @default(0)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  @@map("resources")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Help Requests — Assignment & Project Help Marketplace
+// Students post one-time help jobs; approved instructors bid and deliver help
+// ─────────────────────────────────────────────────────────────────────────────
+model HelpRequest {
+  id                   String   @id @default(uuid()) @db.Uuid
+  student_id           String   @db.Uuid
+  student              User     @relation(fields: [student_id], references: [id])
+  title                String
+  description          String
+  subject_area         String   // math | physics | cs | english | chemistry | other
+  budget_max_per_hour  Decimal  @db.Decimal(10, 2)
+  estimated_hours      Decimal  @default(1) @db.Decimal(6, 2)
+  deadline             DateTime @db.Timestamptz
+  status               String   @default("open") // open | in_progress | completed | cancelled
+  created_at           DateTime @default(now()) @db.Timestamptz
+  updated_at           DateTime @updatedAt @db.Timestamptz
+
+  bids    HelpBid[]
+  session HelpSession?
+
+  @@map("help_requests")
+}
+
+model HelpBid {
+  id               String   @id @default(uuid()) @db.Uuid
+  request_id       String   @db.Uuid
+  request          HelpRequest       @relation(fields: [request_id], references: [id], onDelete: Cascade)
+  helper_id        String   @db.Uuid
+  helper           InstructorProfile @relation(fields: [helper_id], references: [id])
+  quoted_rate      Decimal  @db.Decimal(10, 2)  // ETB per hour
+  estimated_hours  Decimal  @db.Decimal(6, 2)
+  message          String
+  status           String   @default("pending")  // pending | accepted | rejected
+  created_at       DateTime @default(now()) @db.Timestamptz
+
+  session HelpSession?
+
+  @@unique([request_id, helper_id]) // one bid per helper per request
+  @@map("help_bids")
+}
+
+model HelpSession {
+  id            String   @id @default(uuid()) @db.Uuid
+  request_id    String   @unique @db.Uuid
+  request       HelpRequest       @relation(fields: [request_id], references: [id])
+  bid_id        String   @unique @db.Uuid
+  bid           HelpBid           @relation(fields: [bid_id], references: [id])
+  helper_id     String   @db.Uuid
+  helper        InstructorProfile @relation(fields: [helper_id], references: [id])
+  student_id    String   @db.Uuid
+  student       User     @relation("StudentHelpSessions", fields: [student_id], references: [id])
+  meeting_link  String?
+  actual_hours  Decimal? @db.Decimal(6, 2)
+  status        String   @default("scheduled") // scheduled | in_progress | completed | disputed
+  started_at    DateTime? @db.Timestamptz
+  completed_at  DateTime? @db.Timestamptz
+  // ── Session Monitoring fields ──────────────────────────────────────────────
+  platform             String?   // "zoom" | "google" — detected from meeting_link
+  platform_meeting_id  String?   // Zoom meeting ID or Google Meet room code
+  session_started_at   DateTime? @db.Timestamptz
+  session_ended_at     DateTime? @db.Timestamptz
+  session_duration_m   Int?      // actual duration in minutes (computed from events)
+  session_flag         String?   // null | "short_session" | "early_end" | "no_start" | "unmonitored"
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @updatedAt @db.Timestamptz
+
+  transaction   Transaction?
+  sessionEvents SessionEvent[]
+  sessionReview SessionReview?
+
+  @@map("help_sessions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Certificates of Completion
+// ─────────────────────────────────────────────────────────────────────────────
+model Certificate {
+  id                 String   @id @default(uuid()) @db.Uuid
+  certificate_number String   @unique
+  user_id            String   @db.Uuid
+  course_id          String   @db.Uuid
+  pdf_key            String?  // R2 private key for generated certificate PDF
+  issued_at          DateTime @default(now()) @db.Timestamptz
+
+  @@unique([user_id, course_id])
+  @@map("certificates")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Wishlist / Bookmarks
+// ─────────────────────────────────────────────────────────────────────────────
+model Wishlist {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  course_id  String   @db.Uuid
+  course     Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@unique([user_id, course_id])
+  @@map("wishlists")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coupons & Promotional Discounts
+// ─────────────────────────────────────────────────────────────────────────────
+model Coupon {
+  id             String    @id @default(uuid()) @db.Uuid
+  code           String    @unique
+  discount_type  String    @default("percent") // percent | fixed
+  discount_value Decimal   @db.Decimal(10, 2)
+  max_uses       Int       @default(100)
+  used_count     Int       @default(0)
+  expires_at     DateTime? @db.Timestamptz
+  is_active      Boolean   @default(true)
+  created_at     DateTime  @default(now()) @db.Timestamptz
+
+  @@map("coupons")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Per-Lesson Q&A System
+// ─────────────────────────────────────────────────────────────────────────────
+model LessonQuestion {
+  id          String   @id @default(uuid()) @db.Uuid
+  lesson_id   String   @db.Uuid
+  lesson      CourseLesson @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
+  user_id     String   @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  title       String
+  details     String
+  upvotes     Int      @default(0)
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  answers     LessonAnswer[]
+
+  @@map("lesson_questions")
+}
+
+model LessonAnswer {
+  id          String   @id @default(uuid()) @db.Uuid
+  question_id String   @db.Uuid
+  question    LessonQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user_id     String   @db.Uuid
+  user        User     @relation(fields: [user_id], references: [id])
+  answer      String
+  is_accepted Boolean  @default(false)
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  @@map("lesson_answers")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Instructor Follow System
+// ─────────────────────────────────────────────────────────────────────────────
+model InstructorFollow {
+  id            String            @id @default(uuid()) @db.Uuid
+  user_id       String            @db.Uuid
+  user          User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  instructor_id String            @db.Uuid
+  instructor    InstructorProfile @relation(fields: [instructor_id], references: [id], onDelete: Cascade)
+  created_at    DateTime          @default(now()) @db.Timestamptz
+
+  @@unique([user_id, instructor_id])
+  @@map("instructor_follows")
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Quiz & Assessment System
+// Each lesson can optionally have one quiz.
+// Students submit attempts; the server auto-grades and stores results.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Quiz {
+  id           String   @id @default(uuid()) @db.Uuid
+  lesson_id    String   @unique @db.Uuid
+  lesson       CourseLesson @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
+
+  title        String
+  description  String?
+  pass_score   Int      @default(70)   // minimum % score to pass
+  time_limit   Int?                    // minutes; null = no limit
+  max_attempts Int      @default(3)    // 0 = unlimited
+  is_gating    Boolean  @default(true) // if true, student must pass before next lesson unlocks
+
+  created_at   DateTime @default(now()) @db.Timestamptz
+  updated_at   DateTime @updatedAt     @db.Timestamptz
+
+  questions    QuizQuestion[]
+  attempts     QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id          String   @id @default(uuid()) @db.Uuid
+  quiz_id     String   @db.Uuid
+  quiz        Quiz     @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+
+  question    String
+  // Type controls how grading works:
+  //   multiple_choice – options array + correct = index string "0","1",…
+  //   true_false      – options always ["True","False"] + correct = "0" or "1"
+  //   text            – correct = expected text (case-insensitive includes match)
+  type        String   @default("multiple_choice")
+  options     String[] // option label strings for MC and T/F
+  correct     String   // index string for MC/TF, or keyword/phrase for text
+  explanation String?  // shown to student after answering
+  points      Int      @default(1)
+  position    Int      @default(0)
+
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt     @db.Timestamptz
+
+  answers     QuizAnswer[]
+
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id           String   @id @default(uuid()) @db.Uuid
+  quiz_id      String   @db.Uuid
+  quiz         Quiz     @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+  user_id      String   @db.Uuid       // student who took the quiz
+
+  score        Int                     // 0–100 percentage
+  passed       Boolean
+  time_taken   Int?                    // seconds the student spent
+  completed_at DateTime @default(now()) @db.Timestamptz
+
+  answers      QuizAnswer[]
+
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id          String   @id @default(uuid()) @db.Uuid
+  attempt_id  String   @db.Uuid
+  attempt     QuizAttempt  @relation(fields: [attempt_id], references: [id], onDelete: Cascade)
+  question_id String   @db.Uuid
+  question    QuizQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  answer      String   // what the student submitted
+  is_correct  Boolean
+
+  @@map("quiz_answers")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gamification System
+// Tracks XP, streaks, levels, and badges per student.
+// The gamification module is self-contained — other modules never import it.
+// Frontend calls POST /api/gamification/award after key learning events.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model UserStats {
+  id             String    @id @default(uuid()) @db.Uuid
+  user_id        String    @unique @db.Uuid   // one stats row per user
+  total_xp       Int       @default(0)
+  level          Int       @default(1)        // computed from total_xp
+  current_streak Int       @default(0)        // consecutive days with activity
+  longest_streak Int       @default(0)        // all-time best streak
+  last_active    DateTime? @db.Timestamptz    // date of last XP-earning action
+  updated_at     DateTime  @updatedAt @db.Timestamptz
+
+  @@map("user_stats")
+}
+
+model XPLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  // reason values: lesson_complete | quiz_passed | quiz_perfect |
+  //                course_complete | session_booked | daily_checkin | streak_bonus
+  reason     String
+  amount     Int                              // XP awarded (always positive)
+  metadata   Json?                            // optional context (course_id, etc.)
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@index([user_id, created_at])
+  @@map("xp_logs")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid()) @db.Uuid
+  user_id   String   @db.Uuid
+  // badge_id values: first_lesson | week_streak | month_streak |
+  //                  perfect_score | first_course | five_courses |
+  //                  bookworm | speed_learner | first_quiz
+  badge_id  String
+  earned_at DateTime @default(now()) @db.Timestamptz
+
+  @@unique([user_id, badge_id])   // earn each badge only once
+  @@map("user_badges")
+}

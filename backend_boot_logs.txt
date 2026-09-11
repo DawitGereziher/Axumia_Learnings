@@ -1,0 +1,377 @@
+[32m[Nest] 1  - [39m07/31/2026, 11:22:48 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:22:48 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +30ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:22:48 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:22:49 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:22:49 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +22ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:22:49 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:22:50 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:22:50 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +24ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:22:50 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:22:51 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:22:52 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +21ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:22:52 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:22:53 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:22:53 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +42ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:22:53 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:22:56 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:22:56 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +21ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:22:56 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:23:00 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:23:00 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +24ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:23:00 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:23:07 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:23:07 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +22ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:23:07 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:23:21 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:23:21 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +19ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:23:21 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:23:47 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:23:47 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +26ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:23:47 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:24:40 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:24:40 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +23ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:24:40 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:25:40 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:25:40 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +21ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:25:40 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
+[32m[Nest] 1  - [39m07/31/2026, 11:26:41 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 1  - [39m07/31/2026, 11:26:41 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +23ms[39m
+[31m[Nest] 1  - [39m07/31/2026, 11:26:41 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mPrismaClientInitializationError: PrismaClient was instantiated without any options. A driver adapter is required to connect to your database.
+
+Pass a driver adapter to the PrismaClient constructor, for example:
+
+  import { PrismaPg } from '@prisma/adapter-pg'
+  import { PrismaClient } from './generated/prisma/client'
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  const prisma = new PrismaClient({ adapter })
+
+Learn more about driver adapters: https://pris.ly/d/driver-adapters
+
+If you use Prisma Accelerate instead of connecting to your database directly, pass `accelerateUrl` to the PrismaClient constructor instead of `adapter`.
+    at new t [90m(/usr/src/app/backend/[39mnode_modules/[4m@prisma/client[24m/runtime/client.js:82:1527[90m)[39m
+    at new PrismaService [90m(/usr/src/app/backend/[39mdist/prisma/prisma.service.js:12:21[90m)[39m
+    at Injector.instantiateClass [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:430:19[90m)[39m
+    at callback [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:72:45[90m)[39m
+    at async Injector.resolveConstructorParams [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:180:24[90m)[39m
+    at async Injector.loadInstance [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:77:13[90m)[39m
+    at async Injector.loadProvider [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/injector.js:111:9[90m)[39m
+    at async [90m/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:56:13
+    at async Promise.all (index 3)
+    at async InstanceLoader.createInstancesOfProviders [90m(/usr/src/app/backend/[39mnode_modules/[4m@nestjs/core[24m/injector/instance-loader.js:55:9[90m)[39m {
+  clientVersion: [32m'7.9.1'[39m,
+  errorCode: [90mundefined[39m,
+  retryable: [90mundefined[39m
+}
