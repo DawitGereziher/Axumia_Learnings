@@ -143,7 +143,7 @@ export class HelpRequestsService {
   async acceptBid(
     studentId: string,
     bidId: string,
-  ): Promise<{ session: any; checkoutUrl: string }> {
+  ): Promise<{ session: any; checkoutUrl: string; txRef: string }> {
     // Load bid with full context (helper + student user data needed for payment)
     const bid = await this.prisma.helpBid.findUnique({
       where: { id: bidId },
@@ -180,37 +180,32 @@ export class HelpRequestsService {
         where: { id: bid.request_id },
         data: { status: 'in_progress' },
       }),
-      // Create the help session
+      // Create session as 'awaiting_payment' — helper is NOT notified until payment confirmed
       this.prisma.helpSession.create({
         data: {
           request_id: bid.request_id,
           bid_id: bidId,
           helper_id: bid.helper_id,
           student_id: studentId,
-          status: 'scheduled',
+          status: 'awaiting_payment', // ← transitions to 'scheduled' via webhook
         },
       }),
     ]);
 
-    // Initiate payment atomically — return checkoutUrl to frontend
+    // Initiate payment — student must pay to confirm session
     const student = bid.request.student;
     const studentName =
       `${student.first_name || ''} ${student.last_name || ''}`.trim() ||
       student.email;
-    const { checkoutUrl } = await this.payments.initiateHelpSessionPayment(
+    const { checkoutUrl, txRef } = await this.payments.initiateHelpSessionPayment(
       studentId,
       session.id,
       student.email,
       studentName,
     );
 
-    // Notify helper that their bid was accepted
-    await this.notifications.notifyBidAccepted(
-      bid.helper.user.email,
-      bid.request.title,
-    );
-
-    return { session, checkoutUrl };
+    // Helper notified only after payment is confirmed (via onHelpSessionPaymentConfirmed)
+    return { session, checkoutUrl, txRef };
   }
 
   // ── Helper: Set meeting link ────────────────────────────────────────────────
@@ -295,36 +290,133 @@ export class HelpRequestsService {
     });
   }
 
-  // ── Helper: Complete session (actual hours → triggers payout eligibility) ───
-  async completeSession(
+  // ── Webhook callback: session payment confirmed ──────────────────────────────
+
+  /**
+   * Called by PaymentsService when the Chapa webhook fires for a help session.
+   * Transitions session from 'awaiting_payment' → 'scheduled' and notifies helper.
+   */
+  async onHelpSessionPaymentConfirmed(sessionId: string) {
+    const session = await this.prisma.helpSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        helper: { include: { user: true } },
+        request: true,
+      },
+    });
+    if (!session) return;
+    if (session.status !== 'awaiting_payment') return; // idempotent
+
+    await this.prisma.helpSession.update({
+      where: { id: sessionId },
+      data: { status: 'scheduled' },
+    });
+
+    // Now notify helper — they know payment is confirmed
+    try {
+      await this.notifications.notifyBidAccepted(
+        session.helper.user.email,
+        session.request.title,
+      );
+    } catch {}
+  }
+
+  // ── Helper: Mark session done (step 1 of 2) ──────────────────────────────────
+
+  /**
+   * Helper reports session complete + actual hours.
+   * Session moves to 'helper_completed' — student must confirm or it auto-confirms in 24h.
+   * This prevents self-reported hours from immediately unlocking payouts.
+   */
+  async markHelperCompleted(
     helperUserId: string,
     sessionId: string,
     actualHours: number,
   ) {
+    if (!actualHours || actualHours <= 0) {
+      throw new BadRequestException('actualHours must be greater than zero');
+    }
     const session = await this.prisma.helpSession.findUnique({
       where: { id: sessionId },
-      include: { helper: true, request: true },
+      include: { helper: true },
     });
     if (!session) throw new NotFoundException('Session not found');
     if (session.helper.user_id !== helperUserId) throw new ForbiddenException();
-    if (session.status === 'completed')
-      throw new BadRequestException('Session already completed');
+    if (!['scheduled', 'in_progress'].includes(session.status)) {
+      throw new BadRequestException(`Cannot complete a session in status '${session.status}'`);
+    }
+
+    return this.prisma.helpSession.update({
+      where: { id: sessionId },
+      data: {
+        status: 'helper_completed',
+        actual_hours: actualHours,
+      },
+    });
+  }
+
+  // ── Student: Confirm completion (step 2 of 2) ─────────────────────────────────
+
+  /**
+   * Student confirms the session is complete → triggers payout eligibility.
+   * If student disputes instead, status becomes 'disputed' for admin review.
+   */
+  async confirmCompletion(studentId: string, sessionId: string, confirmed: boolean) {
+    const session = await this.prisma.helpSession.findUnique({
+      where: { id: sessionId },
+      include: { request: true },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    if (session.student_id !== studentId) throw new ForbiddenException();
+    if (session.status !== 'helper_completed') {
+      throw new BadRequestException(
+        `Session must be in 'helper_completed' status. Current: '${session.status}'`,
+      );
+    }
+
+    if (confirmed) {
+      const [updatedSession] = await this.prisma.$transaction([
+        this.prisma.helpSession.update({
+          where: { id: sessionId },
+          data: { status: 'completed', completed_at: new Date() },
+        }),
+        this.prisma.helpRequest.update({
+          where: { id: session.request_id },
+          data: { status: 'completed' },
+        }),
+      ]);
+      return updatedSession;
+    } else {
+      // Student disputes — hold for admin review
+      return this.prisma.helpSession.update({
+        where: { id: sessionId },
+        data: { status: 'disputed' },
+      });
+    }
+  }
+
+  // ── Admin: Force-complete a session (e.g. after 24h auto-confirm) ────────────
+
+  async forceCompleteSession(sessionId: string) {
+    const session = await this.prisma.helpSession.findUnique({
+      where: { id: sessionId },
+      include: { request: true },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    if (!['helper_completed', 'disputed'].includes(session.status)) {
+      throw new BadRequestException(`Cannot force-complete a session in status '${session.status}'`);
+    }
 
     const [updatedSession] = await this.prisma.$transaction([
       this.prisma.helpSession.update({
         where: { id: sessionId },
-        data: {
-          status: 'completed',
-          actual_hours: actualHours,
-          completed_at: new Date(),
-        },
+        data: { status: 'completed', completed_at: new Date() },
       }),
       this.prisma.helpRequest.update({
         where: { id: session.request_id },
         data: { status: 'completed' },
       }),
     ]);
-
     return updatedSession;
   }
 
@@ -356,7 +448,8 @@ export class HelpRequestsService {
     });
   }
 
-  // ── Instructor: My bids ─────────────────────────────────────────────────────
+  // ── Instructor: My bids + bid withdrawal ─────────────────────────────────────
+
   async getMyBids(instructorUserId: string) {
     const profile = await this.prisma.instructorProfile.findUnique({
       where: { user_id: instructorUserId },
@@ -364,12 +457,25 @@ export class HelpRequestsService {
     if (!profile) throw new NotFoundException('Instructor profile not found');
     return this.prisma.helpBid.findMany({
       where: { helper_id: profile.id },
-      include: {
-        request: true,
-        session: true,
-      },
+      include: { request: true, session: true },
       orderBy: { created_at: 'desc' },
     });
+  }
+
+  async withdrawBid(instructorUserId: string, bidId: string) {
+    const profile = await this.prisma.instructorProfile.findUnique({
+      where: { user_id: instructorUserId },
+    });
+    if (!profile) throw new ForbiddenException('Instructor profile not found');
+
+    const bid = await this.prisma.helpBid.findUnique({ where: { id: bidId } });
+    if (!bid) throw new NotFoundException('Bid not found');
+    if (bid.helper_id !== profile.id) throw new ForbiddenException();
+    if (bid.status !== 'pending') {
+      throw new BadRequestException('Only pending bids can be withdrawn');
+    }
+
+    return this.prisma.helpBid.delete({ where: { id: bidId } });
   }
 
   // ── Admin: All requests with full details ───────────────────────────────────

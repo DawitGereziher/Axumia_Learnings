@@ -7,14 +7,14 @@ export declare class ResourcesController {
         data: {
             category: string;
             id: string;
+            description: string | null;
+            title: string;
             created_at: Date;
             updated_at: Date;
             is_active: boolean;
-            title: string;
-            description: string | null;
             language: string;
-            file_size: number | null;
             file_url: string;
+            file_size: number | null;
             file_type: string | null;
             downloads: number;
         }[];
@@ -37,28 +37,28 @@ export declare class ResourcesController {
     }): Promise<{
         category: string;
         id: string;
+        description: string | null;
+        title: string;
         created_at: Date;
         updated_at: Date;
         is_active: boolean;
-        title: string;
-        description: string | null;
         language: string;
-        file_size: number | null;
         file_url: string;
+        file_size: number | null;
         file_type: string | null;
         downloads: number;
     }>;
     remove(id: string): Promise<{
         category: string;
         id: string;
+        description: string | null;
+        title: string;
         created_at: Date;
         updated_at: Date;
         is_active: boolean;
-        title: string;
-        description: string | null;
         language: string;
-        file_size: number | null;
         file_url: string;
+        file_size: number | null;
         file_type: string | null;
         downloads: number;
     }>;

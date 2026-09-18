@@ -19,19 +19,36 @@ const review_validation_service_1 = require("./review-validation.service");
 const review_management_service_1 = require("./review-management.service");
 const review_comment_service_1 = require("./review-comment.service");
 const instructor_response_service_1 = require("./instructor-response.service");
+const reviews_service_1 = require("./reviews.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 let ReviewsController = class ReviewsController {
     reviewValidation;
     reviewManagement;
     reviewComment;
     instructorResponse;
+    reviewsService;
     prisma;
-    constructor(reviewValidation, reviewManagement, reviewComment, instructorResponse, prisma) {
+    constructor(reviewValidation, reviewManagement, reviewComment, instructorResponse, reviewsService, prisma) {
         this.reviewValidation = reviewValidation;
         this.reviewManagement = reviewManagement;
         this.reviewComment = reviewComment;
         this.instructorResponse = instructorResponse;
+        this.reviewsService = reviewsService;
         this.prisma = prisma;
+    }
+    async reviewBookingSession(req, bookingId, body) {
+        const userId = req.user.id;
+        return this.reviewsService.createBookingSessionReview(userId, bookingId, body);
+    }
+    async getBookingSessionReview(bookingId) {
+        return this.reviewsService.getBookingSessionReview(bookingId);
+    }
+    async reviewHelpSession(req, helpSessionId, body) {
+        const userId = req.user.id;
+        return this.reviewsService.createHelpSessionReview(userId, helpSessionId, body);
+    }
+    async getHelpSessionReview(helpSessionId) {
+        return this.reviewsService.getHelpSessionReview(helpSessionId);
     }
     async getCourseReviews(courseId, isVerified, isFeatured, minRating, sortBy, limit, offset) {
         const filters = {
@@ -46,6 +63,89 @@ let ReviewsController = class ReviewsController {
     }
     async getCourseRatingStats(courseId) {
         return this.reviewManagement.getCourseRatingStats(courseId);
+    }
+    async createInstructorReview(req, instructorId, body) {
+        const userId = req.user.id;
+        const profile = await this.prisma.instructorProfile.findFirst({
+            where: { OR: [{ id: instructorId }, { user_id: instructorId }] },
+        });
+        if (!profile)
+            throw new common_1.NotFoundException('Instructor profile not found');
+        if (profile.user_id === userId) {
+            throw new common_1.BadRequestException('You cannot review your own instructor profile');
+        }
+        if (!body.rating || body.rating < 1 || body.rating > 5) {
+            throw new common_1.BadRequestException('Rating must be between 1 and 5');
+        }
+        let courseId = body.course_id;
+        if (!courseId) {
+            const course = await this.prisma.course.findFirst({
+                where: { instructor_id: profile.id, status: 'published' },
+                select: { id: true },
+                orderBy: { created_at: 'desc' },
+            });
+            if (!course) {
+                throw new common_1.BadRequestException('Instructor has no published courses to review');
+            }
+            courseId = course.id;
+        }
+        const ratingVal = Math.round(body.rating);
+        const review = await this.prisma.courseReview.upsert({
+            where: {
+                user_id_course_id: {
+                    user_id: userId,
+                    course_id: courseId,
+                },
+            },
+            update: {
+                overall_rating: ratingVal,
+                content_quality: ratingVal,
+                instructor_quality: ratingVal,
+                course_structure: ratingVal,
+                value_for_money: ratingVal,
+                comment: body.comment?.trim() || null,
+            },
+            create: {
+                user_id: userId,
+                course_id: courseId,
+                overall_rating: ratingVal,
+                content_quality: ratingVal,
+                instructor_quality: ratingVal,
+                course_structure: ratingVal,
+                value_for_money: ratingVal,
+                comment: body.comment?.trim() || null,
+                is_verified: true,
+            },
+            include: {
+                user: { select: { id: true, first_name: true, last_name: true, image: true } },
+                course: { select: { id: true, title: true } },
+            },
+        });
+        const all = await this.prisma.courseReview.findMany({
+            where: {
+                course: { instructor_id: profile.id },
+                is_hidden: false,
+            },
+            select: { overall_rating: true },
+        });
+        if (all.length > 0) {
+            const avg = all.reduce((s, r) => s + r.overall_rating, 0) / all.length;
+            await this.prisma.instructorProfile.update({
+                where: { id: profile.id },
+                data: { avg_rating: avg },
+            });
+        }
+        return {
+            success: true,
+            review: {
+                id: review.id,
+                rating: review.overall_rating,
+                comment: review.comment || '',
+                created_at: review.created_at,
+                user: review.user,
+                course_title: review.course?.title,
+            },
+        };
     }
     async createCourseReview(req, courseId, reviewData) {
         const userId = req.user.id;
@@ -233,6 +333,42 @@ let ReviewsController = class ReviewsController {
 };
 exports.ReviewsController = ReviewsController;
 __decorate([
+    (0, common_1.Post)('sessions/booking/:bookingId'),
+    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('bookingId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "reviewBookingSession", null);
+__decorate([
+    (0, common_1.Get)('sessions/booking/:bookingId'),
+    __param(0, (0, common_1.Param)('bookingId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "getBookingSessionReview", null);
+__decorate([
+    (0, common_1.Post)('sessions/help/:helpSessionId'),
+    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('helpSessionId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "reviewHelpSession", null);
+__decorate([
+    (0, common_1.Get)('sessions/help/:helpSessionId'),
+    __param(0, (0, common_1.Param)('helpSessionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "getHelpSessionReview", null);
+__decorate([
     (0, common_1.Get)('course/:courseId'),
     __param(0, (0, common_1.Param)('courseId')),
     __param(1, (0, common_1.Query)('is_verified')),
@@ -253,7 +389,19 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ReviewsController.prototype, "getCourseRatingStats", null);
 __decorate([
+    (0, common_1.Post)('instructor/:instructorId'),
+    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('instructorId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", Promise)
+], ReviewsController.prototype, "createInstructorReview", null);
+__decorate([
     (0, common_1.Post)('course/:courseId'),
+    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('courseId')),
@@ -427,11 +575,11 @@ __decorate([
 ], ReviewsController.prototype, "autoVerifyReviews", null);
 exports.ReviewsController = ReviewsController = __decorate([
     (0, common_1.Controller)('reviews'),
-    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),
     __metadata("design:paramtypes", [review_validation_service_1.ReviewValidationService,
         review_management_service_1.ReviewManagementService,
         review_comment_service_1.ReviewCommentService,
         instructor_response_service_1.InstructorResponseService,
+        reviews_service_1.ReviewsService,
         prisma_service_1.PrismaService])
 ], ReviewsController);
 //# sourceMappingURL=reviews.controller.js.map

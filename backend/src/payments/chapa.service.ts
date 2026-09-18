@@ -66,9 +66,7 @@ export class ChapaService {
   }
 
   /** Verify a transaction by tx_ref — call this inside your webhook handler */
-  async verifyTransaction(
-    txRef: string,
-  ): Promise<{ status: string; data: any }> {
+  async verifyTransaction(txRef: string): Promise<{ status: string; data: any }> {
     const res = await fetch(`${this.baseUrl}/transaction/verify/${txRef}`, {
       headers: { Authorization: `Bearer ${this.secretKey}` },
     });
@@ -76,14 +74,42 @@ export class ChapaService {
     return res.json();
   }
 
+  /**
+   * Refund a transaction via Chapa's refund API.
+   * `amount` is optional — omitting it issues a full refund.
+   * Returns the Chapa API response (status + message).
+   */
+  async refundTransaction(
+    txRef: string,
+    amount?: number,
+    reason = 'Customer requested refund',
+  ): Promise<{ status: string; message: string }> {
+    const body: Record<string, any> = { tx_ref: txRef, reason };
+    if (amount !== undefined) body.amount = amount.toString();
+
+    const res = await fetch(`${this.baseUrl}/refund`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.secretKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      this.logger.error(`Chapa refund failed for ${txRef}: ${err}`);
+      throw new Error(`Chapa refund failed: ${res.status}`);
+    }
+    return res.json();
+  }
+
   /** Verify webhook signature — Chapa sends x-chapa-signature header */
   verifyWebhookSignature(payload: string, signature: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const crypto = require('crypto');
     const secret = this.config.get('CHAPA_WEBHOOK_SECRET') || '';
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(payload)
-      .digest('hex');
+    const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
     return expected === signature;
   }
 }

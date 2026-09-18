@@ -6,7 +6,12 @@ export declare class StorageController {
     getUploadUrl(user: AuthUser, body: {
         bucket: StorageBucket;
         contentType: string;
-        folder: 'thumbnail' | 'profile' | 'cover' | 'kyc' | 'pdf' | 'certificate' | 'resource';
+        folder: 'thumbnail' | 'profile' | 'cover' | 'kyc' | 'pdf' | 'certificate' | 'resource' | 'material';
         fileName: string;
     }): Promise<Record<string, string>>;
+    uploadFile(user: AuthUser, file: any, body: {
+        bucket?: StorageBucket;
+        folder?: any;
+        fileName?: string;
+    }): Promise<Record<string, any>>;
 }

@@ -28,5 +28,9 @@ export declare class ChapaService {
         status: string;
         data: any;
     }>;
+    refundTransaction(txRef: string, amount?: number, reason?: string): Promise<{
+        status: string;
+        message: string;
+    }>;
     verifyWebhookSignature(payload: string, signature: string): boolean;
 }

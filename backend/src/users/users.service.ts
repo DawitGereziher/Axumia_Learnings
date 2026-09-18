@@ -1,9 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import {
+  SubmitInstructorProfileDto,
+  UpdateRichInstructorProfileDto,
+  CreateInstructorReviewDto,
+} from './dto/instructor-profile.dto';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
+
+  // ── Identity sync ──────────────────────────────────────────────────────────
 
   /** Sync user from D-auth JWT into our business DB on first API call */
   async syncUser(jwtPayload: {
@@ -41,28 +53,24 @@ export class UsersService {
     });
   }
 
-  async updateProfile(
-    id: string,
-    dto: {
-      first_name?: string;
-      last_name?: string;
-      image?: string;
-      phone?: string;
-    },
-  ) {
-    return this.prisma.user.update({ where: { id }, data: dto });
+  /** Safe explicit-field profile update — cannot mass-assign role or email */
+  async updateProfile(id: string, dto: UpdateProfileDto) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        image: dto.image,
+        // phone stored if schema has it
+        ...(dto.phone !== undefined ? { phone: dto.phone } : {}),
+      },
+    });
   }
 
+  // ── Instructor KYC ────────────────────────────────────────────────────────
+
   /** Create or update instructor profile (KYC submission) */
-  async submitInstructorProfile(
-    userId: string,
-    dto: {
-      bio?: string;
-      headline?: string;
-      hourly_rate?: number;
-      kyc_docs?: string[];
-    },
-  ) {
+  async submitInstructorProfile(userId: string, dto: SubmitInstructorProfileDto) {
     return this.prisma.instructorProfile.upsert({
       where: { user_id: userId },
       create: { user_id: userId, ...dto, kyc_status: 'submitted' },
@@ -70,36 +78,42 @@ export class UsersService {
     });
   }
 
-  /** Update full rich instructor profile (bio, skills, social links, etc.) */
+  /**
+   * Update rich instructor profile (bio, skills, social links, etc.).
+   * kyc_status and is_active are NOT accepted here — admin-only via updateKycStatus().
+   */
   async updateRichInstructorProfile(
     userId: string,
-    dto: {
-      bio?: string;
-      headline?: string;
-      hourly_rate?: number;
-      cover_image?: string;
-      profile_image?: string;
-      skills?: string[];
-      languages?: string[];
-      experience_years?: number;
-      location?: string;
-      website_url?: string;
-      linkedin_url?: string;
-      twitter_url?: string;
-      youtube_url?: string;
-      kyc_docs?: string[];
-      kyc_status?: string;
-    },
+    dto: UpdateRichInstructorProfileDto,
   ) {
     const profile = await this.prisma.instructorProfile.findUnique({
       where: { user_id: userId },
     });
     if (!profile) throw new NotFoundException('Instructor profile not found');
+
     return this.prisma.instructorProfile.update({
       where: { user_id: userId },
-      data: dto,
+      data: {
+        bio: dto.bio,
+        headline: dto.headline,
+        hourly_rate: dto.hourly_rate,
+        cover_image: dto.cover_image,
+        profile_image: dto.profile_image,
+        skills: dto.skills,
+        languages: dto.languages,
+        experience_years: dto.experience_years,
+        location: dto.location,
+        website_url: dto.website_url,
+        linkedin_url: dto.linkedin_url,
+        twitter_url: dto.twitter_url,
+        youtube_url: dto.youtube_url,
+        ...(dto.kyc_docs !== undefined ? { kyc_docs: dto.kyc_docs } : {}),
+        // kyc_status and is_active are intentionally excluded here
+      },
     });
   }
+
+  // ── Instructor Public Profile ──────────────────────────────────────────────
 
   /** Get full public instructor profile (includes courses + reviews + stats) */
   async getPublicInstructorProfile(profileId: string) {
@@ -112,8 +126,8 @@ export class UsersService {
           select: {
             first_name: true,
             last_name: true,
-            email: false,
             image: true,
+            // email intentionally excluded from public profile
           },
         },
         courses: {
@@ -128,13 +142,9 @@ export class UsersService {
     });
     if (!profile) throw new NotFoundException('Instructor not found');
 
-    // Fetch student reviews from both courses and 1-on-1 / help sessions
     const [courseReviews, sessionReviews] = await Promise.all([
       this.prisma.courseReview.findMany({
-        where: {
-          course: { instructor_id: profile.id },
-          is_hidden: false,
-        },
+        where: { course: { instructor_id: profile.id }, is_hidden: false },
         include: {
           user: { select: { id: true, first_name: true, last_name: true, image: true } },
           course: { select: { id: true, title: true } },
@@ -174,22 +184,23 @@ export class UsersService {
       created_at: sr.created_at,
       user: sr.student,
       type: sr.booking_id ? 'booking' : 'help',
-      session_title: sr.booking_id ? '1-on-1 Mentorship Session' : (sr.helpSession?.request?.title || 'Help Request Session'),
+      session_title: sr.booking_id
+        ? '1-on-1 Mentorship Session'
+        : (sr.helpSession?.request?.title || 'Help Request Session'),
     }));
 
     const allReviews = [...formattedCourseReviews, ...formattedSessionReviews].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
 
-    // Calculate instructor average rating from real reviews
     const totalRatingSum = allReviews.reduce((sum, r) => sum + r.rating, 0);
-    const avgRating = allReviews.length > 0
-      ? (totalRatingSum / allReviews.length).toFixed(1)
-      : profile.avg_rating && Number(profile.avg_rating) > 0
-      ? Number(profile.avg_rating).toFixed(1)
-      : '5.0';
+    const avgRating =
+      allReviews.length > 0
+        ? (totalRatingSum / allReviews.length).toFixed(1)
+        : profile.avg_rating && Number(profile.avg_rating) > 0
+          ? Number(profile.avg_rating).toFixed(1)
+          : '5.0';
 
-    // Format courses with real average ratings from courseReviews
     const formattedCourses = profile.courses.map((c: any) => {
       const ratings = c.courseReviews?.map((cr: any) => cr.overall_rating) || [];
       const totalScore = ratings.reduce((acc: number, r: number) => acc + r, 0);
@@ -198,10 +209,7 @@ export class UsersService {
       return {
         ...rest,
         avgRating: Math.round(cAvg * 10) / 10,
-        _count: {
-          ...c._count,
-          reviews: ratings.length,
-        },
+        _count: { ...c._count, reviews: ratings.length },
       };
     });
 
@@ -215,27 +223,25 @@ export class UsersService {
     };
   }
 
-  /** Create a review for an instructor */
+  // ── Instructor Review ─────────────────────────────────────────────────────
+
   async createInstructorReview(
     userId: string,
     instructorId: string,
-    dto: { rating: number; comment?: string; course_id?: string },
+    dto: CreateInstructorReviewDto,
   ) {
     if (!dto.rating || dto.rating < 1 || dto.rating > 5) {
       throw new BadRequestException('Rating must be between 1 and 5 stars');
     }
 
     const profile = await this.prisma.instructorProfile.findFirst({
-      where: {
-        OR: [{ id: instructorId }, { user_id: instructorId }],
-      },
+      where: { OR: [{ id: instructorId }, { user_id: instructorId }] },
     });
     if (!profile) throw new NotFoundException('Instructor profile not found');
     if (profile.user_id === userId) {
       throw new BadRequestException('You cannot review your own instructor profile');
     }
 
-    // Determine which course by this instructor to review
     let courseId = dto.course_id;
     if (!courseId) {
       const course = await this.prisma.course.findFirst({
@@ -251,12 +257,7 @@ export class UsersService {
 
     const ratingVal = Math.round(dto.rating);
     const review = await this.prisma.courseReview.upsert({
-      where: {
-        user_id_course_id: {
-          user_id: userId,
-          course_id: courseId,
-        },
-      },
+      where: { user_id_course_id: { user_id: userId, course_id: courseId } },
       update: {
         overall_rating: ratingVal,
         content_quality: ratingVal,
@@ -282,15 +283,11 @@ export class UsersService {
       },
     });
 
-    // Update instructor's denormalized avg_rating
+    // Update denormalized avg_rating
     const allCourseReviews = await this.prisma.courseReview.findMany({
-      where: {
-        course: { instructor_id: profile.id },
-        is_hidden: false,
-      },
+      where: { course: { instructor_id: profile.id }, is_hidden: false },
       select: { overall_rating: true },
     });
-
     if (allCourseReviews.length > 0) {
       const avg = allCourseReviews.reduce((s, r) => s + r.overall_rating, 0) / allCourseReviews.length;
       await this.prisma.instructorProfile.update({
@@ -309,7 +306,9 @@ export class UsersService {
     };
   }
 
-  /** Admin: approve / reject instructor KYC */
+  // ── Admin ────────────────────────────────────────────────────────────────
+
+  /** Admin: approve / reject instructor KYC — the ONLY place kyc_status is changed */
   async updateKycStatus(userId: string, status: 'approved' | 'rejected') {
     const profile = await this.prisma.instructorProfile.findUnique({
       where: { user_id: userId },
@@ -321,65 +320,198 @@ export class UsersService {
     });
   }
 
-  async listInstructors(page = 1, limit = 20) {
+  // ── Directory ────────────────────────────────────────────────────────────
+
+  /** Browse public instructor directory — only approved, active instructors */
+  async listInstructors(page = 1, limit = 20, search?: string) {
     const skip = (page - 1) * limit;
+    const where = {
+      kyc_status: 'approved',
+      is_active: true,
+      ...(search
+        ? {
+            OR: [
+              { user: { first_name: { contains: search, mode: 'insensitive' as const } } },
+              { user: { last_name:  { contains: search, mode: 'insensitive' as const } } },
+              { headline: { contains: search, mode: 'insensitive' as const } },
+              { skills: { has: search } },
+            ],
+          }
+        : {}),
+    };
+
     const [data, total] = await this.prisma.$transaction([
       this.prisma.instructorProfile.findMany({
-        include: { user: true },
+        where,
+        include: {
+          user: {
+            select: { id: true, first_name: true, last_name: true, image: true },
+          },
+        },
         skip,
         take: limit,
-        orderBy: { created_at: 'desc' },
+        orderBy: { avg_rating: 'desc' },
       }),
-      this.prisma.instructorProfile.count(),
+      this.prisma.instructorProfile.count({ where }),
     ]);
     return { data, total, page, limit };
   }
+
+  // ── Student Purchases ────────────────────────────────────────────────────
 
   async getPurchases(userId: string) {
     return this.prisma.coursePurchase.findMany({
       where: { user_id: userId },
       include: {
         course: {
-          include: {
-            instructor: {
-              include: { user: true },
-            },
-          },
+          include: { instructor: { include: { user: true } } },
         },
       },
+      orderBy: { created_at: 'desc' },
     });
   }
 
-  // ── Instructor Follow ───────────────────────────────────────────────────────
+  // ── Student Dashboard ────────────────────────────────────────────────────
+
+  /** Aggregate dashboard data for the student home screen */
+  async getStudentDashboard(userId: string) {
+    const [user, enrolledCourses, upcomingBookings, certificates] =
+      await Promise.all([
+        // Basic profile
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            image: true,
+            role: true,
+          },
+        }),
+
+        // Enrolled courses with inline completion percentage
+        this.prisma.coursePurchase.findMany({
+          where: { user_id: userId },
+          select: {
+            id: true,
+            course_id: true,
+            completion_pct: true,
+            completed_at: true,
+            created_at: true,
+            course: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+                thumbnail_url: true,
+                total_lessons: true,
+                instructor: {
+                  select: {
+                    user: { select: { first_name: true, last_name: true } },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { created_at: 'desc' },
+          take: 8,
+        }),
+
+        // Upcoming bookings (via slot.starts_at)
+        this.prisma.booking.findMany({
+          where: {
+            student_id: userId,
+            status: { in: ['confirmed', 'pending'] },
+            slot: { starts_at: { gte: new Date() } },
+          },
+          include: {
+            slot: { select: { starts_at: true, ends_at: true } },
+            instructor: {
+              include: {
+                user: {
+                  select: { first_name: true, last_name: true, image: true },
+                },
+              },
+            },
+          },
+          orderBy: { slot: { starts_at: 'asc' } },
+          take: 5,
+        }),
+
+        // Earned certificates (no course relation — use course_id directly)
+        this.prisma.certificate.findMany({
+          where: { user_id: userId },
+          orderBy: { issued_at: 'desc' },
+          take: 5,
+        }),
+      ]);
+
+    // XP total via raw query (xp_logs may not always be present)
+    let totalXp = 0;
+    try {
+      const xpResult = await this.prisma.$queryRaw<[{ total: bigint }]>`
+        SELECT COALESCE(SUM(amount), 0)::bigint AS total
+        FROM xp_logs WHERE user_id = ${userId}::uuid`;
+      totalXp = Number(xpResult[0]?.total ?? 0);
+    } catch {
+      // table doesn't exist yet in this environment — skip gracefully
+    }
+
+    // Badges via raw query (user_badges table)
+    let badges: { badge_id: string; earned_at: Date }[] = [];
+    try {
+      badges = await this.prisma.$queryRaw`
+        SELECT badge_id, earned_at FROM user_badges
+        WHERE user_id = ${userId}::uuid
+        ORDER BY earned_at DESC`;
+    } catch {
+      // skip gracefully
+    }
+
+    const coursesWithProgress = enrolledCourses.map((p) => ({
+      ...p.course,
+      purchase_id: p.id,
+      progress: p.completion_pct,
+      completed: !!p.completed_at,
+    }));
+
+    return {
+      user,
+      enrolled_count: coursesWithProgress.length,
+      courses: coursesWithProgress,
+      upcoming_bookings: upcomingBookings,
+      certificates,
+      gamification: { xp: totalXp, badges },
+    };
+  }
+
+  // ── Instructor Follow ────────────────────────────────────────────────────
+
   async toggleFollowInstructor(userId: string, profileId: string) {
-    const prisma = this.prisma as any;
-    const existing = await prisma.instructorFollow.findUnique({
+    const existing = await this.prisma.instructorFollow.findUnique({
       where: { user_id_instructor_id: { user_id: userId, instructor_id: profileId } },
     });
 
     if (existing) {
-      await prisma.instructorFollow.delete({ where: { id: existing.id } });
-      const count = await prisma.instructorFollow.count({ where: { instructor_id: profileId } });
+      await this.prisma.instructorFollow.delete({ where: { id: existing.id } });
+      const count = await this.prisma.instructorFollow.count({ where: { instructor_id: profileId } });
       return { following: false, followerCount: count };
     } else {
-      await prisma.instructorFollow.create({
+      await this.prisma.instructorFollow.create({
         data: { user_id: userId, instructor_id: profileId },
       });
-      const count = await prisma.instructorFollow.count({ where: { instructor_id: profileId } });
+      const count = await this.prisma.instructorFollow.count({ where: { instructor_id: profileId } });
       return { following: true, followerCount: count };
     }
   }
 
   async getFollowStatus(userId: string | null, profileId: string) {
-    const prisma = this.prisma as any;
-    const count = await prisma.instructorFollow.count({ where: { instructor_id: profileId } });
+    const count = await this.prisma.instructorFollow.count({ where: { instructor_id: profileId } });
     if (!userId) return { following: false, followerCount: count };
 
-    const existing = await prisma.instructorFollow.findUnique({
+    const existing = await this.prisma.instructorFollow.findUnique({
       where: { user_id_instructor_id: { user_id: userId, instructor_id: profileId } },
     });
-
     return { following: !!existing, followerCount: count };
   }
 }
-

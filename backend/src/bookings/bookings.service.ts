@@ -9,6 +9,7 @@ import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { MonitorService } from '../session-monitoring/monitor/monitor.service';
+import { PaymentsService } from '../payments/payments.service';
 import {
   detectPlatform,
   extractZoomMeetingId,
@@ -30,24 +31,35 @@ export class BookingsService {
     private prisma: PrismaService,
     private notifications: NotificationsService,
     private monitorService: MonitorService,
+    private payments: PaymentsService,
     @InjectQueue(QUEUE_NOTIFICATIONS) private notificationsQueue: Queue,
   ) {}
 
-  /** Instructor: create available time slots */
-  async createSlot(
-    instructorUserId: string,
-    dto: { starts_at: string; ends_at: string },
-  ) {
+  // ── Slot management ──────────────────────────────────────────────────────────
+
+  async createSlot(instructorUserId: string, dto: { starts_at: string; ends_at: string }) {
     const profile = await this.prisma.instructorProfile.findUnique({
       where: { user_id: instructorUserId },
     });
-    if (!profile || !profile.is_active)
-      throw new ForbiddenException('Instructor not active');
+    if (!profile || !profile.is_active) throw new ForbiddenException('Instructor not active');
+
+    const starts = new Date(dto.starts_at);
+    const ends = new Date(dto.ends_at);
+    if (isNaN(starts.getTime()) || isNaN(ends.getTime())) {
+      throw new BadRequestException('Invalid date format for starts_at or ends_at');
+    }
+    if (ends <= starts) {
+      throw new BadRequestException('ends_at must be after starts_at');
+    }
+    if (starts <= new Date()) {
+      throw new BadRequestException('Slot must be in the future');
+    }
+
     return this.prisma.availabilitySlot.create({
       data: {
         instructor_id: profile.id,
-        starts_at: new Date(dto.starts_at),
-        ends_at: new Date(dto.ends_at),
+        starts_at: starts,
+        ends_at: ends,
       },
     });
   }
@@ -63,18 +75,32 @@ export class BookingsService {
     });
   }
 
-  /** Student: Request a booking — payment must be linked separately via Chapa */
+  // ── Student: Request a booking + immediately initiate payment ─────────────────
+
+  /**
+   * requestBooking — creates booking in status 'awaiting_payment' and
+   * atomically initiates Chapa checkout. The booking only becomes 'pending'
+   * (notifying the instructor) when the Chapa webhook fires.
+   * This prevents ghost bookings from students who never pay.
+   */
   async requestBooking(
     studentId: string,
     slotId: string,
     sessionType: string = '1-on-1',
     notes?: string,
-  ) {
+    userEmail?: string,
+    userName?: string,
+  ): Promise<{ booking: any; checkoutUrl: string; txRef: string }> {
     const slot = await this.prisma.availabilitySlot.findUnique({
       where: { id: slotId },
       include: { instructor: { include: { user: true } } },
     });
     if (!slot) throw new NotFoundException('Slot not found');
+
+    // Prevent self-booking
+    if (slot.instructor.user_id === studentId) {
+      throw new ForbiddenException('You cannot book your own slot');
+    }
 
     const type = ['1-on-1', '1-on-many', 'group-class'].includes(sessionType)
       ? sessionType
@@ -82,18 +108,11 @@ export class BookingsService {
 
     let multiplier = 1.0;
     let maxParticipants = 1;
-
-    if (type === '1-on-many') {
-      multiplier = 0.6;
-      maxParticipants = 5;
-    } else if (type === 'group-class') {
-      multiplier = 0.4;
-      maxParticipants = 20;
-    }
+    if (type === '1-on-many') { multiplier = 0.6; maxParticipants = 5; }
+    else if (type === 'group-class') { multiplier = 0.4; maxParticipants = 20; }
 
     const currentCap = (slot as any).current_participants || 0;
     const maxCap = Math.max((slot as any).max_participants || 1, maxParticipants);
-
     if (slot.is_booked || currentCap >= maxCap) {
       throw new BadRequestException('Slot is fully booked');
     }
@@ -102,6 +121,7 @@ export class BookingsService {
     const pricePaid = +(baseRate * multiplier).toFixed(2);
     const isNowFull = currentCap + 1 >= maxCap;
 
+    // Create booking as 'awaiting_payment' — instructor is NOT notified yet
     const [booking] = await this.prisma.$transaction([
       this.prisma.booking.create({
         data: {
@@ -110,7 +130,7 @@ export class BookingsService {
           slot_id: slotId,
           session_type: type,
           price_paid: pricePaid,
-          status: 'pending',
+          status: 'awaiting_payment', // ← only becomes 'pending' after webhook
           notes: notes || null,
         },
       }),
@@ -124,44 +144,73 @@ export class BookingsService {
       }),
     ]);
 
-    // Add job to BullMQ queue for async processing & retry capability
+    // Immediately initiate payment — student must pay to confirm reservation
+    const student = await this.prisma.user.findUnique({ where: { id: studentId } });
+    const email = userEmail || student?.email || '';
+    const name = userName ||
+      `${student?.first_name || ''} ${student?.last_name || ''}`.trim() ||
+      'Student';
+
+    const { checkoutUrl, txRef } = await this.payments.initiateBookingPayment(
+      studentId,
+      booking.id,
+      email,
+      name,
+    );
+
+    return { booking, checkoutUrl, txRef };
+  }
+
+  // ── Booking lifecycle ─────────────────────────────────────────────────────────
+
+  /**
+   * Called internally by the Chapa webhook (via PaymentsService) when
+   * booking payment is confirmed — transitions to 'pending' and notifies instructor.
+   */
+  async onBookingPaymentConfirmed(bookingId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { instructor: { include: { user: true } }, student: true },
+    });
+    if (!booking) return;
+    if (booking.status !== 'awaiting_payment') return; // idempotent
+
+    await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: 'pending' },
+    });
+
+    // Now notify instructor — they know student has paid
     try {
-      const student = await this.prisma.user.findUnique({ where: { id: studentId } });
+      const student = booking.student;
       await this.notificationsQueue.add(JOB_BOOKING_NEW, {
-        instructorEmail: slot.instructor.user.email,
+        instructorEmail: booking.instructor.user.email,
         bookingId: booking.id,
-        studentName: student ? `${student.first_name || ''} ${student.last_name || ''}`.trim() : 'Student',
+        studentName: `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Student',
       });
     } catch {
       await this.notifications.notifyInstructorNewBooking(
-        slot.instructor.user.email,
+        booking.instructor.user.email,
         booking.id,
       );
     }
-
-    return booking;
   }
 
-  /** Instructor: confirm and add meeting link */
-  async confirmBooking(
-    bookingId: string,
-    instructorUserId: string,
-    meetingLink: string,
-  ) {
+  /** Instructor: confirm booking and add meeting link */
+  async confirmBooking(bookingId: string, instructorUserId: string, meetingLink: string) {
     if (!ZOOM_MEET_PATTERN.test(meetingLink)) {
-      throw new BadRequestException(
-        'Meeting link must be a valid Zoom or Google Meet URL',
-      );
+      throw new BadRequestException('Meeting link must be a valid Zoom or Google Meet URL');
     }
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       include: { instructor: true, student: true, slot: true },
     });
     if (!booking) throw new NotFoundException('Booking not found');
-    if (booking.instructor.user_id !== instructorUserId)
-      throw new ForbiddenException();
+    if (booking.instructor.user_id !== instructorUserId) throw new ForbiddenException();
+    if (booking.status !== 'pending') {
+      throw new BadRequestException(`Cannot confirm a booking in status '${booking.status}'`);
+    }
 
-    // Detect platform and extract meeting ID for monitoring
     const platform = detectPlatform(meetingLink);
     const platformMeetingId =
       platform === 'zoom'
@@ -178,9 +227,10 @@ export class BookingsService {
       },
     });
 
-    const slotTime = booking.slot?.starts_at ? new Date(booking.slot.starts_at).toLocaleString() : undefined;
+    const slotTime = booking.slot?.starts_at
+      ? new Date(booking.slot.starts_at).toLocaleString()
+      : undefined;
 
-    // Queue confirmation notification and reminder jobs
     try {
       await this.notificationsQueue.add(JOB_BOOKING_CONFIRMED, {
         studentEmail: booking.student.email,
@@ -189,11 +239,9 @@ export class BookingsService {
         studentPhone: (booking.student as any).phone || undefined,
       });
 
-      // Schedule delayed reminders if slot time is in the future
       if (booking.slot?.starts_at) {
         const sessionTime = new Date(booking.slot.starts_at).getTime();
         const now = Date.now();
-
         const delay24h = sessionTime - 24 * 60 * 60 * 1000 - now;
         if (delay24h > 0) {
           await this.notificationsQueue.add(
@@ -202,7 +250,6 @@ export class BookingsService {
             { delay: delay24h },
           );
         }
-
         const delay1h = sessionTime - 60 * 60 * 1000 - now;
         if (delay1h > 0) {
           await this.notificationsQueue.add(
@@ -223,22 +270,95 @@ export class BookingsService {
     return updated;
   }
 
-  /** Called by a cron/manual trigger after session time — gates payout before completing */
-  async completeBooking(bookingId: string) {
+  /** Instructor: reject a booking request (refund triggered) */
+  async rejectBooking(bookingId: string, instructorUserId: string, reason?: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { instructor: true, slot: true },
+    });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.instructor.user_id !== instructorUserId) throw new ForbiddenException();
+    if (!['pending'].includes(booking.status)) {
+      throw new BadRequestException(`Cannot reject a booking in status '${booking.status}'`);
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.booking.update({
+        where: { id: bookingId },
+        data: { status: 'cancelled', notes: reason ? `Rejected: ${reason}` : booking.notes },
+      }),
+      // Free up the slot
+      this.prisma.availabilitySlot.update({
+        where: { id: booking.slot_id },
+        data: {
+          current_participants: { decrement: 1 },
+          is_booked: false,
+        },
+      }),
+    ]);
+
+    return { message: 'Booking rejected. Refund will be processed.' };
+  }
+
+  /** Student: cancel a booking (pre-confirmation only) */
+  async cancelBooking(bookingId: string, studentId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { slot: true },
+    });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.student_id !== studentId) throw new ForbiddenException('Not your booking');
+    if (!['awaiting_payment', 'pending'].includes(booking.status)) {
+      throw new BadRequestException(
+        `Cannot cancel a booking in status '${booking.status}'. Contact support for confirmed bookings.`,
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.booking.update({
+        where: { id: bookingId },
+        data: { status: 'cancelled' },
+      }),
+      this.prisma.availabilitySlot.update({
+        where: { id: booking.slot_id },
+        data: {
+          current_participants: { decrement: 1 },
+          is_booked: false,
+        },
+      }),
+    ]);
+
+    return { message: 'Booking cancelled. If payment was made, a refund will be processed.' };
+  }
+
+  /** Admin/cron: complete booking after session time passes, gates payout */
+  async completeBooking(bookingId: string, adminOrSystemCall = false) {
+    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.status !== 'confirmed') {
+      throw new BadRequestException(`Booking must be 'confirmed' to complete. Current: '${booking.status}'`);
+    }
+
     const { blocked } = await this.monitorService.gatePayoutRelease(bookingId);
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id: bookingId },
       data: { status: 'completed' },
     });
+
+    return { ...updated, payoutBlocked: blocked };
   }
 
-  /** Mark as no-show — triggers refund flow */
+  /** Admin: mark booking as no-show */
   async markNoShow(bookingId: string) {
+    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+    if (!booking) throw new NotFoundException('Booking not found');
     return this.prisma.booking.update({
       where: { id: bookingId },
       data: { status: 'no_show' },
     });
   }
+
+  // ── Queries ──────────────────────────────────────────────────────────────────
 
   async getStudentBookings(studentId: string) {
     return this.prisma.booking.findMany({

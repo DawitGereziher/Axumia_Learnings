@@ -26,6 +26,8 @@ const help_requests_module_1 = require("./help-requests/help-requests.module");
 const content_module_1 = require("./content/content.module");
 const common_module_1 = require("./common/common.module");
 const certificates_module_1 = require("./certificates/certificates.module");
+const quiz_module_1 = require("./quiz/quiz.module");
+const gamification_module_1 = require("./gamification/gamification.module");
 const throttler_1 = require("@nestjs/throttler");
 const core_1 = require("@nestjs/core");
 const custom_throttler_guard_1 = require("./common/guards/custom-throttler.guard");
@@ -70,6 +72,8 @@ exports.AppModule = AppModule = __decorate([
             help_requests_module_1.HelpRequestsModule,
             session_monitoring_module_1.SessionMonitoringModule,
             health_module_1.HealthModule,
+            quiz_module_1.QuizModule,
+            gamification_module_1.GamificationModule,
         ],
         providers: [
             {

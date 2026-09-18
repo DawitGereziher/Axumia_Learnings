@@ -10,6 +10,9 @@ exports.CoursesModule = void 0;
 const common_1 = require("@nestjs/common");
 const courses_controller_1 = require("./courses.controller");
 const courses_service_1 = require("./courses.service");
+const lessons_service_1 = require("./lessons.service");
+const enrollment_service_1 = require("./enrollment.service");
+const qa_service_1 = require("./qa.service");
 const storage_module_1 = require("../storage/storage.module");
 const content_module_1 = require("../content/content.module");
 const common_module_1 = require("../common/common.module");
@@ -20,8 +23,8 @@ exports.CoursesModule = CoursesModule = __decorate([
     (0, common_1.Module)({
         imports: [storage_module_1.StorageModule, content_module_1.ContentModule, common_module_1.CommonModule],
         controllers: [courses_controller_1.CoursesController],
-        providers: [courses_service_1.CoursesService],
-        exports: [courses_service_1.CoursesService],
+        providers: [courses_service_1.CoursesService, lessons_service_1.LessonsService, enrollment_service_1.EnrollmentService, qa_service_1.QaService],
+        exports: [courses_service_1.CoursesService, enrollment_service_1.EnrollmentService],
     })
 ], CoursesModule);
 //# sourceMappingURL=courses.module.js.map

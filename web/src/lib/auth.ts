@@ -115,8 +115,8 @@ export async function refreshAccessToken(): Promise<string | null> {
     });
     if (!res.ok) { clearTokens(); return null; }
     const data = await res.json();
-    localStorage.setItem('access_token', data.accessToken);
-    localStorage.setItem('token', data.accessToken);
+    // Store rotated refresh token — server now issues a new one on every refresh
+    setTokens(data.accessToken, data.refreshToken ?? refreshToken);
     return data.accessToken;
   } catch { return null; }
 }

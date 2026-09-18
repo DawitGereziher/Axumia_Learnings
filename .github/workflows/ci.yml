@@ -1,14 +1,15 @@
-name: Ethio Learn CI
+name: Axumia Learnings CI
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
-  backend-build-test:
-    name: Backend Build & Lint
+  # ── Backend ────────────────────────────────────────────────────────────────
+  backend:
+    name: Backend — Build, Lint & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -18,7 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
@@ -29,12 +30,25 @@ jobs:
         run: npx prisma generate
         working-directory: ./backend
 
+      - name: TypeScript — type check
+        run: npx tsc --noEmit
+        working-directory: ./backend
+
+      - name: ESLint
+        run: npm run lint
+        working-directory: ./backend
+
       - name: Build NestJS API
         run: npm run build
         working-directory: ./backend
 
-  web-build:
-    name: Frontend Next.js Build
+      - name: Unit tests
+        run: npm test -- --passWithNoTests --forceExit
+        working-directory: ./backend
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend — Build & Type Check
     runs-on: ubuntu-latest
 
     steps:
@@ -44,16 +58,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: web/package-lock.json
 
       - name: Install dependencies
         run: npm ci
         working-directory: ./web
 
-      - name: Build Next.js Web App
+      - name: TypeScript — type check
+        run: npx tsc --noEmit
+        working-directory: ./web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3000
+
+      - name: Build Next.js
         run: npm run build
         working-directory: ./web
         env:
-          NEXT_PUBLIC_API_URL: "http://localhost:3000"
+          NEXT_PUBLIC_API_URL: http://localhost:3000
           NEXT_TELEMETRY_DISABLED: 1

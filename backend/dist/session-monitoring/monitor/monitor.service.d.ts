@@ -31,18 +31,12 @@ export declare class MonitorService {
         limit: number;
         sessions: {
             id: string;
+            status: string;
             student: {
                 email: string;
                 first_name: string | null;
                 last_name: string | null;
             };
-            status: string;
-            platform: string | null;
-            platform_meeting_id: string | null;
-            session_started_at: Date | null;
-            session_ended_at: Date | null;
-            session_duration_m: number | null;
-            session_flag: string | null;
             instructor: {
                 user: {
                     email: string;
@@ -50,6 +44,12 @@ export declare class MonitorService {
                     last_name: string | null;
                 };
             };
+            platform: string | null;
+            platform_meeting_id: string | null;
+            session_started_at: Date | null;
+            session_ended_at: Date | null;
+            session_duration_m: number | null;
+            session_flag: string | null;
             slot: {
                 starts_at: Date;
                 ends_at: Date;
@@ -82,8 +82,8 @@ export declare class MonitorService {
             id: string;
             created_at: Date;
             booking_id: string | null;
-            platform: string;
             help_session_id: string | null;
+            platform: string;
             event_type: string;
             platform_event_id: string | null;
             payload: import("@prisma/client/runtime/client").JsonValue;
@@ -92,15 +92,15 @@ export declare class MonitorService {
         }[];
     } & {
         id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        student_id: string;
         instructor_id: string;
+        student_id: string;
         slot_id: string;
         session_type: string;
         price_paid: import("@prisma/client-runtime-utils").Decimal | null;
         meeting_link: string | null;
-        status: string;
         notes: string | null;
         platform: string | null;
         platform_meeting_id: string | null;

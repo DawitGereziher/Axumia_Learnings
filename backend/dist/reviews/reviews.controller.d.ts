@@ -2,14 +2,182 @@ import { ReviewValidationService } from './review-validation.service';
 import { ReviewManagementService } from './review-management.service';
 import { ReviewCommentService } from './review-comment.service';
 import { InstructorResponseService } from './instructor-response.service';
+import { ReviewsService } from './reviews.service';
 import { PrismaService } from '../prisma/prisma.service';
 export declare class ReviewsController {
     private reviewValidation;
     private reviewManagement;
     private reviewComment;
     private instructorResponse;
+    private reviewsService;
     private prisma;
-    constructor(reviewValidation: ReviewValidationService, reviewManagement: ReviewManagementService, reviewComment: ReviewCommentService, instructorResponse: InstructorResponseService, prisma: PrismaService);
+    constructor(reviewValidation: ReviewValidationService, reviewManagement: ReviewManagementService, reviewComment: ReviewCommentService, instructorResponse: InstructorResponseService, reviewsService: ReviewsService, prisma: PrismaService);
+    reviewBookingSession(req: any, bookingId: string, body: {
+        overall_rating: number;
+        teaching_style_rating?: number;
+        communication_rating?: number;
+        comment?: string;
+    }): Promise<{
+        student: {
+            id: string;
+            first_name: string | null;
+            last_name: string | null;
+            image: string | null;
+        };
+        instructor: {
+            user: {
+                id: string;
+                email: string;
+                role: string;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+                password_hash: string | null;
+                is_email_verified: boolean;
+                created_at: Date;
+                updated_at: Date;
+            };
+        } & {
+            id: string;
+            bio: string | null;
+            headline: string | null;
+            hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+            kyc_docs: string[];
+            cover_image: string | null;
+            profile_image: string | null;
+            skills: string[];
+            languages: string[];
+            experience_years: number | null;
+            location: string | null;
+            website_url: string | null;
+            linkedin_url: string | null;
+            twitter_url: string | null;
+            youtube_url: string | null;
+            created_at: Date;
+            updated_at: Date;
+            user_id: string;
+            kyc_status: string;
+            is_active: boolean;
+            total_students: number;
+            total_sessions: number;
+            avg_rating: import("@prisma/client-runtime-utils").Decimal;
+        };
+    } & {
+        id: string;
+        comment: string | null;
+        created_at: Date;
+        updated_at: Date;
+        overall_rating: number;
+        instructor_id: string;
+        student_id: string;
+        booking_id: string | null;
+        help_session_id: string | null;
+        teaching_style_rating: number | null;
+        communication_rating: number | null;
+    }>;
+    getBookingSessionReview(bookingId: string): Promise<({
+        student: {
+            id: string;
+            first_name: string | null;
+            last_name: string | null;
+            image: string | null;
+        };
+    } & {
+        id: string;
+        comment: string | null;
+        created_at: Date;
+        updated_at: Date;
+        overall_rating: number;
+        instructor_id: string;
+        student_id: string;
+        booking_id: string | null;
+        help_session_id: string | null;
+        teaching_style_rating: number | null;
+        communication_rating: number | null;
+    }) | null>;
+    reviewHelpSession(req: any, helpSessionId: string, body: {
+        overall_rating: number;
+        teaching_style_rating?: number;
+        communication_rating?: number;
+        comment?: string;
+    }): Promise<{
+        student: {
+            id: string;
+            first_name: string | null;
+            last_name: string | null;
+            image: string | null;
+        };
+        instructor: {
+            user: {
+                id: string;
+                email: string;
+                role: string;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+                password_hash: string | null;
+                is_email_verified: boolean;
+                created_at: Date;
+                updated_at: Date;
+            };
+        } & {
+            id: string;
+            bio: string | null;
+            headline: string | null;
+            hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+            kyc_docs: string[];
+            cover_image: string | null;
+            profile_image: string | null;
+            skills: string[];
+            languages: string[];
+            experience_years: number | null;
+            location: string | null;
+            website_url: string | null;
+            linkedin_url: string | null;
+            twitter_url: string | null;
+            youtube_url: string | null;
+            created_at: Date;
+            updated_at: Date;
+            user_id: string;
+            kyc_status: string;
+            is_active: boolean;
+            total_students: number;
+            total_sessions: number;
+            avg_rating: import("@prisma/client-runtime-utils").Decimal;
+        };
+    } & {
+        id: string;
+        comment: string | null;
+        created_at: Date;
+        updated_at: Date;
+        overall_rating: number;
+        instructor_id: string;
+        student_id: string;
+        booking_id: string | null;
+        help_session_id: string | null;
+        teaching_style_rating: number | null;
+        communication_rating: number | null;
+    }>;
+    getHelpSessionReview(helpSessionId: string): Promise<({
+        student: {
+            id: string;
+            first_name: string | null;
+            last_name: string | null;
+            image: string | null;
+        };
+    } & {
+        id: string;
+        comment: string | null;
+        created_at: Date;
+        updated_at: Date;
+        overall_rating: number;
+        instructor_id: string;
+        student_id: string;
+        booking_id: string | null;
+        help_session_id: string | null;
+        teaching_style_rating: number | null;
+        communication_rating: number | null;
+    }) | null>;
     getCourseReviews(courseId: string, isVerified?: string, isFeatured?: string, minRating?: string, sortBy?: 'recent' | 'helpful' | 'rating_high' | 'rating_low', limit?: string, offset?: string): Promise<({
         comments: ({
             user: {
@@ -20,10 +188,10 @@ export declare class ReviewsController {
             };
         } & {
             id: string;
+            comment: string;
             created_at: Date;
             updated_at: Date;
             user_id: string;
-            comment: string;
             is_hidden: boolean;
             is_flagged: boolean;
             helpful_count: number;
@@ -39,14 +207,13 @@ export declare class ReviewsController {
         };
     } & {
         id: string;
+        title: string | null;
+        comment: string | null;
+        course_id: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        course_id: string;
-        comment: string | null;
-        title: string | null;
-        total_lessons: number | null;
-        instructorResponseId: string | null;
+        is_hidden: boolean;
         overall_rating: number;
         content_quality: number;
         instructor_quality: number;
@@ -56,17 +223,38 @@ export declare class ReviewsController {
         cons: string[];
         completion_percentage: number | null;
         completed_lessons: number | null;
+        total_lessons: number | null;
         is_verified: boolean;
         is_featured: boolean;
-        is_hidden: boolean;
         is_flagged: boolean;
         helpful_count: number;
         reply_count: number;
+        instructorResponseId: string | null;
         moderated_by: string | null;
         moderated_at: Date | null;
         moderation_reason: string | null;
     })[]>;
     getCourseRatingStats(courseId: string): Promise<import("./review-management.service").RatingStats>;
+    createInstructorReview(req: any, instructorId: string, body: {
+        rating: number;
+        comment?: string;
+        course_id?: string;
+    }): Promise<{
+        success: boolean;
+        review: {
+            id: string;
+            rating: number;
+            comment: string;
+            created_at: Date;
+            user: {
+                id: string;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+            };
+            course_title: string;
+        };
+    }>;
     createCourseReview(req: any, courseId: string, reviewData: {
         overall_rating: number;
         content_quality?: number;
@@ -86,14 +274,13 @@ export declare class ReviewsController {
         success: boolean;
         review: {
             id: string;
+            title: string | null;
+            comment: string | null;
+            course_id: string;
             created_at: Date;
             updated_at: Date;
             user_id: string;
-            course_id: string;
-            comment: string | null;
-            title: string | null;
-            total_lessons: number | null;
-            instructorResponseId: string | null;
+            is_hidden: boolean;
             overall_rating: number;
             content_quality: number;
             instructor_quality: number;
@@ -103,12 +290,13 @@ export declare class ReviewsController {
             cons: string[];
             completion_percentage: number | null;
             completed_lessons: number | null;
+            total_lessons: number | null;
             is_verified: boolean;
             is_featured: boolean;
-            is_hidden: boolean;
             is_flagged: boolean;
             helpful_count: number;
             reply_count: number;
+            instructorResponseId: string | null;
             moderated_by: string | null;
             moderated_at: Date | null;
             moderation_reason: string | null;
@@ -118,14 +306,13 @@ export declare class ReviewsController {
     }>;
     updateReview(req: any, reviewId: string, reviewData: any): Promise<{
         id: string;
+        title: string | null;
+        comment: string | null;
+        course_id: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        course_id: string;
-        comment: string | null;
-        title: string | null;
-        total_lessons: number | null;
-        instructorResponseId: string | null;
+        is_hidden: boolean;
         overall_rating: number;
         content_quality: number;
         instructor_quality: number;
@@ -135,12 +322,13 @@ export declare class ReviewsController {
         cons: string[];
         completion_percentage: number | null;
         completed_lessons: number | null;
+        total_lessons: number | null;
         is_verified: boolean;
         is_featured: boolean;
-        is_hidden: boolean;
         is_flagged: boolean;
         helpful_count: number;
         reply_count: number;
+        instructorResponseId: string | null;
         moderated_by: string | null;
         moderated_at: Date | null;
         moderation_reason: string | null;
@@ -157,9 +345,9 @@ export declare class ReviewsController {
         success: boolean;
         report: {
             id: string;
-            created_at: Date;
-            status: string;
             description: string | null;
+            status: string;
+            created_at: Date;
             reason: string;
             review_id: string;
             reviewed_by: string | null;
@@ -177,10 +365,10 @@ export declare class ReviewsController {
         };
         replies: {
             id: string;
+            comment: string;
             created_at: Date;
             updated_at: Date;
             user_id: string;
-            comment: string;
             is_hidden: boolean;
             is_flagged: boolean;
             helpful_count: number;
@@ -190,10 +378,10 @@ export declare class ReviewsController {
         }[];
     } & {
         id: string;
+        comment: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        comment: string;
         is_hidden: boolean;
         is_flagged: boolean;
         helpful_count: number;
@@ -206,10 +394,10 @@ export declare class ReviewsController {
         parent_id?: string;
     }): Promise<{
         id: string;
+        comment: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        comment: string;
         is_hidden: boolean;
         is_flagged: boolean;
         helpful_count: number;
@@ -221,10 +409,10 @@ export declare class ReviewsController {
         comment: string;
     }): Promise<{
         id: string;
+        comment: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        comment: string;
         is_hidden: boolean;
         is_flagged: boolean;
         helpful_count: number;
@@ -303,14 +491,13 @@ export declare class ReviewsController {
             };
         } & {
             id: string;
+            title: string | null;
+            comment: string | null;
+            course_id: string;
             created_at: Date;
             updated_at: Date;
             user_id: string;
-            course_id: string;
-            comment: string | null;
-            title: string | null;
-            total_lessons: number | null;
-            instructorResponseId: string | null;
+            is_hidden: boolean;
             overall_rating: number;
             content_quality: number;
             instructor_quality: number;
@@ -320,12 +507,13 @@ export declare class ReviewsController {
             cons: string[];
             completion_percentage: number | null;
             completed_lessons: number | null;
+            total_lessons: number | null;
             is_verified: boolean;
             is_featured: boolean;
-            is_hidden: boolean;
             is_flagged: boolean;
             helpful_count: number;
             reply_count: number;
+            instructorResponseId: string | null;
             moderated_by: string | null;
             moderated_at: Date | null;
             moderation_reason: string | null;
@@ -338,9 +526,9 @@ export declare class ReviewsController {
         };
     } & {
         id: string;
-        created_at: Date;
-        status: string;
         description: string | null;
+        status: string;
+        created_at: Date;
         reason: string;
         review_id: string;
         reviewed_by: string | null;

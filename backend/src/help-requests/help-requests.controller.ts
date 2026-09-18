@@ -8,6 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -35,8 +37,7 @@ export class HelpRequestsController {
   // ── Public browse ───────────────────────────────────────────────────────────
 
   @Get()
-  @UseGuards(DAuthGuard)
-  @ApiOperation({ summary: 'Browse open help requests' })
+  @ApiOperation({ summary: 'Browse open help requests (public)' })
   @ApiQuery({ name: 'subject', required: false })
   listOpen(@Query('subject') subject?: string) {
     return this.helpRequests.listOpenRequests(subject);
@@ -104,6 +105,18 @@ export class HelpRequestsController {
     return this.helpRequests.submitBid(user.id, requestId, dto);
   }
 
+  @Delete('bids/:bidId/withdraw')
+  @UseGuards(DAuthGuard, RolesGuard)
+  @Roles('instructor', 'admin')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[Instructor] Withdraw a pending bid' })
+  withdrawBid(
+    @Param('bidId') bidId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.helpRequests.withdrawBid(user.id, bidId);
+  }
+
   @Patch('sessions/:id/link')
   @UseGuards(DAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
@@ -134,17 +147,24 @@ export class HelpRequestsController {
   @Patch('sessions/:id/complete')
   @UseGuards(DAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
-  @ApiOperation({ summary: '[Helper] Mark a help session as complete' })
-  complete(
+  @ApiOperation({ summary: '[Helper] Step 1 — Report session complete with actual hours (moves to helper_completed)' })
+  markComplete(
     @Param('id') sessionId: string,
     @CurrentUser() user: AuthUser,
     @Body() body: { actualHours: number },
   ) {
-    return this.helpRequests.completeSession(
-      user.id,
-      sessionId,
-      body.actualHours,
-    );
+    return this.helpRequests.markHelperCompleted(user.id, sessionId, body.actualHours);
+  }
+
+  @Patch('sessions/:id/confirm')
+  @UseGuards(DAuthGuard)
+  @ApiOperation({ summary: '[Student] Step 2 — Confirm or dispute session completion' })
+  confirmCompletion(
+    @Param('id') sessionId: string,
+    @CurrentUser() user: AuthUser,
+    @Body() body: { confirmed: boolean },
+  ) {
+    return this.helpRequests.confirmCompletion(user.id, sessionId, body.confirmed);
   }
 
   // ── Detail (must be last to avoid route collisions) ─────────────────────────

@@ -1,4 +1,4 @@
-version: '3.8'
+name: axumia-learnings
 
 services:
   # ── PostgreSQL Database ───────────────────────────────────────────────────
@@ -57,7 +57,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: sh -c "npx prisma db push --url postgresql://postgres:password@db:5432/ethiolearn?schema=public --accept-data-loss && node dist/main.js"
+    command: sh -c "npx prisma db push --url postgresql://postgres:password@db:5432/ethiolearn?schema=public && node dist/main.js"
 
   # ── Next.js Web App ────────────────────────────────────────────────────────
   web:
@@ -73,6 +73,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       NEXT_PUBLIC_API_URL: "http://localhost"
+      # Used by Next.js server components for internal SSR fetches (bypasses Nginx)
+      API_INTERNAL_URL: "http://backend:3000"
       NEXT_PUBLIC_R2_PUBLIC_DOMAIN: "https://pub-690cc2b08ff243269c59174e79778c39.r2.dev"
       # Disable telemetry for privacy/performance
       NEXT_TELEMETRY_DISABLED: 1

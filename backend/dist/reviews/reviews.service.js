@@ -17,43 +17,120 @@ let ReviewsService = class ReviewsService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async createCourseReview(userId, courseId, dto) {
-        if (dto.rating < 1 || dto.rating > 5)
-            throw new common_1.BadRequestException('Rating must be 1–5');
-        const purchase = await this.prisma.coursePurchase.findUnique({
-            where: { user_id_course_id: { user_id: userId, course_id: courseId } },
-        });
-        if (!purchase)
-            throw new common_1.BadRequestException('You must purchase this course first');
-        return this.prisma.review.create({
-            data: { user_id: userId, course_id: courseId, ...dto },
-        });
-    }
-    async createBookingReview(userId, bookingId, dto) {
-        if (dto.rating < 1 || dto.rating > 5)
-            throw new common_1.BadRequestException('Rating must be 1–5');
+    async createBookingSessionReview(userId, bookingId, dto) {
+        if (!dto.overall_rating || dto.overall_rating < 1 || dto.overall_rating > 5) {
+            throw new common_1.BadRequestException('Overall rating must be between 1 and 5');
+        }
         const booking = await this.prisma.booking.findUnique({
             where: { id: bookingId },
+            include: { instructor: true },
         });
-        if (!booking ||
-            booking.student_id !== userId ||
-            booking.status !== 'completed') {
-            throw new common_1.BadRequestException('Can only review completed sessions you attended');
+        if (!booking)
+            throw new common_1.NotFoundException('Booking session not found');
+        if (booking.student_id !== userId) {
+            throw new common_1.ForbiddenException('Only the student who attended can review this session');
         }
-        return this.prisma.review.create({
-            data: { user_id: userId, booking_id: bookingId, ...dto },
+        const review = await this.prisma.sessionReview.upsert({
+            where: { booking_id: bookingId },
+            update: {
+                overall_rating: Math.round(dto.overall_rating),
+                teaching_style_rating: dto.teaching_style_rating ? Math.round(dto.teaching_style_rating) : undefined,
+                communication_rating: dto.communication_rating ? Math.round(dto.communication_rating) : undefined,
+                comment: dto.comment?.trim() || null,
+            },
+            create: {
+                student_id: userId,
+                instructor_id: booking.instructor_id,
+                booking_id: bookingId,
+                overall_rating: Math.round(dto.overall_rating),
+                teaching_style_rating: dto.teaching_style_rating ? Math.round(dto.teaching_style_rating) : undefined,
+                communication_rating: dto.communication_rating ? Math.round(dto.communication_rating) : undefined,
+                comment: dto.comment?.trim() || null,
+            },
+            include: {
+                student: { select: { id: true, first_name: true, last_name: true, image: true } },
+                instructor: { include: { user: true } },
+            },
+        });
+        await this.updateInstructorRating(booking.instructor_id);
+        return review;
+    }
+    async createHelpSessionReview(userId, helpSessionId, dto) {
+        if (!dto.overall_rating || dto.overall_rating < 1 || dto.overall_rating > 5) {
+            throw new common_1.BadRequestException('Overall rating must be between 1 and 5');
+        }
+        const helpSession = await this.prisma.helpSession.findUnique({
+            where: { id: helpSessionId },
+            include: { helper: true },
+        });
+        if (!helpSession)
+            throw new common_1.NotFoundException('Help session not found');
+        if (helpSession.student_id !== userId) {
+            throw new common_1.ForbiddenException('Only the student who requested help can review this session');
+        }
+        const review = await this.prisma.sessionReview.upsert({
+            where: { help_session_id: helpSessionId },
+            update: {
+                overall_rating: Math.round(dto.overall_rating),
+                teaching_style_rating: dto.teaching_style_rating ? Math.round(dto.teaching_style_rating) : undefined,
+                communication_rating: dto.communication_rating ? Math.round(dto.communication_rating) : undefined,
+                comment: dto.comment?.trim() || null,
+            },
+            create: {
+                student_id: userId,
+                instructor_id: helpSession.helper_id,
+                help_session_id: helpSessionId,
+                overall_rating: Math.round(dto.overall_rating),
+                teaching_style_rating: dto.teaching_style_rating ? Math.round(dto.teaching_style_rating) : undefined,
+                communication_rating: dto.communication_rating ? Math.round(dto.communication_rating) : undefined,
+                comment: dto.comment?.trim() || null,
+            },
+            include: {
+                student: { select: { id: true, first_name: true, last_name: true, image: true } },
+                instructor: { include: { user: true } },
+            },
+        });
+        await this.updateInstructorRating(helpSession.helper_id);
+        return review;
+    }
+    async updateInstructorRating(instructorId) {
+        const [courseReviews, sessionReviews] = await Promise.all([
+            this.prisma.courseReview.findMany({
+                where: { course: { instructor_id: instructorId }, is_hidden: false },
+                select: { overall_rating: true },
+            }),
+            this.prisma.sessionReview.findMany({
+                where: { instructor_id: instructorId },
+                select: { overall_rating: true },
+            }),
+        ]);
+        const allScores = [
+            ...courseReviews.map((r) => r.overall_rating),
+            ...sessionReviews.map((r) => r.overall_rating),
+        ];
+        if (allScores.length > 0) {
+            const avg = allScores.reduce((sum, s) => sum + s, 0) / allScores.length;
+            await this.prisma.instructorProfile.update({
+                where: { id: instructorId },
+                data: { avg_rating: avg },
+            });
+        }
+    }
+    async getBookingSessionReview(bookingId) {
+        return this.prisma.sessionReview.findUnique({
+            where: { booking_id: bookingId },
+            include: {
+                student: { select: { id: true, first_name: true, last_name: true, image: true } },
+            },
         });
     }
-    async getCourseReviews(courseId) {
-        const reviews = await this.prisma.review.findMany({
-            where: { course_id: courseId },
-            include: { user: true },
-            orderBy: { created_at: 'desc' },
+    async getHelpSessionReview(helpSessionId) {
+        return this.prisma.sessionReview.findUnique({
+            where: { help_session_id: helpSessionId },
+            include: {
+                student: { select: { id: true, first_name: true, last_name: true, image: true } },
+            },
         });
-        const avg = reviews.length
-            ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-            : 0;
-        return { reviews, averageRating: +avg.toFixed(1), count: reviews.length };
     }
 };
 exports.ReviewsService = ReviewsService;

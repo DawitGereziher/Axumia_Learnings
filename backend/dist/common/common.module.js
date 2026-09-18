@@ -8,17 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommonModule = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const rate_limit_service_1 = require("./services/rate-limit.service");
 const access_log_service_1 = require("./services/access-log.service");
+const cache_service_1 = require("./services/cache.service");
 const prisma_module_1 = require("../prisma/prisma.module");
 let CommonModule = class CommonModule {
 };
 exports.CommonModule = CommonModule;
 exports.CommonModule = CommonModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
-        providers: [rate_limit_service_1.RateLimitService, access_log_service_1.AccessLogService],
-        exports: [rate_limit_service_1.RateLimitService, access_log_service_1.AccessLogService],
+        imports: [prisma_module_1.PrismaModule, config_1.ConfigModule],
+        providers: [rate_limit_service_1.RateLimitService, access_log_service_1.AccessLogService, cache_service_1.CacheService],
+        exports: [rate_limit_service_1.RateLimitService, access_log_service_1.AccessLogService, cache_service_1.CacheService],
     })
 ], CommonModule);
 //# sourceMappingURL=common.module.js.map

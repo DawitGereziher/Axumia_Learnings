@@ -16,7 +16,7 @@ export declare class PaymentsController {
         checkoutUrl: string;
         txRef: string;
     }>;
-    verifyPaymentStatus(txRef: string): Promise<{
+    verifyPaymentStatus(txRef: string, user: AuthUser): Promise<{
         status: string;
         txRef: string;
         verified?: undefined;
@@ -31,27 +31,25 @@ export declare class PaymentsController {
     }>;
     chapaWebhook(req: Request, signature: string): Promise<{
         received: boolean;
-        status?: undefined;
-    } | {
-        received: boolean;
-        status: string;
+        status?: string;
     }>;
-    myTransactions(user: AuthUser): Promise<{
-        id: string;
-        created_at: Date;
-        updated_at: Date;
-        user_id: string;
-        booking_id: string | null;
-        status: string;
-        currency: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        purchase_id: string | null;
-        help_session_id: string | null;
-        amount: import("@prisma/client-runtime-utils").Decimal;
-        platform_fee: import("@prisma/client-runtime-utils").Decimal;
-        provider: string;
-        provider_tx_ref: string | null;
-    }[]>;
+    myTransactions(user: AuthUser, page?: number, limit?: number): Promise<{
+        data: {
+            id: string;
+            status: string;
+            created_at: Date;
+            currency: string;
+            booking_id: string | null;
+            help_session_id: string | null;
+            purchase_id: string | null;
+            amount: import("@prisma/client-runtime-utils").Decimal;
+            platform_fee: import("@prisma/client-runtime-utils").Decimal;
+            provider_tx_ref: string | null;
+        }[];
+        total: number;
+        page: number;
+        limit: number;
+    }>;
     getInstructorEarnings(user: AuthUser): Promise<{
         grossEarned: number;
         platformFees: number;
@@ -61,11 +59,11 @@ export declare class PaymentsController {
         availableBalance: number;
         payouts: {
             id: string;
+            status: string;
             created_at: Date;
             instructor_id: string;
-            status: string;
-            notes: string | null;
             currency: string;
+            notes: string | null;
             amount: import("@prisma/client-runtime-utils").Decimal;
             method: string;
             transaction_id: string | null;
@@ -88,48 +86,27 @@ export declare class PaymentsController {
         account_details: string;
     }): Promise<{
         id: string;
+        status: string;
         created_at: Date;
         instructor_id: string;
-        status: string;
-        notes: string | null;
         currency: string;
+        notes: string | null;
         amount: import("@prisma/client-runtime-utils").Decimal;
         method: string;
         transaction_id: string | null;
         account_details: string | null;
         paid_at: Date | null;
     }>;
-    requestPayout(txId: string, user: AuthUser): Promise<{
-        grossEarned: number;
-        platformFees: number;
-        netEarned: number;
-        totalPaidOut: number;
-        totalPendingPayouts: number;
-        availableBalance: number;
-        payouts: {
-            id: string;
-            created_at: Date;
-            instructor_id: string;
-            status: string;
-            notes: string | null;
-            currency: string;
-            amount: import("@prisma/client-runtime-utils").Decimal;
-            method: string;
-            transaction_id: string | null;
-            account_details: string | null;
-            paid_at: Date | null;
-        }[];
-        earningsLedger: {
-            id: string;
-            type: string;
-            title: string;
-            student: string;
-            amount: number;
-            net: number;
-            date: Date;
-        }[];
-    }>;
     cleanupAbandoned(): Promise<{
-        cleaned: number;
+        abandoned: number;
+    }>;
+    refundTransaction(txRef: string, user: AuthUser, body?: {
+        amount?: number;
+        reason?: string;
+    }): Promise<{
+        status: string;
+        message: string;
+        txRef: string;
+        amount: number;
     }>;
 }

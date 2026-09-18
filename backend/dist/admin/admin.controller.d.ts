@@ -26,10 +26,10 @@ export declare class AdminController {
         id: string;
         email: string;
         role: string;
-        password_hash: string | null;
         first_name: string | null;
         last_name: string | null;
         image: string | null;
+        password_hash: string | null;
         is_email_verified: boolean;
         created_at: Date;
         updated_at: Date;
@@ -40,10 +40,10 @@ export declare class AdminController {
         id: string;
         email: string;
         role: string;
-        password_hash: string | null;
         first_name: string | null;
         last_name: string | null;
         image: string | null;
+        password_hash: string | null;
         is_email_verified: boolean;
         created_at: Date;
         updated_at: Date;
@@ -62,15 +62,10 @@ export declare class AdminController {
             last_name: string | null;
         };
         id: string;
-        created_at: Date;
-        updated_at: Date;
-        user_id: string;
         bio: string | null;
         headline: string | null;
-        kyc_status: string;
-        kyc_docs: string[];
         hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-        is_active: boolean;
+        kyc_docs: string[];
         cover_image: string | null;
         profile_image: string | null;
         skills: string[];
@@ -81,6 +76,11 @@ export declare class AdminController {
         linkedin_url: string | null;
         twitter_url: string | null;
         youtube_url: string | null;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        kyc_status: string;
+        is_active: boolean;
         total_students: number;
         total_sessions: number;
         avg_rating: import("@prisma/client-runtime-utils").Decimal;
@@ -90,15 +90,10 @@ export declare class AdminController {
         notes?: string;
     }): Promise<{
         id: string;
-        created_at: Date;
-        updated_at: Date;
-        user_id: string;
         bio: string | null;
         headline: string | null;
-        kyc_status: string;
-        kyc_docs: string[];
         hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-        is_active: boolean;
+        kyc_docs: string[];
         cover_image: string | null;
         profile_image: string | null;
         skills: string[];
@@ -109,6 +104,11 @@ export declare class AdminController {
         linkedin_url: string | null;
         twitter_url: string | null;
         youtube_url: string | null;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        kyc_status: string;
+        is_active: boolean;
         total_students: number;
         total_sessions: number;
         avg_rating: import("@prisma/client-runtime-utils").Decimal;
@@ -133,15 +133,10 @@ export declare class AdminController {
                 };
             } & {
                 id: string;
-                created_at: Date;
-                updated_at: Date;
-                user_id: string;
                 bio: string | null;
                 headline: string | null;
-                kyc_status: string;
-                kyc_docs: string[];
                 hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-                is_active: boolean;
+                kyc_docs: string[];
                 cover_image: string | null;
                 profile_image: string | null;
                 skills: string[];
@@ -152,20 +147,26 @@ export declare class AdminController {
                 linkedin_url: string | null;
                 twitter_url: string | null;
                 youtube_url: string | null;
+                created_at: Date;
+                updated_at: Date;
+                user_id: string;
+                kyc_status: string;
+                is_active: boolean;
                 total_students: number;
                 total_sessions: number;
                 avg_rating: import("@prisma/client-runtime-utils").Decimal;
             };
         } & {
             id: string;
+            description: string | null;
+            title: string;
+            status: string;
             created_at: Date;
             updated_at: Date;
+            total_lessons: number;
             instructor_id: string;
-            status: string;
             category_id: string | null;
-            title: string;
             slug: string;
-            description: string | null;
             price: import("@prisma/client-runtime-utils").Decimal;
             currency: string;
             thumbnail: string | null;
@@ -179,7 +180,6 @@ export declare class AdminController {
             learning_objectives: string[];
             promo_video_id: string | null;
             thumbnail_url: string | null;
-            total_lessons: number;
             total_materials: number;
             version: number;
             last_published_at: Date | null;
@@ -192,14 +192,15 @@ export declare class AdminController {
         status: string;
     }): Promise<{
         id: string;
+        description: string | null;
+        title: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
+        total_lessons: number;
         instructor_id: string;
-        status: string;
         category_id: string | null;
-        title: string;
         slug: string;
-        description: string | null;
         price: import("@prisma/client-runtime-utils").Decimal;
         currency: string;
         thumbnail: string | null;
@@ -213,21 +214,21 @@ export declare class AdminController {
         learning_objectives: string[];
         promo_video_id: string | null;
         thumbnail_url: string | null;
-        total_lessons: number;
         total_materials: number;
         version: number;
         last_published_at: Date | null;
     }>;
     deleteCourse(id: string): Promise<{
         id: string;
+        description: string | null;
+        title: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
+        total_lessons: number;
         instructor_id: string;
-        status: string;
         category_id: string | null;
-        title: string;
         slug: string;
-        description: string | null;
         price: import("@prisma/client-runtime-utils").Decimal;
         currency: string;
         thumbnail: string | null;
@@ -241,7 +242,6 @@ export declare class AdminController {
         learning_objectives: string[];
         promo_video_id: string | null;
         thumbnail_url: string | null;
-        total_lessons: number;
         total_materials: number;
         version: number;
         last_published_at: Date | null;
@@ -255,15 +255,15 @@ export declare class AdminController {
             };
         } & {
             id: string;
+            status: string;
             created_at: Date;
             updated_at: Date;
             user_id: string;
-            booking_id: string | null;
-            status: string;
             currency: string;
+            booking_id: string | null;
+            help_session_id: string | null;
             metadata: import("@prisma/client/runtime/client").JsonValue | null;
             purchase_id: string | null;
-            help_session_id: string | null;
             amount: import("@prisma/client-runtime-utils").Decimal;
             platform_fee: import("@prisma/client-runtime-utils").Decimal;
             provider: string;
@@ -318,11 +318,11 @@ export declare class AdminController {
         } | null;
     } & {
         id: string;
+        status: string;
         created_at: Date;
         instructor_id: string;
-        status: string;
-        notes: string | null;
         currency: string;
+        notes: string | null;
         amount: import("@prisma/client-runtime-utils").Decimal;
         method: string;
         transaction_id: string | null;
@@ -337,11 +337,11 @@ export declare class AdminController {
         } | null;
     } & {
         id: string;
+        status: string;
         created_at: Date;
         instructor_id: string;
-        status: string;
-        notes: string | null;
         currency: string;
+        notes: string | null;
         amount: import("@prisma/client-runtime-utils").Decimal;
         method: string;
         transaction_id: string | null;
@@ -353,11 +353,11 @@ export declare class AdminController {
         notes?: string;
     }): Promise<{
         id: string;
+        status: string;
         created_at: Date;
         instructor_id: string;
-        status: string;
-        notes: string | null;
         currency: string;
+        notes: string | null;
         amount: import("@prisma/client-runtime-utils").Decimal;
         method: string;
         transaction_id: string | null;

@@ -2,12 +2,14 @@ import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { MonitorService } from '../session-monitoring/monitor/monitor.service';
+import { PaymentsService } from '../payments/payments.service';
 export declare class BookingsService {
     private prisma;
     private notifications;
     private monitorService;
+    private payments;
     private notificationsQueue;
-    constructor(prisma: PrismaService, notifications: NotificationsService, monitorService: MonitorService, notificationsQueue: Queue);
+    constructor(prisma: PrismaService, notifications: NotificationsService, monitorService: MonitorService, payments: PaymentsService, notificationsQueue: Queue);
     createSlot(instructorUserId: string, dto: {
         starts_at: string;
         ends_at: string;
@@ -29,36 +31,23 @@ export declare class BookingsService {
         max_participants: number;
         current_participants: number;
     }[]>;
-    requestBooking(studentId: string, slotId: string, sessionType?: string, notes?: string): Promise<{
-        id: string;
-        created_at: Date;
-        updated_at: Date;
-        student_id: string;
-        instructor_id: string;
-        slot_id: string;
-        session_type: string;
-        price_paid: import("@prisma/client-runtime-utils").Decimal | null;
-        meeting_link: string | null;
-        status: string;
-        notes: string | null;
-        platform: string | null;
-        platform_meeting_id: string | null;
-        session_started_at: Date | null;
-        session_ended_at: Date | null;
-        session_duration_m: number | null;
-        session_flag: string | null;
+    requestBooking(studentId: string, slotId: string, sessionType?: string, notes?: string, userEmail?: string, userName?: string): Promise<{
+        booking: any;
+        checkoutUrl: string;
+        txRef: string;
     }>;
+    onBookingPaymentConfirmed(bookingId: string): Promise<void>;
     confirmBooking(bookingId: string, instructorUserId: string, meetingLink: string): Promise<{
         id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        student_id: string;
         instructor_id: string;
+        student_id: string;
         slot_id: string;
         session_type: string;
         price_paid: import("@prisma/client-runtime-utils").Decimal | null;
         meeting_link: string | null;
-        status: string;
         notes: string | null;
         platform: string | null;
         platform_meeting_id: string | null;
@@ -67,17 +56,24 @@ export declare class BookingsService {
         session_duration_m: number | null;
         session_flag: string | null;
     }>;
-    completeBooking(bookingId: string): Promise<{
+    rejectBooking(bookingId: string, instructorUserId: string, reason?: string): Promise<{
+        message: string;
+    }>;
+    cancelBooking(bookingId: string, studentId: string): Promise<{
+        message: string;
+    }>;
+    completeBooking(bookingId: string, adminOrSystemCall?: boolean): Promise<{
+        payoutBlocked: boolean;
         id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        student_id: string;
         instructor_id: string;
+        student_id: string;
         slot_id: string;
         session_type: string;
         price_paid: import("@prisma/client-runtime-utils").Decimal | null;
         meeting_link: string | null;
-        status: string;
         notes: string | null;
         platform: string | null;
         platform_meeting_id: string | null;
@@ -88,15 +84,15 @@ export declare class BookingsService {
     }>;
     markNoShow(bookingId: string): Promise<{
         id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        student_id: string;
         instructor_id: string;
+        student_id: string;
         slot_id: string;
         session_type: string;
         price_paid: import("@prisma/client-runtime-utils").Decimal | null;
         meeting_link: string | null;
-        status: string;
         notes: string | null;
         platform: string | null;
         platform_meeting_id: string | null;
@@ -111,25 +107,20 @@ export declare class BookingsService {
                 id: string;
                 email: string;
                 role: string;
-                password_hash: string | null;
                 first_name: string | null;
                 last_name: string | null;
                 image: string | null;
+                password_hash: string | null;
                 is_email_verified: boolean;
                 created_at: Date;
                 updated_at: Date;
             };
         } & {
             id: string;
-            created_at: Date;
-            updated_at: Date;
-            user_id: string;
             bio: string | null;
             headline: string | null;
-            kyc_status: string;
-            kyc_docs: string[];
             hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-            is_active: boolean;
+            kyc_docs: string[];
             cover_image: string | null;
             profile_image: string | null;
             skills: string[];
@@ -140,6 +131,11 @@ export declare class BookingsService {
             linkedin_url: string | null;
             twitter_url: string | null;
             youtube_url: string | null;
+            created_at: Date;
+            updated_at: Date;
+            user_id: string;
+            kyc_status: string;
+            is_active: boolean;
             total_students: number;
             total_sessions: number;
             avg_rating: import("@prisma/client-runtime-utils").Decimal;
@@ -155,15 +151,15 @@ export declare class BookingsService {
         };
     } & {
         id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        student_id: string;
         instructor_id: string;
+        student_id: string;
         slot_id: string;
         session_type: string;
         price_paid: import("@prisma/client-runtime-utils").Decimal | null;
         meeting_link: string | null;
-        status: string;
         notes: string | null;
         platform: string | null;
         platform_meeting_id: string | null;
@@ -177,10 +173,10 @@ export declare class BookingsService {
             id: string;
             email: string;
             role: string;
-            password_hash: string | null;
             first_name: string | null;
             last_name: string | null;
             image: string | null;
+            password_hash: string | null;
             is_email_verified: boolean;
             created_at: Date;
             updated_at: Date;
@@ -196,15 +192,15 @@ export declare class BookingsService {
         };
     } & {
         id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        student_id: string;
         instructor_id: string;
+        student_id: string;
         slot_id: string;
         session_type: string;
         price_paid: import("@prisma/client-runtime-utils").Decimal | null;
         meeting_link: string | null;
-        status: string;
         notes: string | null;
         platform: string | null;
         platform_meeting_id: string | null;

@@ -210,7 +210,7 @@ class PgAdapter extends BaseAdapter {
 
     async createEmailVerification(userId) {
         await this.pool.query('DELETE FROM email_verifications WHERE user_id = $1', [userId]);
-        const code      = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+        const code      = crypto.randomInt(100000, 1000000).toString(); // 6-digit CSPRNG OTP
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
         await this.pool.query(
             'INSERT INTO email_verifications (user_id, code, expires_at) VALUES ($1,$2,$3)',

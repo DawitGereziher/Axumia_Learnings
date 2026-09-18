@@ -51,14 +51,20 @@ let HelpRequestsController = class HelpRequestsController {
     submitBid(requestId, user, dto) {
         return this.helpRequests.submitBid(user.id, requestId, dto);
     }
+    withdrawBid(bidId, user) {
+        return this.helpRequests.withdrawBid(user.id, bidId);
+    }
     setLink(sessionId, user, body) {
         return this.helpRequests.setMeetingLink(user.id, sessionId, body.meetingLink);
     }
     updateSession(sessionId, user, body) {
         return this.helpRequests.updateSession(user.id, sessionId, body);
     }
-    complete(sessionId, user, body) {
-        return this.helpRequests.completeSession(user.id, sessionId, body.actualHours);
+    markComplete(sessionId, user, body) {
+        return this.helpRequests.markHelperCompleted(user.id, sessionId, body.actualHours);
+    }
+    confirmCompletion(sessionId, user, body) {
+        return this.helpRequests.confirmCompletion(user.id, sessionId, body.confirmed);
     }
     getOne(id, user) {
         return this.helpRequests.getRequest(id, user.id);
@@ -67,8 +73,7 @@ let HelpRequestsController = class HelpRequestsController {
 exports.HelpRequestsController = HelpRequestsController;
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: 'Browse open help requests' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Browse open help requests (public)' }),
     (0, swagger_1.ApiQuery)({ name: 'subject', required: false }),
     __param(0, (0, common_1.Query)('subject')),
     __metadata("design:type", Function),
@@ -148,6 +153,18 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], HelpRequestsController.prototype, "submitBid", null);
 __decorate([
+    (0, common_1.Delete)('bids/:bidId/withdraw'),
+    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('instructor', 'admin'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '[Instructor] Withdraw a pending bid' }),
+    __param(0, (0, common_1.Param)('bidId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], HelpRequestsController.prototype, "withdrawBid", null);
+__decorate([
     (0, common_1.Patch)('sessions/:id/link'),
     (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('instructor', 'admin'),
@@ -174,14 +191,25 @@ __decorate([
     (0, common_1.Patch)('sessions/:id/complete'),
     (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('instructor', 'admin'),
-    (0, swagger_1.ApiOperation)({ summary: '[Helper] Mark a help session as complete' }),
+    (0, swagger_1.ApiOperation)({ summary: '[Helper] Step 1 — Report session complete with actual hours (moves to helper_completed)' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", void 0)
-], HelpRequestsController.prototype, "complete", null);
+], HelpRequestsController.prototype, "markComplete", null);
+__decorate([
+    (0, common_1.Patch)('sessions/:id/confirm'),
+    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),
+    (0, swagger_1.ApiOperation)({ summary: '[Student] Step 2 — Confirm or dispute session completion' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], HelpRequestsController.prototype, "confirmCompletion", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),

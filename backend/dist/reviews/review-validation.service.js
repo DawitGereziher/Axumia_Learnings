@@ -21,16 +21,21 @@ let ReviewValidationService = ReviewValidationService_1 = class ReviewValidation
     }
     async validateCourseReviewAccess(userId, courseId) {
         try {
+            const user = await this.prisma.user.findUnique({ where: { id: userId } });
+            if (user?.role === 'admin')
+                return true;
             const purchase = await this.prisma.coursePurchase.findUnique({
                 where: {
                     user_id_course_id: { user_id: userId, course_id: courseId },
                 },
             });
-            if (!purchase) {
-                this.logger.warn(`User ${userId} attempted to review unpurchased course ${courseId}`);
-                return false;
-            }
-            return true;
+            if (purchase)
+                return true;
+            const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+            if (course && Number(course.price) === 0)
+                return true;
+            this.logger.warn(`User ${userId} attempted to review unpurchased course ${courseId}`);
+            return false;
         }
         catch (error) {
             this.logger.error('Error validating course review access:', error);

@@ -41,6 +41,12 @@ let ContentService = ContentService_1 = class ContentService {
         this.youtubeService = youtubeService;
         this.storageService = storageService;
     }
+    isValidYouTubeUrl(url) {
+        return this.youtubeService.isValidYouTubeUrl(url);
+    }
+    processYouTubeUrl(url) {
+        return this.youtubeService.processYouTubeUrl(url);
+    }
     async processContent(contentType, data, options = {}) {
         switch (contentType) {
             case ContentType.YOUTUBE:
@@ -181,31 +187,41 @@ let ContentService = ContentService_1 = class ContentService {
         switch (lesson.content_type) {
             case ContentType.YOUTUBE:
                 if (!lesson.youtube_video_id) {
-                    throw new common_1.BadRequestException('YouTube video ID not found');
+                    if (lesson.external_url) {
+                        const vId = this.youtubeService.extractVideoId(lesson.external_url);
+                        if (vId) {
+                            return `https://www.youtube.com/embed/${vId}?rel=0&modestbranding=1&enablejsapi=1`;
+                        }
+                        return lesson.external_url;
+                    }
+                    return '';
                 }
                 return this.youtubeService.generateEmbedUrl(lesson.youtube_video_id, options);
             case ContentType.VIDEO:
                 if (!lesson.video_key) {
-                    throw new common_1.BadRequestException('Video key not found');
+                    if (lesson.external_url)
+                        return lesson.external_url;
+                    return '';
                 }
                 return this.storageService.getSignedUrl(lesson.video_key);
             case ContentType.PDF:
             case ContentType.DOCUMENT:
             case ContentType.AUDIO:
                 if (!lesson.external_url) {
-                    throw new common_1.BadRequestException('Content URL not found');
+                    return '';
                 }
-                if (lesson.storage_type === StorageType.S3) {
+                if (lesson.storage_type === StorageType.S3 || (!lesson.external_url.startsWith('http://') && !lesson.external_url.startsWith('https://'))) {
                     return this.storageService.getSignedUrl(lesson.external_url);
                 }
                 return lesson.external_url;
+            case 'reading':
             case ContentType.LINK:
             case ContentType.TEXT:
                 return lesson.external_url || '';
             case ContentType.EMBEDDED:
                 return lesson.embed_code || '';
             default:
-                throw new common_1.BadRequestException(`Unsupported content type: ${lesson.content_type}`);
+                return lesson.external_url || '';
         }
     }
     generateThumbnailUrl(lesson) {

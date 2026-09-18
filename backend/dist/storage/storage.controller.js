@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StorageController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const d_auth_guard_1 = require("../common/guards/d-auth.guard");
 const storage_service_1 = require("./storage.service");
@@ -26,6 +27,15 @@ const ALLOWED_PUBLIC_TYPES = [
 ];
 const ALLOWED_PRIVATE_TYPES = [
     'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/octet-stream',
+    'text/plain',
+    'text/markdown',
     'image/jpeg',
     'image/png',
     'image/webp',
@@ -54,6 +64,26 @@ let StorageController = class StorageController {
         }
         return response;
     }
+    async uploadFile(user, file, body) {
+        if (!file) {
+            throw new common_1.BadRequestException('File is required');
+        }
+        const bucket = body.bucket === 'public' ? 'public' : 'private';
+        const folder = body.folder || 'material';
+        const originalName = body.fileName || file.originalname || 'document';
+        const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+        const key = `${folder}/${user.id}/${Date.now()}-${safeName}`;
+        await this.storage.uploadBuffer(file.buffer, bucket, key, file.mimetype || 'application/octet-stream');
+        const response = {
+            key,
+            fileName: originalName,
+            fileSize: file.size,
+        };
+        if (bucket === 'public') {
+            response.publicUrl = this.storage.getPublicUrl(key);
+        }
+        return response;
+    }
 };
 exports.StorageController = StorageController;
 __decorate([
@@ -75,6 +105,19 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], StorageController.prototype, "getUploadUrl", null);
+__decorate([
+    (0, common_1.Post)('upload'),
+    (0, common_1.UseGuards)(d_auth_guard_1.DAuthGuard),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', { limits: { fileSize: 50 * 1024 * 1024 } })),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload file directly via server to R2' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", Promise)
+], StorageController.prototype, "uploadFile", null);
 exports.StorageController = StorageController = __decorate([
     (0, swagger_1.ApiTags)('Storage'),
     (0, swagger_1.ApiBearerAuth)(),

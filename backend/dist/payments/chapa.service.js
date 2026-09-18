@@ -58,13 +58,29 @@ let ChapaService = ChapaService_1 = class ChapaService {
             throw new Error(`Chapa verify failed: ${res.status}`);
         return res.json();
     }
+    async refundTransaction(txRef, amount, reason = 'Customer requested refund') {
+        const body = { tx_ref: txRef, reason };
+        if (amount !== undefined)
+            body.amount = amount.toString();
+        const res = await fetch(`${this.baseUrl}/refund`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${this.secretKey}`,
+            },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            const err = await res.text();
+            this.logger.error(`Chapa refund failed for ${txRef}: ${err}`);
+            throw new Error(`Chapa refund failed: ${res.status}`);
+        }
+        return res.json();
+    }
     verifyWebhookSignature(payload, signature) {
         const crypto = require('crypto');
         const secret = this.config.get('CHAPA_WEBHOOK_SECRET') || '';
-        const expected = crypto
-            .createHmac('sha256', secret)
-            .update(payload)
-            .digest('hex');
+        const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
         return expected === signature;
     }
 };

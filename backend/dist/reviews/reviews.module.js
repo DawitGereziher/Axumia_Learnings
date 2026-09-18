@@ -12,6 +12,7 @@ const review_validation_service_1 = require("./review-validation.service");
 const review_management_service_1 = require("./review-management.service");
 const review_comment_service_1 = require("./review-comment.service");
 const instructor_response_service_1 = require("./instructor-response.service");
+const reviews_service_1 = require("./reviews.service");
 const reviews_controller_1 = require("./reviews.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
 let CourseReviewsModule = class CourseReviewsModule {
@@ -26,12 +27,14 @@ exports.CourseReviewsModule = CourseReviewsModule = __decorate([
             review_management_service_1.ReviewManagementService,
             review_comment_service_1.ReviewCommentService,
             instructor_response_service_1.InstructorResponseService,
+            reviews_service_1.ReviewsService,
         ],
         exports: [
             review_validation_service_1.ReviewValidationService,
             review_management_service_1.ReviewManagementService,
             review_comment_service_1.ReviewCommentService,
             instructor_response_service_1.InstructorResponseService,
+            reviews_service_1.ReviewsService,
         ],
     })
 ], CourseReviewsModule);

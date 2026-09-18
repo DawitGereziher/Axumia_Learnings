@@ -19,6 +19,7 @@ const bullmq_2 = require("bullmq");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const monitor_service_1 = require("../session-monitoring/monitor/monitor.service");
+const payments_service_1 = require("../payments/payments.service");
 const oauth_service_1 = require("../session-monitoring/oauth/oauth.service");
 const queue_constants_1 = require("../queue/queue.constants");
 const ZOOM_MEET_PATTERN = /^https:\/\/(zoom\.us\/j\/|meet\.google\.com\/)/;
@@ -26,11 +27,13 @@ let BookingsService = class BookingsService {
     prisma;
     notifications;
     monitorService;
+    payments;
     notificationsQueue;
-    constructor(prisma, notifications, monitorService, notificationsQueue) {
+    constructor(prisma, notifications, monitorService, payments, notificationsQueue) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.monitorService = monitorService;
+        this.payments = payments;
         this.notificationsQueue = notificationsQueue;
     }
     async createSlot(instructorUserId, dto) {
@@ -39,11 +42,22 @@ let BookingsService = class BookingsService {
         });
         if (!profile || !profile.is_active)
             throw new common_1.ForbiddenException('Instructor not active');
+        const starts = new Date(dto.starts_at);
+        const ends = new Date(dto.ends_at);
+        if (isNaN(starts.getTime()) || isNaN(ends.getTime())) {
+            throw new common_1.BadRequestException('Invalid date format for starts_at or ends_at');
+        }
+        if (ends <= starts) {
+            throw new common_1.BadRequestException('ends_at must be after starts_at');
+        }
+        if (starts <= new Date()) {
+            throw new common_1.BadRequestException('Slot must be in the future');
+        }
         return this.prisma.availabilitySlot.create({
             data: {
                 instructor_id: profile.id,
-                starts_at: new Date(dto.starts_at),
-                ends_at: new Date(dto.ends_at),
+                starts_at: starts,
+                ends_at: ends,
             },
         });
     }
@@ -57,13 +71,16 @@ let BookingsService = class BookingsService {
             orderBy: { starts_at: 'asc' },
         });
     }
-    async requestBooking(studentId, slotId, sessionType = '1-on-1', notes) {
+    async requestBooking(studentId, slotId, sessionType = '1-on-1', notes, userEmail, userName) {
         const slot = await this.prisma.availabilitySlot.findUnique({
             where: { id: slotId },
             include: { instructor: { include: { user: true } } },
         });
         if (!slot)
             throw new common_1.NotFoundException('Slot not found');
+        if (slot.instructor.user_id === studentId) {
+            throw new common_1.ForbiddenException('You cannot book your own slot');
+        }
         const type = ['1-on-1', '1-on-many', 'group-class'].includes(sessionType)
             ? sessionType
             : '1-on-1';
@@ -93,7 +110,7 @@ let BookingsService = class BookingsService {
                     slot_id: slotId,
                     session_type: type,
                     price_paid: pricePaid,
-                    status: 'pending',
+                    status: 'awaiting_payment',
                     notes: notes || null,
                 },
             }),
@@ -106,18 +123,38 @@ let BookingsService = class BookingsService {
                 },
             }),
         ]);
+        const student = await this.prisma.user.findUnique({ where: { id: studentId } });
+        const email = userEmail || student?.email || '';
+        const name = userName ||
+            `${student?.first_name || ''} ${student?.last_name || ''}`.trim() ||
+            'Student';
+        const { checkoutUrl, txRef } = await this.payments.initiateBookingPayment(studentId, booking.id, email, name);
+        return { booking, checkoutUrl, txRef };
+    }
+    async onBookingPaymentConfirmed(bookingId) {
+        const booking = await this.prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: { instructor: { include: { user: true } }, student: true },
+        });
+        if (!booking)
+            return;
+        if (booking.status !== 'awaiting_payment')
+            return;
+        await this.prisma.booking.update({
+            where: { id: bookingId },
+            data: { status: 'pending' },
+        });
         try {
-            const student = await this.prisma.user.findUnique({ where: { id: studentId } });
+            const student = booking.student;
             await this.notificationsQueue.add(queue_constants_1.JOB_BOOKING_NEW, {
-                instructorEmail: slot.instructor.user.email,
+                instructorEmail: booking.instructor.user.email,
                 bookingId: booking.id,
-                studentName: student ? `${student.first_name || ''} ${student.last_name || ''}`.trim() : 'Student',
+                studentName: `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Student',
             });
         }
         catch {
-            await this.notifications.notifyInstructorNewBooking(slot.instructor.user.email, booking.id);
+            await this.notifications.notifyInstructorNewBooking(booking.instructor.user.email, booking.id);
         }
-        return booking;
     }
     async confirmBooking(bookingId, instructorUserId, meetingLink) {
         if (!ZOOM_MEET_PATTERN.test(meetingLink)) {
@@ -131,6 +168,9 @@ let BookingsService = class BookingsService {
             throw new common_1.NotFoundException('Booking not found');
         if (booking.instructor.user_id !== instructorUserId)
             throw new common_1.ForbiddenException();
+        if (booking.status !== 'pending') {
+            throw new common_1.BadRequestException(`Cannot confirm a booking in status '${booking.status}'`);
+        }
         const platform = (0, oauth_service_1.detectPlatform)(meetingLink);
         const platformMeetingId = platform === 'zoom'
             ? (0, oauth_service_1.extractZoomMeetingId)(meetingLink)
@@ -144,7 +184,9 @@ let BookingsService = class BookingsService {
                 platform_meeting_id: platformMeetingId ?? undefined,
             },
         });
-        const slotTime = booking.slot?.starts_at ? new Date(booking.slot.starts_at).toLocaleString() : undefined;
+        const slotTime = booking.slot?.starts_at
+            ? new Date(booking.slot.starts_at).toLocaleString()
+            : undefined;
         try {
             await this.notificationsQueue.add(queue_constants_1.JOB_BOOKING_CONFIRMED, {
                 studentEmail: booking.student.email,
@@ -170,14 +212,78 @@ let BookingsService = class BookingsService {
         }
         return updated;
     }
-    async completeBooking(bookingId) {
+    async rejectBooking(bookingId, instructorUserId, reason) {
+        const booking = await this.prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: { instructor: true, slot: true },
+        });
+        if (!booking)
+            throw new common_1.NotFoundException('Booking not found');
+        if (booking.instructor.user_id !== instructorUserId)
+            throw new common_1.ForbiddenException();
+        if (!['pending'].includes(booking.status)) {
+            throw new common_1.BadRequestException(`Cannot reject a booking in status '${booking.status}'`);
+        }
+        await this.prisma.$transaction([
+            this.prisma.booking.update({
+                where: { id: bookingId },
+                data: { status: 'cancelled', notes: reason ? `Rejected: ${reason}` : booking.notes },
+            }),
+            this.prisma.availabilitySlot.update({
+                where: { id: booking.slot_id },
+                data: {
+                    current_participants: { decrement: 1 },
+                    is_booked: false,
+                },
+            }),
+        ]);
+        return { message: 'Booking rejected. Refund will be processed.' };
+    }
+    async cancelBooking(bookingId, studentId) {
+        const booking = await this.prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: { slot: true },
+        });
+        if (!booking)
+            throw new common_1.NotFoundException('Booking not found');
+        if (booking.student_id !== studentId)
+            throw new common_1.ForbiddenException('Not your booking');
+        if (!['awaiting_payment', 'pending'].includes(booking.status)) {
+            throw new common_1.BadRequestException(`Cannot cancel a booking in status '${booking.status}'. Contact support for confirmed bookings.`);
+        }
+        await this.prisma.$transaction([
+            this.prisma.booking.update({
+                where: { id: bookingId },
+                data: { status: 'cancelled' },
+            }),
+            this.prisma.availabilitySlot.update({
+                where: { id: booking.slot_id },
+                data: {
+                    current_participants: { decrement: 1 },
+                    is_booked: false,
+                },
+            }),
+        ]);
+        return { message: 'Booking cancelled. If payment was made, a refund will be processed.' };
+    }
+    async completeBooking(bookingId, adminOrSystemCall = false) {
+        const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+        if (!booking)
+            throw new common_1.NotFoundException('Booking not found');
+        if (booking.status !== 'confirmed') {
+            throw new common_1.BadRequestException(`Booking must be 'confirmed' to complete. Current: '${booking.status}'`);
+        }
         const { blocked } = await this.monitorService.gatePayoutRelease(bookingId);
-        return this.prisma.booking.update({
+        const updated = await this.prisma.booking.update({
             where: { id: bookingId },
             data: { status: 'completed' },
         });
+        return { ...updated, payoutBlocked: blocked };
     }
     async markNoShow(bookingId) {
+        const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+        if (!booking)
+            throw new common_1.NotFoundException('Booking not found');
         return this.prisma.booking.update({
             where: { id: bookingId },
             data: { status: 'no_show' },
@@ -206,10 +312,11 @@ let BookingsService = class BookingsService {
 exports.BookingsService = BookingsService;
 exports.BookingsService = BookingsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(3, (0, bullmq_1.InjectQueue)(queue_constants_1.QUEUE_NOTIFICATIONS)),
+    __param(4, (0, bullmq_1.InjectQueue)(queue_constants_1.QUEUE_NOTIFICATIONS)),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService,
         monitor_service_1.MonitorService,
+        payments_service_1.PaymentsService,
         bullmq_2.Queue])
 ], BookingsService);
 //# sourceMappingURL=bookings.service.js.map

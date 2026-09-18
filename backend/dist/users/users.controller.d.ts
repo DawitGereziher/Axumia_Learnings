@@ -1,20 +1,19 @@
 import { AuthUser } from '../common/decorators/current-user.decorator';
 import { UsersService } from './users.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { SubmitInstructorProfileDto, UpdateRichInstructorProfileDto, CreateInstructorReviewDto, UpdateKycStatusDto } from './dto/instructor-profile.dto';
+import { StorageService } from '../storage/storage.service';
 export declare class UsersController {
     private usersService;
-    constructor(usersService: UsersService);
+    private storageService;
+    constructor(usersService: UsersService, storageService: StorageService);
     getMe(user: AuthUser): Promise<({
         instructorProfile: {
             id: string;
-            created_at: Date;
-            updated_at: Date;
-            user_id: string;
             bio: string | null;
             headline: string | null;
-            kyc_status: string;
-            kyc_docs: string[];
             hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-            is_active: boolean;
+            kyc_docs: string[];
             cover_image: string | null;
             profile_image: string | null;
             skills: string[];
@@ -25,6 +24,11 @@ export declare class UsersController {
             linkedin_url: string | null;
             twitter_url: string | null;
             youtube_url: string | null;
+            created_at: Date;
+            updated_at: Date;
+            user_id: string;
+            kyc_status: string;
+            is_active: boolean;
             total_students: number;
             total_sessions: number;
             avg_rating: import("@prisma/client-runtime-utils").Decimal;
@@ -33,40 +37,69 @@ export declare class UsersController {
         id: string;
         email: string;
         role: string;
-        password_hash: string | null;
         first_name: string | null;
         last_name: string | null;
         image: string | null;
+        password_hash: string | null;
         is_email_verified: boolean;
         created_at: Date;
         updated_at: Date;
     }) | null>;
-    getMyPurchases(user: AuthUser): Promise<({
-        course: {
+    updateMe(user: AuthUser, dto: UpdateProfileDto): Promise<{
+        id: string;
+        email: string;
+        role: string;
+        first_name: string | null;
+        last_name: string | null;
+        image: string | null;
+        password_hash: string | null;
+        is_email_verified: boolean;
+        created_at: Date;
+        updated_at: Date;
+    }>;
+    uploadAvatar(user: AuthUser, file: Express.Multer.File): Promise<{
+        uploadUrl: string;
+        imageUrl: string;
+        key: string;
+    }>;
+    getDashboard(user: AuthUser): Promise<{
+        user: {
+            id: string;
+            role: string;
+            first_name: string | null;
+            last_name: string | null;
+            image: string | null;
+        } | null;
+        enrolled_count: number;
+        courses: {
+            purchase_id: string;
+            progress: number;
+            completed: boolean;
+            id: string;
+            title: string;
+            total_lessons: number;
+            slug: string;
+            thumbnail_url: string | null;
             instructor: {
                 user: {
-                    id: string;
-                    email: string;
-                    role: string;
-                    password_hash: string | null;
+                    first_name: string | null;
+                    last_name: string | null;
+                };
+            };
+        }[];
+        upcoming_bookings: ({
+            instructor: {
+                user: {
                     first_name: string | null;
                     last_name: string | null;
                     image: string | null;
-                    is_email_verified: boolean;
-                    created_at: Date;
-                    updated_at: Date;
                 };
             } & {
                 id: string;
-                created_at: Date;
-                updated_at: Date;
-                user_id: string;
                 bio: string | null;
                 headline: string | null;
-                kyc_status: string;
-                kyc_docs: string[];
                 hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-                is_active: boolean;
+                kyc_docs: string[];
                 cover_image: string | null;
                 profile_image: string | null;
                 skills: string[];
@@ -77,20 +110,105 @@ export declare class UsersController {
                 linkedin_url: string | null;
                 twitter_url: string | null;
                 youtube_url: string | null;
+                created_at: Date;
+                updated_at: Date;
+                user_id: string;
+                kyc_status: string;
+                is_active: boolean;
+                total_students: number;
+                total_sessions: number;
+                avg_rating: import("@prisma/client-runtime-utils").Decimal;
+            };
+            slot: {
+                starts_at: Date;
+                ends_at: Date;
+            };
+        } & {
+            id: string;
+            status: string;
+            created_at: Date;
+            updated_at: Date;
+            instructor_id: string;
+            student_id: string;
+            slot_id: string;
+            session_type: string;
+            price_paid: import("@prisma/client-runtime-utils").Decimal | null;
+            meeting_link: string | null;
+            notes: string | null;
+            platform: string | null;
+            platform_meeting_id: string | null;
+            session_started_at: Date | null;
+            session_ended_at: Date | null;
+            session_duration_m: number | null;
+            session_flag: string | null;
+        })[];
+        certificates: {
+            id: string;
+            course_id: string;
+            user_id: string;
+            certificate_number: string;
+            pdf_key: string | null;
+            issued_at: Date;
+        }[];
+        gamification: {
+            xp: number;
+            badges: {
+                badge_id: string;
+                earned_at: Date;
+            }[];
+        };
+    }>;
+    getMyPurchases(user: AuthUser): Promise<({
+        course: {
+            instructor: {
+                user: {
+                    id: string;
+                    email: string;
+                    role: string;
+                    first_name: string | null;
+                    last_name: string | null;
+                    image: string | null;
+                    password_hash: string | null;
+                    is_email_verified: boolean;
+                    created_at: Date;
+                    updated_at: Date;
+                };
+            } & {
+                id: string;
+                bio: string | null;
+                headline: string | null;
+                hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+                kyc_docs: string[];
+                cover_image: string | null;
+                profile_image: string | null;
+                skills: string[];
+                languages: string[];
+                experience_years: number | null;
+                location: string | null;
+                website_url: string | null;
+                linkedin_url: string | null;
+                twitter_url: string | null;
+                youtube_url: string | null;
+                created_at: Date;
+                updated_at: Date;
+                user_id: string;
+                kyc_status: string;
+                is_active: boolean;
                 total_students: number;
                 total_sessions: number;
                 avg_rating: import("@prisma/client-runtime-utils").Decimal;
             };
         } & {
             id: string;
+            description: string | null;
+            title: string;
+            status: string;
             created_at: Date;
             updated_at: Date;
+            total_lessons: number;
             instructor_id: string;
-            status: string;
             category_id: string | null;
-            title: string;
             slug: string;
-            description: string | null;
             price: import("@prisma/client-runtime-utils").Decimal;
             currency: string;
             thumbnail: string | null;
@@ -104,50 +222,26 @@ export declare class UsersController {
             learning_objectives: string[];
             promo_video_id: string | null;
             thumbnail_url: string | null;
-            total_lessons: number;
             total_materials: number;
             version: number;
             last_published_at: Date | null;
         };
     } & {
         id: string;
-        created_at: Date;
-        user_id: string;
         course_id: string;
+        created_at: Date;
+        user_id: string;
         currency: string;
+        completed_at: Date | null;
         amount_paid: import("@prisma/client-runtime-utils").Decimal;
+        completion_pct: number;
     })[]>;
-    updateMe(user: AuthUser, body: {
-        first_name?: string;
-        last_name?: string;
-        image?: string;
-    }): Promise<{
+    submitInstructorProfile(user: AuthUser, dto: SubmitInstructorProfileDto): Promise<{
         id: string;
-        email: string;
-        role: string;
-        password_hash: string | null;
-        first_name: string | null;
-        last_name: string | null;
-        image: string | null;
-        is_email_verified: boolean;
-        created_at: Date;
-        updated_at: Date;
-    }>;
-    submitInstructorProfile(user: AuthUser, body: {
-        bio?: string;
-        headline?: string;
-        hourly_rate?: number;
-    }): Promise<{
-        id: string;
-        created_at: Date;
-        updated_at: Date;
-        user_id: string;
         bio: string | null;
         headline: string | null;
-        kyc_status: string;
-        kyc_docs: string[];
         hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-        is_active: boolean;
+        kyc_docs: string[];
         cover_image: string | null;
         profile_image: string | null;
         skills: string[];
@@ -158,37 +252,21 @@ export declare class UsersController {
         linkedin_url: string | null;
         twitter_url: string | null;
         youtube_url: string | null;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        kyc_status: string;
+        is_active: boolean;
         total_students: number;
         total_sessions: number;
         avg_rating: import("@prisma/client-runtime-utils").Decimal;
     }>;
-    updateRichProfile(user: AuthUser, body: {
-        bio?: string;
-        headline?: string;
-        hourly_rate?: number;
-        cover_image?: string;
-        profile_image?: string;
-        skills?: string[];
-        languages?: string[];
-        experience_years?: number;
-        location?: string;
-        website_url?: string;
-        linkedin_url?: string;
-        twitter_url?: string;
-        youtube_url?: string;
-        kyc_docs?: string[];
-        kyc_status?: string;
-    }): Promise<{
+    updateRichProfile(user: AuthUser, dto: UpdateRichInstructorProfileDto): Promise<{
         id: string;
-        created_at: Date;
-        updated_at: Date;
-        user_id: string;
         bio: string | null;
         headline: string | null;
-        kyc_status: string;
-        kyc_docs: string[];
         hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-        is_active: boolean;
+        kyc_docs: string[];
         cover_image: string | null;
         profile_image: string | null;
         skills: string[];
@@ -199,113 +277,29 @@ export declare class UsersController {
         linkedin_url: string | null;
         twitter_url: string | null;
         youtube_url: string | null;
-        total_students: number;
-        total_sessions: number;
-        avg_rating: import("@prisma/client-runtime-utils").Decimal;
-    }>;
-    getPublicProfile(profileId: string): Promise<{
-        reviews: ({
-            user: {
-                first_name: string | null;
-                last_name: string | null;
-                image: string | null;
-            };
-        } & {
-            id: string;
-            created_at: Date;
-            user_id: string;
-            course_id: string | null;
-            booking_id: string | null;
-            rating: number;
-            comment: string | null;
-        })[];
-        user: {
-            first_name: string | null;
-            last_name: string | null;
-            image: string | null;
-        };
-        courses: ({
-            _count: {
-                reviews: number;
-                purchases: number;
-            };
-        } & {
-            id: string;
-            created_at: Date;
-            updated_at: Date;
-            instructor_id: string;
-            status: string;
-            category_id: string | null;
-            title: string;
-            slug: string;
-            description: string | null;
-            price: import("@prisma/client-runtime-utils").Decimal;
-            currency: string;
-            thumbnail: string | null;
-            level: string;
-            language: string;
-            tags: string[];
-            search_vector: string | null;
-            estimated_hours: number | null;
-            skill_level: string | null;
-            prerequisites: string[];
-            learning_objectives: string[];
-            promo_video_id: string | null;
-            thumbnail_url: string | null;
-            total_lessons: number;
-            total_materials: number;
-            version: number;
-            last_published_at: Date | null;
-        })[];
-        id: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        bio: string | null;
-        headline: string | null;
         kyc_status: string;
-        kyc_docs: string[];
-        hourly_rate: import("@prisma/client-runtime-utils").Decimal;
         is_active: boolean;
-        cover_image: string | null;
-        profile_image: string | null;
-        skills: string[];
-        languages: string[];
-        experience_years: number | null;
-        location: string | null;
-        website_url: string | null;
-        linkedin_url: string | null;
-        twitter_url: string | null;
-        youtube_url: string | null;
         total_students: number;
         total_sessions: number;
         avg_rating: import("@prisma/client-runtime-utils").Decimal;
     }>;
-    listInstructors(): Promise<{
+    listInstructors(page: number, limit: number, search?: string): Promise<{
         data: ({
             user: {
                 id: string;
-                email: string;
-                role: string;
-                password_hash: string | null;
                 first_name: string | null;
                 last_name: string | null;
                 image: string | null;
-                is_email_verified: boolean;
-                created_at: Date;
-                updated_at: Date;
             };
         } & {
             id: string;
-            created_at: Date;
-            updated_at: Date;
-            user_id: string;
             bio: string | null;
             headline: string | null;
-            kyc_status: string;
-            kyc_docs: string[];
             hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-            is_active: boolean;
+            kyc_docs: string[];
             cover_image: string | null;
             profile_image: string | null;
             skills: string[];
@@ -316,6 +310,11 @@ export declare class UsersController {
             linkedin_url: string | null;
             twitter_url: string | null;
             youtube_url: string | null;
+            created_at: Date;
+            updated_at: Date;
+            user_id: string;
+            kyc_status: string;
+            is_active: boolean;
             total_students: number;
             total_sessions: number;
             avg_rating: import("@prisma/client-runtime-utils").Decimal;
@@ -324,57 +323,51 @@ export declare class UsersController {
         page: number;
         limit: number;
     }>;
-    getInstructor(id: string): Promise<({
-        instructorProfile: {
+    getPublicProfile(profileId: string): Promise<{
+        courses: any[];
+        reviews: ({
             id: string;
+            rating: number;
+            comment: string;
             created_at: Date;
-            updated_at: Date;
-            user_id: string;
-            bio: string | null;
-            headline: string | null;
-            kyc_status: string;
-            kyc_docs: string[];
-            hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-            is_active: boolean;
-            cover_image: string | null;
-            profile_image: string | null;
-            skills: string[];
-            languages: string[];
-            experience_years: number | null;
-            location: string | null;
-            website_url: string | null;
-            linkedin_url: string | null;
-            twitter_url: string | null;
-            youtube_url: string | null;
-            total_students: number;
-            total_sessions: number;
-            avg_rating: import("@prisma/client-runtime-utils").Decimal;
-        } | null;
-    } & {
+            user: {
+                id: string;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+            };
+            course_title: string;
+            course_id: string;
+            type: string;
+        } | {
+            id: string;
+            rating: number;
+            teaching_style_rating: number | null;
+            communication_rating: number | null;
+            comment: string;
+            created_at: Date;
+            user: {
+                id: string;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+            };
+            type: string;
+            session_title: string;
+        })[];
+        rating: string;
+        avg_rating: string;
+        total_reviews: number;
+        user: {
+            first_name: string | null;
+            last_name: string | null;
+            image: string | null;
+        };
         id: string;
-        email: string;
-        role: string;
-        password_hash: string | null;
-        first_name: string | null;
-        last_name: string | null;
-        image: string | null;
-        is_email_verified: boolean;
-        created_at: Date;
-        updated_at: Date;
-    }) | null>;
-    updateKyc(userId: string, body: {
-        status: 'approved' | 'rejected';
-    }): Promise<{
-        id: string;
-        created_at: Date;
-        updated_at: Date;
-        user_id: string;
         bio: string | null;
         headline: string | null;
-        kyc_status: string;
-        kyc_docs: string[];
         hourly_rate: import("@prisma/client-runtime-utils").Decimal;
-        is_active: boolean;
+        kyc_docs: string[];
         cover_image: string | null;
         profile_image: string | null;
         skills: string[];
@@ -385,16 +378,121 @@ export declare class UsersController {
         linkedin_url: string | null;
         twitter_url: string | null;
         youtube_url: string | null;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        kyc_status: string;
+        is_active: boolean;
         total_students: number;
         total_sessions: number;
-        avg_rating: import("@prisma/client-runtime-utils").Decimal;
+    }>;
+    getInstructor(id: string): Promise<{
+        courses: any[];
+        reviews: ({
+            id: string;
+            rating: number;
+            comment: string;
+            created_at: Date;
+            user: {
+                id: string;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+            };
+            course_title: string;
+            course_id: string;
+            type: string;
+        } | {
+            id: string;
+            rating: number;
+            teaching_style_rating: number | null;
+            communication_rating: number | null;
+            comment: string;
+            created_at: Date;
+            user: {
+                id: string;
+                first_name: string | null;
+                last_name: string | null;
+                image: string | null;
+            };
+            type: string;
+            session_title: string;
+        })[];
+        rating: string;
+        avg_rating: string;
+        total_reviews: number;
+        user: {
+            first_name: string | null;
+            last_name: string | null;
+            image: string | null;
+        };
+        id: string;
+        bio: string | null;
+        headline: string | null;
+        hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+        kyc_docs: string[];
+        cover_image: string | null;
+        profile_image: string | null;
+        skills: string[];
+        languages: string[];
+        experience_years: number | null;
+        location: string | null;
+        website_url: string | null;
+        linkedin_url: string | null;
+        twitter_url: string | null;
+        youtube_url: string | null;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        kyc_status: string;
+        is_active: boolean;
+        total_students: number;
+        total_sessions: number;
+    }>;
+    createInstructorReview(profileId: string, user: AuthUser, dto: CreateInstructorReviewDto): Promise<{
+        id: string;
+        rating: number;
+        comment: string;
+        created_at: Date;
+        user: {
+            id: string;
+            first_name: string | null;
+            last_name: string | null;
+            image: string | null;
+        };
+        course_title: string;
     }>;
     toggleFollow(profileId: string, user: AuthUser): Promise<{
         following: boolean;
-        followerCount: any;
+        followerCount: number;
     }>;
     getFollowStatus(profileId: string, req: any): Promise<{
         following: boolean;
-        followerCount: any;
+        followerCount: number;
+    }>;
+    updateKyc(userId: string, dto: UpdateKycStatusDto): Promise<{
+        id: string;
+        bio: string | null;
+        headline: string | null;
+        hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+        kyc_docs: string[];
+        cover_image: string | null;
+        profile_image: string | null;
+        skills: string[];
+        languages: string[];
+        experience_years: number | null;
+        location: string | null;
+        website_url: string | null;
+        linkedin_url: string | null;
+        twitter_url: string | null;
+        youtube_url: string | null;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
+        kyc_status: string;
+        is_active: boolean;
+        total_students: number;
+        total_sessions: number;
+        avg_rating: import("@prisma/client-runtime-utils").Decimal;
     }>;
 }

@@ -50,6 +50,17 @@ export class ContentService {
     private storageService: StorageService,
   ) {}
 
+  /** Proxy: check if a URL is a valid YouTube URL */
+  isValidYouTubeUrl(url: string): boolean {
+    return this.youtubeService.isValidYouTubeUrl(url);
+  }
+
+  /** Proxy: process a YouTube URL and return the encrypted video ID */
+  processYouTubeUrl(url: string) {
+    return this.youtubeService.processYouTubeUrl(url);
+  }
+
+
   /**
    * Process content based on type and return unified result
    */

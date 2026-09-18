@@ -1,15 +1,18 @@
+import { OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChapaService } from './chapa.service';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
-export declare class PaymentsService {
+export declare class PaymentsService implements OnModuleInit {
     private prisma;
     private chapa;
     private config;
     private notificationsQueue;
+    private payoutsQueue;
     private readonly logger;
     private readonly commissionPct;
-    constructor(prisma: PrismaService, chapa: ChapaService, config: ConfigService, notificationsQueue: Queue);
+    constructor(prisma: PrismaService, chapa: ChapaService, config: ConfigService, notificationsQueue: Queue, payoutsQueue: Queue);
+    onModuleInit(): Promise<void>;
     private checkExistingPaidTransaction;
     private generateTxRef;
     private parseUserName;
@@ -28,16 +31,11 @@ export declare class PaymentsService {
         checkoutUrl: string;
         txRef: string;
     }>;
-    private linkTransactionToEntity;
-    private updateTransactionStatus;
     handleChapaWebhook(rawBody: string, signature: string): Promise<{
         received: boolean;
-        status?: undefined;
-    } | {
-        received: boolean;
-        status: string;
+        status?: string;
     }>;
-    verifyPaymentStatus(txRef: string): Promise<{
+    verifyPaymentStatus(txRef: string, userId: string): Promise<{
         status: string;
         txRef: string;
         verified?: undefined;
@@ -50,25 +48,34 @@ export declare class PaymentsService {
         entityType: string | null;
         courseSlug: string | null;
     }>;
+    private linkTransactionToEntity;
+    private updateTransactionStatus;
     cleanupAbandonedTransactions(): Promise<{
-        cleaned: number;
+        abandoned: number;
     }>;
-    getMyTransactions(userId: string): Promise<{
-        id: string;
-        created_at: Date;
-        updated_at: Date;
-        user_id: string;
-        booking_id: string | null;
+    refundTransaction(txRef: string, requestedByUserId: string, amount?: number, reason?: string): Promise<{
         status: string;
-        currency: string;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        purchase_id: string | null;
-        help_session_id: string | null;
-        amount: import("@prisma/client-runtime-utils").Decimal;
-        platform_fee: import("@prisma/client-runtime-utils").Decimal;
-        provider: string;
-        provider_tx_ref: string | null;
-    }[]>;
+        message: string;
+        txRef: string;
+        amount: number;
+    }>;
+    getMyTransactions(userId: string, page?: number, limit?: number): Promise<{
+        data: {
+            id: string;
+            status: string;
+            created_at: Date;
+            currency: string;
+            booking_id: string | null;
+            help_session_id: string | null;
+            purchase_id: string | null;
+            amount: import("@prisma/client-runtime-utils").Decimal;
+            platform_fee: import("@prisma/client-runtime-utils").Decimal;
+            provider_tx_ref: string | null;
+        }[];
+        total: number;
+        page: number;
+        limit: number;
+    }>;
     getInstructorEarnings(instructorUserId: string): Promise<{
         grossEarned: number;
         platformFees: number;
@@ -78,11 +85,11 @@ export declare class PaymentsService {
         availableBalance: number;
         payouts: {
             id: string;
+            status: string;
             created_at: Date;
             instructor_id: string;
-            status: string;
-            notes: string | null;
             currency: string;
+            notes: string | null;
             amount: import("@prisma/client-runtime-utils").Decimal;
             method: string;
             transaction_id: string | null;
@@ -105,11 +112,11 @@ export declare class PaymentsService {
         account_details: string;
     }): Promise<{
         id: string;
+        status: string;
         created_at: Date;
         instructor_id: string;
-        status: string;
-        notes: string | null;
         currency: string;
+        notes: string | null;
         amount: import("@prisma/client-runtime-utils").Decimal;
         method: string;
         transaction_id: string | null;

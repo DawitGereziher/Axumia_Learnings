@@ -12,12 +12,17 @@ const bookings_controller_1 = require("./bookings.controller");
 const bookings_service_1 = require("./bookings.service");
 const notifications_module_1 = require("../notifications/notifications.module");
 const session_monitoring_module_1 = require("../session-monitoring/session-monitoring.module");
+const payments_module_1 = require("../payments/payments.module");
 let BookingsModule = class BookingsModule {
 };
 exports.BookingsModule = BookingsModule;
 exports.BookingsModule = BookingsModule = __decorate([
     (0, common_1.Module)({
-        imports: [notifications_module_1.NotificationsModule, (0, common_1.forwardRef)(() => session_monitoring_module_1.SessionMonitoringModule)],
+        imports: [
+            notifications_module_1.NotificationsModule,
+            (0, common_1.forwardRef)(() => session_monitoring_module_1.SessionMonitoringModule),
+            (0, common_1.forwardRef)(() => payments_module_1.PaymentsModule),
+        ],
         controllers: [bookings_controller_1.BookingsController],
         providers: [bookings_service_1.BookingsService],
         exports: [bookings_service_1.BookingsService],

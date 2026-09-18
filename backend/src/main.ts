@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 // D-auth module
 import {
@@ -77,7 +78,7 @@ async function bootstrap() {
   );
   // Payment initiation endpoints: 10 requests per minute per IP
   app.use(
-    '/api/payments',
+    '/payments',
     rateLimit({
       windowMs: 60 * 1000,
       max: 10,
@@ -93,10 +94,15 @@ async function bootstrap() {
 
   // ── Validation & Global Prefix ──────────────────────────────────────────────
   app.setGlobalPrefix('api', { exclude: ['auth', 'auth/(.*)', 'health'] });
-  app.useGlobalPipes(new ValidationPipe({ whitelist: false, transform: true }));
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+
 
   // ── D-auth: Mount auth routes at /auth ──────────────────────────────────────
-  const pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pgPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 5, // D-auth gets max 5 connections; rest reserved for Prisma
+  });
 
   const plugins: any[] = [];
   plugins.push(

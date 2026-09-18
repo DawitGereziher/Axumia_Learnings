@@ -5,10 +5,10 @@ export declare class ReviewCommentService {
     constructor(prisma: PrismaService);
     addComment(userId: string, reviewId: string, comment: string, parentId?: string): Promise<{
         id: string;
+        comment: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        comment: string;
         is_hidden: boolean;
         is_flagged: boolean;
         helpful_count: number;
@@ -18,10 +18,10 @@ export declare class ReviewCommentService {
     }>;
     updateComment(commentId: string, userId: string, comment: string): Promise<{
         id: string;
+        comment: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        comment: string;
         is_hidden: boolean;
         is_flagged: boolean;
         helpful_count: number;
@@ -43,10 +43,10 @@ export declare class ReviewCommentService {
         };
         replies: {
             id: string;
+            comment: string;
             created_at: Date;
             updated_at: Date;
             user_id: string;
-            comment: string;
             is_hidden: boolean;
             is_flagged: boolean;
             helpful_count: number;
@@ -56,10 +56,10 @@ export declare class ReviewCommentService {
         }[];
     } & {
         id: string;
+        comment: string;
         created_at: Date;
         updated_at: Date;
         user_id: string;
-        comment: string;
         is_hidden: boolean;
         is_flagged: boolean;
         helpful_count: number;

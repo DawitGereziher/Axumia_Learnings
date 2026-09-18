@@ -40,6 +40,11 @@ export declare class ContentService {
     private storageService;
     private readonly logger;
     constructor(youtubeService: YouTubeService, storageService: StorageService);
+    isValidYouTubeUrl(url: string): boolean;
+    processYouTubeUrl(url: string): {
+        videoId: string;
+        encryptedId: string;
+    } | null;
     processContent(contentType: ContentType, data: any, options?: any): Promise<ContentProcessingResult>;
     private processYouTubeContent;
     private processDocumentContent;

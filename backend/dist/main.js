@@ -45,6 +45,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const app_module_1 = require("./app.module");
+const all_exceptions_filter_1 = require("./common/filters/all-exceptions.filter");
 const D_auth_1 = require("../../D-auth");
 const pg_1 = require("pg");
 async function bootstrap() {
@@ -88,7 +89,7 @@ async function bootstrap() {
             message: 'Too many requests, please try again in 60 seconds',
         },
     }));
-    app.use('/api/payments', (0, express_rate_limit_1.default)({
+    app.use('/payments', (0, express_rate_limit_1.default)({
         windowMs: 60 * 1000,
         max: 10,
         standardHeaders: true,
@@ -100,8 +101,12 @@ async function bootstrap() {
         },
     }));
     app.setGlobalPrefix('api', { exclude: ['auth', 'auth/(.*)', 'health'] });
-    app.useGlobalPipes(new common_1.ValidationPipe({ whitelist: false, transform: true }));
-    const pgPool = new pg_1.Pool({ connectionString: process.env.DATABASE_URL });
+    app.useGlobalFilters(new all_exceptions_filter_1.AllExceptionsFilter());
+    app.useGlobalPipes(new common_1.ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+    const pgPool = new pg_1.Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 5,
+    });
     const plugins = [];
     plugins.push(new D_auth_1.GooglePlugin({
         clientID: process.env.GOOGLE_CLIENT_ID || 'mock-google-client-id',

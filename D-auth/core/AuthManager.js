@@ -1,3 +1,4 @@
+const crypto   = require('crypto');
 const express  = require('express');
 const passport = require('passport');
 const helmet   = require('helmet');
@@ -7,6 +8,10 @@ const rateLimit = require('express-rate-limit');
 const { generateToken, verifyToken } = require('../utils/jwt');
 const { generateRefreshToken }       = require('../utils/refreshToken');
 const emailService                   = require('../utils/email');
+
+// ─── One-time OAuth code store (in-memory, 30s TTL) ──────────────────────────
+// Codes are used ONCE and then deleted. This avoids putting tokens in URLs.
+const oauthCodeStore = new Map(); // code → { accessToken, refreshToken, expiresAt }
 
 // ─── Rate limiters ────────────────────────────────────────────────────────────
 const authLimiter = rateLimit({
@@ -145,7 +150,7 @@ class AuthManager {
 
         if (this.onSuccess) return this.onSuccess(userForToken, res, req);
 
-        // Default: issue tokens and redirect
+        // Issue tokens
         const accessToken  = generateToken(userForToken, this.jwtOptions);
         const refreshToken = generateRefreshToken();
 
@@ -153,8 +158,17 @@ class AuthManager {
             await this.adapter.saveRefreshToken(userForToken.id, refreshToken, refreshExpiry());
         }
 
+        // ── Secure redirect: one-time code instead of tokens in URL ──────────
+        // Code is valid for 30 seconds — only long enough for the browser redirect
+        const code = crypto.randomBytes(32).toString('hex');
+        oauthCodeStore.set(code, {
+            accessToken,
+            refreshToken,
+            expiresAt: Date.now() + 30_000, // 30 seconds
+        });
+
         const base = process.env.FRONTEND_URL || 'http://localhost:3000';
-        res.redirect(`${base}/oauth-success?token=${accessToken}&refresh=${refreshToken}`);
+        res.redirect(`${base}/oauth-success?code=${code}`);
     }
 
     // ── Route registration ────────────────────────────────────────────────────
@@ -165,6 +179,26 @@ class AuthManager {
         r.get('/health', (req, res) =>
             res.json({ status: 'ok', module: 'd-auth', timestamp: new Date().toISOString() })
         );
+
+        // ── POST /oauth/exchange ─────────────────────────────────────────────
+        // Exchanges a one-time code (from OAuth redirect) for real tokens.
+        // Code is valid for 30 seconds and deleted immediately after use.
+        r.post('/oauth/exchange', authLimiter, (req, res) => {
+            const { code } = req.body;
+            if (!code) return res.status(400).json({ error: 'code is required' });
+
+            const entry = oauthCodeStore.get(code);
+            oauthCodeStore.delete(code); // always delete — prevents replay
+
+            if (!entry || Date.now() > entry.expiresAt) {
+                return res.status(401).json({ error: 'OAuth code invalid or expired' });
+            }
+
+            return res.json({
+                accessToken:  entry.accessToken,
+                refreshToken: entry.refreshToken,
+            });
+        });
 
         // ── POST /register ───────────────────────────────────────────────────
         r.post('/register', authLimiter, async (req, res) => {
@@ -243,14 +277,32 @@ class AuthManager {
 
             try {
                 const record = await this.adapter.findRefreshToken(refreshToken);
-                if (!record || new Date(record.expires_at) < new Date()) {
-                    if (record) await this.adapter.deleteRefreshToken(refreshToken);
-                    return res.status(401).json({ error: 'Refresh token invalid or expired' });
+
+                // Token not found — could mean it was already rotated (theft detection)
+                if (!record) {
+                    return res.status(401).json({ error: 'Refresh token invalid or already used' });
                 }
+
+                // Token found but expired
+                if (new Date(record.expires_at) < new Date()) {
+                    await this.adapter.deleteRefreshToken(refreshToken);
+                    return res.status(401).json({ error: 'Refresh token expired' });
+                }
+
                 const user = await this.adapter.getUserById(record.user_id);
                 if (!user) return res.status(401).json({ error: 'User not found' });
 
-                res.json({ accessToken: generateToken(user, this.jwtOptions) });
+                // ── Rotation: delete old token, issue fresh one ───────────────
+                await this.adapter.deleteRefreshToken(refreshToken);
+                const newRefreshToken = generateRefreshToken();
+                if (this.adapter?.saveRefreshToken) {
+                    await this.adapter.saveRefreshToken(user.id, newRefreshToken, refreshExpiry());
+                }
+
+                res.json({
+                    accessToken: generateToken(user, this.jwtOptions),
+                    refreshToken: newRefreshToken,
+                });
             } catch (err) {
                 console.error('[D-auth] Refresh error:', err);
                 res.status(500).json({ error: 'Server error' });
