@@ -14,6 +14,7 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
   final _subjectController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _budgetController = TextEditingController();
+  final _hoursController = TextEditingController(text: '1.0');
   bool _isSubmitting = false;
 
   @override
@@ -21,6 +22,7 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
     _subjectController.dispose();
     _descriptionController.dispose();
     _budgetController.dispose();
+    _hoursController.dispose();
     super.dispose();
   }
 
@@ -28,6 +30,7 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
     final subject = _subjectController.text.trim();
     final description = _descriptionController.text.trim();
     final budget = double.tryParse(_budgetController.text) ?? 0.0;
+    final hours = double.tryParse(_hoursController.text) ?? 1.0;
 
     if (subject.isEmpty || description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -41,6 +44,7 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
           subject: subject,
           description: description,
           budget: budget,
+          estimatedHours: hours,
         );
 
     if (mounted) {
@@ -113,16 +117,45 @@ class _CreateHelpRequestScreenState extends State<CreateHelpRequestScreen> {
               ),
               const SizedBox(height: 18),
 
-              // Budget
-              Text('Budget (ETB) — optional', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _budgetController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. 500 (leave empty for flexible)',
-                  prefixIcon: Icon(Icons.attach_money_rounded, size: 20),
-                ),
+              // Budget & Hours Row
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Hourly Budget (ETB)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _budgetController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            hintText: 'e.g. 200',
+                            prefixIcon: Icon(Icons.attach_money_rounded, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Estimated Hours', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _hoursController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            hintText: 'e.g. 1.5',
+                            prefixIcon: Icon(Icons.schedule_rounded, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 28),
 

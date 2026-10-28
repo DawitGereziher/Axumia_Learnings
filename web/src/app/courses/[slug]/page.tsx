@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { authFetch } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { initiateUnifiedCheckout } from '@/lib/checkout';
 import ReviewStats from '@/components/reviews/ReviewStats';
 import ReviewList from '@/components/reviews/ReviewList';
 import ReviewForm from '@/components/reviews/ReviewForm';
@@ -32,6 +33,7 @@ import {
   Download,
   AlertCircle,
   X,
+  Heart,
 } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -78,6 +80,8 @@ export default function CourseSlugPage({ params }: { params: Promise<{ slug: str
   const [buying, setBuying] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userHasReviewed, setUserHasReviewed] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [togglingWishlist, setTogglingWishlist] = useState(false);
 
   // Video player modal / inline state
   const [activeLesson, setActiveLesson] = useState<any>(null);
@@ -119,11 +123,40 @@ export default function CourseSlugPage({ params }: { params: Promise<{ slug: str
             if (d) setPurchased(d.purchased);
           })
           .catch(() => {});
+
+        authFetch('/api/courses/wishlist/mine')
+          .then(r => r.ok ? r.json() : [])
+          .then((items: any[]) => {
+            if (Array.isArray(items)) {
+              setWishlisted(items.some((c: any) => c.id === courseId || c.slug === slug));
+            }
+          })
+          .catch(() => {});
       }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    if (!course?.id) return;
+    const courseId = uuidToString(course.id);
+    setTogglingWishlist(true);
+    try {
+      const res = await authFetch(`/api/courses/${courseId}/wishlist`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setWishlisted(data.wishlisted);
+      }
+    } catch {}
+    finally {
+      setTogglingWishlist(false);
     }
   };
 
@@ -156,23 +189,23 @@ export default function CourseSlugPage({ params }: { params: Promise<{ slug: str
       const courseId = uuidToString(course.id);
       const isFree = Number(course.price) === 0;
 
-      if (isFree) {
-        const res = await authFetch(`/api/courses/${courseId}/enroll-free`, { method: 'POST' });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Enrollment failed');
-        setPurchased(true);
-        setBuying(false);
-        return;
-      }
-
-      const res = await authFetch(`/api/payments/courses/${courseId}/checkout`, { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Payment initiation failed');
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      }
+      await initiateUnifiedCheckout({
+        entityType: 'course',
+        entityId: courseId,
+        isFree,
+        onSuccess: (res) => {
+          if (res.enrolledDirectly) {
+            setPurchased(true);
+            setBuying(false);
+          }
+        },
+        onError: (err) => {
+          setError(err.message);
+          setBuying(false);
+        },
+      });
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Payment initiation failed');
       setBuying(false);
     }
   };
@@ -848,6 +881,30 @@ export default function CourseSlugPage({ params }: { params: Promise<{ slug: str
                         style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', fontWeight: 700 }}
                       >
                         {buying ? 'Processing…' : Number(course.price) === 0 ? 'Enroll Free Now' : 'Enroll Now'}
+                      </button>
+
+                      <button
+                        onClick={handleToggleWishlist}
+                        disabled={togglingWishlist}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          fontSize: '0.88rem',
+                          fontWeight: 600,
+                          borderRadius: 999,
+                          background: wishlisted ? 'rgba(244,63,94,0.1)' : 'var(--bg-surface)',
+                          border: wishlisted ? '1px solid rgba(244,63,94,0.35)' : '1px solid var(--card-border)',
+                          color: wishlisted ? '#f43f5e' : 'var(--text-primary)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <Heart size={16} fill={wishlisted ? '#f43f5e' : 'none'} color={wishlisted ? '#f43f5e' : 'currentColor'} />
+                        <span>{wishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
                       </button>
                     </div>
                   )}

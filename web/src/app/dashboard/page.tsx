@@ -26,7 +26,9 @@ import {
   LayoutDashboard,
   ChevronRight,
   Sparkles,
+  CreditCard,
 } from 'lucide-react';
+import { initiateUnifiedCheckout } from '@/lib/checkout';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -217,7 +219,26 @@ function StudentDashboardView({ purchases, bookings, helpRequests, t }: any) {
                   {b.notes && <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: 4 }}>Note: {b.notes}</div>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span className="badge badge-accent" style={{ textTransform: 'capitalize' }}>{b.status}</span>
+                  {b.status === 'awaiting_payment' ? (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await initiateUnifiedCheckout({
+                            entityType: 'booking',
+                            entityId: b.id,
+                          });
+                        } catch (err: any) {
+                          alert(err.message || 'Payment initiation failed');
+                        }
+                      }}
+                      className="btn-primary"
+                      style={{ padding: '0.45rem 1rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+                    >
+                      <CreditCard size={14} /> Pay &amp; Confirm
+                    </button>
+                  ) : (
+                    <span className="badge badge-accent" style={{ textTransform: 'capitalize' }}>{b.status}</span>
+                  )}
                   {b.meeting_link && (
                     <a href={b.meeting_link} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.8rem' }}>
                       Join Meeting 📹

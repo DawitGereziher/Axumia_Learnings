@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export interface ChapaInitResponse {
   status: string;
@@ -44,7 +45,7 @@ export class ChapaService {
       tx_ref: dto.tx_ref,
       callback_url: dto.callback_url,
       return_url: dto.return_url,
-      description: dto.description || 'Ethio Learn payment',
+      description: dto.description || 'Axumia Learning payment',
     };
 
     const res = await fetch(`${this.baseUrl}/transaction/initialize`, {
@@ -104,12 +105,64 @@ export class ChapaService {
     return res.json();
   }
 
-  /** Verify webhook signature — Chapa sends x-chapa-signature header */
-  verifyWebhookSignature(payload: string, signature: string): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const crypto = require('crypto');
-    const secret = this.config.get('CHAPA_WEBHOOK_SECRET') || '';
-    const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-    return expected === signature;
+  /** Verify webhook signature using timing-safe HMAC comparison */
+  verifyWebhookSignature(payload: string | Buffer, signature: string): boolean {
+    const secret =
+      this.config.get<string>('CHAPA_WEBHOOK_SECRET') ||
+      this.config.get<string>('CHAPA_SECRET_KEY') ||
+      this.secretKey;
+
+    if (!secret) {
+      this.logger.error('Neither CHAPA_WEBHOOK_SECRET nor CHAPA_SECRET_KEY is configured. Webhook verification failed.');
+      return false;
+    }
+    if (!signature) {
+      this.logger.warn('Webhook received with missing signature header');
+      return false;
+    }
+
+    try {
+      const cleanSig = signature.trim();
+
+      // 1. Standard x-chapa-signature check: HMAC SHA256 of payload signed with secret
+      const payloadHmac = createHmac('sha256', secret);
+      payloadHmac.update(payload);
+      const expectedPayloadHex = payloadHmac.digest('hex');
+
+      const expectedPayloadBuf = Buffer.from(expectedPayloadHex, 'utf8');
+      const signatureBuf = Buffer.from(cleanSig, 'utf8');
+
+      if (
+        expectedPayloadBuf.length === signatureBuf.length &&
+        timingSafeEqual(expectedPayloadBuf, signatureBuf)
+      ) {
+        return true;
+      }
+
+      // 2. Chapa-signature specification: HMAC SHA256 of secret key itself
+      const secretHmac = createHmac('sha256', secret);
+      secretHmac.update(secret);
+      const expectedSecretHex = secretHmac.digest('hex');
+      const expectedSecretBuf = Buffer.from(expectedSecretHex, 'utf8');
+
+      if (
+        expectedSecretBuf.length === signatureBuf.length &&
+        timingSafeEqual(expectedSecretBuf, signatureBuf)
+      ) {
+        return true;
+      }
+
+      // 3. Dev/test mock fallback (NEVER in production)
+      const isProd = this.config.get('NODE_ENV') === 'production';
+      if (!isProd && (secret.includes('mock') || secret.includes('change-me'))) {
+        this.logger.debug('[Dev-Mock] Permitting webhook verification in mock mode');
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      this.logger.error('Error during webhook signature verification:', err);
+      return false;
+    }
   }
 }

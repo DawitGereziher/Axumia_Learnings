@@ -23,6 +23,7 @@ import { DAuthGuard } from '../common/guards/d-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorator';
+import { verifyToken } from '../../../D-auth/utils/jwt';
 
 import { CoursesService } from './courses.service';
 import { LessonsService } from './lessons.service';
@@ -69,9 +70,19 @@ export class CoursesController {
   }
 
   @Get(':slug')
-  @ApiOperation({ summary: 'Get course details by slug or ID' })
-  findOne(@Param('slug') slug: string) {
-    return this.courses.findOne(slug);
+  @ApiOperation({ summary: 'Get course details by slug or ID (sensitive media URLs redacted for non-purchasers)' })
+  findOne(@Param('slug') slug: string, @Req() req: any) {
+    const authHeader = req.headers?.['authorization'] as string | undefined;
+    let userId: string | undefined;
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const decoded = verifyToken(authHeader.slice(7));
+        userId = decoded?.id;
+      } catch {
+        // visitor is anonymous / guest
+      }
+    }
+    return this.courses.findOne(slug, userId);
   }
 
   // ── Instructor management ─────────────────────────────────────────────────────

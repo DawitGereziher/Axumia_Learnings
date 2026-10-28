@@ -23,7 +23,8 @@ import {
   JOB_BOOKING_REMINDER_1H,
 } from '../queue/queue.constants';
 
-const ZOOM_MEET_PATTERN = /^https:\/\/(zoom\.us\/j\/|meet\.google\.com\/)/;
+const ZOOM_MEET_PATTERN =
+  /^https:\/\/([a-zA-Z0-9-]+\.)?(zoom\.us\/(j|my)\/|meet\.google\.com\/|teams\.microsoft\.com\/)/;
 
 @Injectable()
 export class BookingsService {
@@ -111,38 +112,49 @@ export class BookingsService {
     if (type === '1-on-many') { multiplier = 0.6; maxParticipants = 5; }
     else if (type === 'group-class') { multiplier = 0.4; maxParticipants = 20; }
 
-    const currentCap = (slot as any).current_participants || 0;
     const maxCap = Math.max((slot as any).max_participants || 1, maxParticipants);
-    if (slot.is_booked || currentCap >= maxCap) {
-      throw new BadRequestException('Slot is fully booked');
-    }
-
     const baseRate = Number(slot.instructor?.hourly_rate || 500);
     const pricePaid = +(baseRate * multiplier).toFixed(2);
-    const isNowFull = currentCap + 1 >= maxCap;
 
-    // Create booking as 'awaiting_payment' — instructor is NOT notified yet
-    const [booking] = await this.prisma.$transaction([
-      this.prisma.booking.create({
+    // Atomically reserve slot and create booking — safe against concurrency race conditions
+    const booking = await this.prisma.$transaction(async (tx) => {
+      const reserved = await tx.availabilitySlot.updateMany({
+        where: {
+          id: slotId,
+          is_booked: false,
+          current_participants: { lt: maxCap },
+        },
+        data: {
+          current_participants: { increment: 1 },
+          max_participants: maxCap,
+        },
+      });
+
+      if (reserved.count === 0) {
+        throw new BadRequestException('Slot is fully booked or no longer available');
+      }
+
+      // Check if slot has reached max capacity now
+      const freshSlot = await tx.availabilitySlot.findUnique({ where: { id: slotId } });
+      if (freshSlot && freshSlot.current_participants >= freshSlot.max_participants) {
+        await tx.availabilitySlot.update({
+          where: { id: slotId },
+          data: { is_booked: true },
+        });
+      }
+
+      return tx.booking.create({
         data: {
           student_id: studentId,
           instructor_id: slot.instructor_id,
           slot_id: slotId,
           session_type: type,
           price_paid: pricePaid,
-          status: 'awaiting_payment', // ← only becomes 'pending' after webhook
+          status: 'awaiting_payment', // ← only becomes 'pending' after payment confirmation
           notes: notes || null,
         },
-      }),
-      this.prisma.availabilitySlot.update({
-        where: { id: slotId },
-        data: {
-          current_participants: { increment: 1 },
-          max_participants: maxCap,
-          is_booked: isNowFull,
-        },
-      }),
-    ]);
+      });
+    });
 
     // Immediately initiate payment — student must pay to confirm reservation
     const student = await this.prisma.user.findUnique({ where: { id: studentId } });
@@ -199,7 +211,9 @@ export class BookingsService {
   /** Instructor: confirm booking and add meeting link */
   async confirmBooking(bookingId: string, instructorUserId: string, meetingLink: string) {
     if (!ZOOM_MEET_PATTERN.test(meetingLink)) {
-      throw new BadRequestException('Meeting link must be a valid Zoom or Google Meet URL');
+      throw new BadRequestException(
+        'Meeting link must be a valid Zoom, Google Meet, or Microsoft Teams URL',
+      );
     }
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },

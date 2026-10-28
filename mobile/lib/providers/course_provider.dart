@@ -93,8 +93,58 @@ class CourseProvider extends ChangeNotifier {
     return null;
   }
 
+  List<CourseModel> _wishlist = [];
+  bool _isLoadingWishlist = false;
+
+  List<CourseModel> get wishlist => _wishlist;
+  bool get isLoadingWishlist => _isLoadingWishlist;
+
+  bool isWishlisted(String courseId) => _wishlist.any((c) => c.id == courseId);
+
+  Future<void> fetchWishlist() async {
+    _isLoadingWishlist = true;
+    notifyListeners();
+
+    try {
+      final res = await ApiClient.get(ApiConstants.myWishlist);
+      if (res.isSuccess && res.data != null) {
+        final list = res.data is List ? res.data : res.data['data'] ?? [];
+        _wishlist = (list as List).map((e) => CourseModel.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    finally {
+      _isLoadingWishlist = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> toggleWishlist(CourseModel course) async {
+    final alreadyWishlisted = isWishlisted(course.id);
+    if (alreadyWishlisted) {
+      _wishlist.removeWhere((c) => c.id == course.id);
+      notifyListeners();
+      final res = await ApiClient.delete(ApiConstants.courseWishlist(course.id));
+      if (!res.isSuccess) {
+        _wishlist.add(course);
+        notifyListeners();
+        return false;
+      }
+      return true;
+    } else {
+      _wishlist.add(course);
+      notifyListeners();
+      final res = await ApiClient.post(ApiConstants.courseWishlist(course.id));
+      if (!res.isSuccess) {
+        _wishlist.removeWhere((c) => c.id == course.id);
+        notifyListeners();
+        return false;
+      }
+      return true;
+    }
+  }
+
   Future<bool> enrollFree(String courseId) async {
-    final res = await ApiClient.post('${ApiConstants.courses}/$courseId/enroll-free');
+    final res = await ApiClient.post(ApiConstants.enrollFree(courseId));
     if (res.isSuccess) {
       await fetchEnrolledCourses();
       return true;

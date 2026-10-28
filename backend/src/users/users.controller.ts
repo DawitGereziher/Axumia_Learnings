@@ -32,6 +32,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import {
   SubmitInstructorProfileDto,
   UpdateRichInstructorProfileDto,
+  SubmitKycApplicationDto,
   CreateInstructorReviewDto,
   UpdateKycStatusDto,
 } from './dto/instructor-profile.dto';
@@ -131,6 +132,16 @@ export class UsersController {
     @Body() dto: SubmitInstructorProfileDto,
   ) {
     return this.usersService.submitInstructorProfile(user.id, dto);
+  }
+
+  @Post('me/kyc')
+  @UseGuards(DAuthGuard)
+  @ApiOperation({ summary: 'Submit comprehensive instructor KYC application (Fayda FAN, ID photos, selfie, liveness)' })
+  async submitKyc(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: SubmitKycApplicationDto,
+  ) {
+    return this.usersService.submitKycApplication(user.id, dto);
   }
 
   @Patch('me/instructor-profile/rich')

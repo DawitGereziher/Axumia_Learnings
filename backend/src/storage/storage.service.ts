@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
@@ -163,7 +163,12 @@ export class StorageService {
    */
   async getSignedUrl(key: string): Promise<string> {
     if (!this.isConfigured('private')) {
-      this.logger.warn(`[StorageService] R2 private bucket not configured — mocking signed URL`);
+      const isProd = this.config.get('NODE_ENV') === 'production';
+      if (isProd) {
+        this.logger.error(`[StorageService] CRITICAL: R2 private bucket not configured in production. Cannot serve ${key}`);
+        throw new ServiceUnavailableException('Private content storage is currently unavailable');
+      }
+      this.logger.warn(`[StorageService] R2 private bucket not configured — returning dev preview for ${key}`);
       return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
     }
 

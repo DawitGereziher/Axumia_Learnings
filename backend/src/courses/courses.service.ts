@@ -39,7 +39,7 @@ export class CoursesService {
     });
 
     if (!profile) {
-      if (user?.role === UserRole.ADMIN || user?.role === UserRole.INSTRUCTOR) {
+      if (user?.role === UserRole.ADMIN) {
         profile = await this.prisma.instructorProfile.create({
           data: {
             user_id: instructorUserId,
@@ -50,7 +50,7 @@ export class CoursesService {
       } else {
         throw new ForbiddenException('You must have an approved instructor profile to create courses');
       }
-    } else if (!profile.is_active) {
+    } else if (!profile.is_active || profile.kyc_status !== KycStatus.APPROVED) {
       if (user?.role === UserRole.ADMIN) {
         profile = await this.prisma.instructorProfile.update({
           where: { id: profile.id },
@@ -204,7 +204,7 @@ export class CoursesService {
 
   // ── Detail ────────────────────────────────────────────────────────────────────
 
-  async findOne(slug: string) {
+  async findOne(slug: string, requestingUserId?: string) {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
     const where: Prisma.CourseWhereInput = isUuid ? { OR: [{ slug }, { id: slug }] } : { slug };
 
@@ -214,7 +214,23 @@ export class CoursesService {
         instructor: { include: { user: true } },
         category: true,
         sections: { orderBy: { position: 'asc' } },
-        lessons: { orderBy: { position: 'asc' }, include: { materials: true } },
+        lessons: {
+          orderBy: { position: 'asc' },
+          include: {
+            materials: true,
+            quiz: {
+              select: {
+                id: true,
+                title: true,
+                pass_score: true,
+                time_limit: true,
+                max_attempts: true,
+                is_gating: true,
+                _count: { select: { questions: true } },
+              },
+            },
+          },
+        },
         courseReviews: {
           where: { is_hidden: false },
           include: { user: { select: { id: true, first_name: true, last_name: true, image: true } } },
@@ -226,11 +242,56 @@ export class CoursesService {
     });
     if (!course) throw new NotFoundException('Course not found');
 
+    // Determine access level: is user the instructor, an admin, or an enrolled student?
+    let hasFullAccess = false;
+    if (requestingUserId) {
+      if (course.instructor?.user_id === requestingUserId) {
+        hasFullAccess = true;
+      } else {
+        const user = await this.prisma.user.findUnique({
+          where: { id: requestingUserId },
+          select: { role: true },
+        });
+        if (user?.role === 'admin') {
+          hasFullAccess = true;
+        } else {
+          const purchase = await this.prisma.coursePurchase.findUnique({
+            where: {
+              user_id_course_id: { user_id: requestingUserId, course_id: course.id },
+            },
+          });
+          if (purchase) {
+            hasFullAccess = true;
+          }
+        }
+      }
+    }
+
+    // Sanitize non-preview lessons and materials to prevent content theft
+    const sanitizedLessons = (course.lessons || []).map((lesson) => {
+      if (hasFullAccess || lesson.is_free_preview) {
+        return lesson;
+      }
+      return {
+        ...lesson,
+        video_key: null,
+        hls_key: null,
+        youtube_video_id: null,
+        external_url: null,
+        embed_code: null,
+        materials: (lesson.materials || []).map((mat) => {
+          if (mat.is_free_preview) return mat;
+          return { ...mat, file_url: null };
+        }),
+      };
+    });
+
     const ratings = course.courseReviews?.map((cr) => cr.overall_rating) ?? [];
     const avgRating = ratings.length > 0 ? ratings.reduce((a, r) => a + r, 0) / ratings.length : 0;
 
     return {
       ...course,
+      lessons: sanitizedLessons,
       avgRating: Math.round(avgRating * 10) / 10,
       _count: { ...course._count, reviews: ratings.length },
     };
@@ -295,6 +356,10 @@ export class CoursesService {
 
     if (course.status === CourseStatus.PUBLISHED) {
       return { message: 'Course is already published', course };
+    }
+
+    if (!isAdmin && (course.instructor.kyc_status !== KycStatus.APPROVED || !course.instructor.is_active)) {
+      throw new ForbiddenException('Your instructor profile must be approved before publishing courses');
     }
 
     // Minimum publishability requirements

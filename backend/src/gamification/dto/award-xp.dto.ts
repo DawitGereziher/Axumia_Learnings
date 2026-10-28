@@ -8,13 +8,16 @@ export class AwardXPDto {
     | 'quiz_perfect'
     | 'course_complete'
     | 'session_booked'
-    | 'daily_checkin';
+    | 'daily_checkin'
+    | 'streak_bonus';
 
   // Optional context — used for duplicate prevention and analytics
   metadata?: {
     lesson_id?: string;
     course_id?: string;
     quiz_id?: string;
+    booking_id?: string;
     score?: number;      // quiz score percentage (used to detect quiz_perfect)
+    [key: string]: any;
   };
 }

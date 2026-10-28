@@ -100,19 +100,40 @@ export class AdminService {
   }
 
   // ── KYC ───────────────────────────────────────────────────────────────────
-  async getPendingKyc() {
+  async getPendingKyc(statusFilter?: string) {
+    let whereClause: any = { kyc_status: { in: ['submitted', 'pending', 'in_review'] } };
+    if (statusFilter && statusFilter !== 'all') {
+      whereClause = { kyc_status: statusFilter };
+    } else if (statusFilter === 'all') {
+      whereClause = {};
+    }
+
     const profiles = await this.prisma.instructorProfile.findMany({
-      where: { kyc_status: { in: ['submitted', 'pending'] } },
+      where: whereClause,
       include: {
-        user: { select: { email: true, first_name: true, last_name: true } },
+        user: { select: { id: true, email: true, first_name: true, last_name: true, image: true, created_at: true } },
       },
-      orderBy: { updated_at: 'asc' },
+      orderBy: { updated_at: 'desc' },
     });
 
     return await Promise.all(
       profiles.map(async (p) => {
+        const kycData = (p.kyc_data as any) || {};
+
+        const docKeys = Array.from(
+          new Set(
+            [
+              kycData.id_front_doc,
+              kycData.id_back_doc,
+              kycData.selfie_doc,
+              kycData.certificate_doc,
+              ...(p.kyc_docs || []),
+            ].filter(Boolean) as string[],
+          ),
+        );
+
         const signedKycDocs = await Promise.all(
-          (p.kyc_docs || []).map(async (docKey) => {
+          docKeys.map(async (docKey) => {
             if (docKey.startsWith('http://') || docKey.startsWith('https://')) {
               return { key: docKey, url: docKey };
             }
@@ -124,7 +145,34 @@ export class AdminService {
             }
           }),
         );
-        return { ...p, signedKycDocs };
+
+        const docPreviews: Record<string, string | null> = {};
+        for (const [field, key] of Object.entries({
+          id_front: kycData.id_front_doc,
+          id_back: kycData.id_back_doc,
+          selfie: kycData.selfie_doc,
+          certificate: kycData.certificate_doc,
+        })) {
+          if (!key) continue;
+          if (typeof key === 'string' && (key.startsWith('http://') || key.startsWith('https://'))) {
+            docPreviews[field] = key;
+          } else if (typeof key === 'string') {
+            try {
+              docPreviews[field] = await this.storage.getSignedUrl(key);
+            } catch {
+              docPreviews[field] = null;
+            }
+          }
+        }
+
+        return {
+          ...p,
+          kyc_data: kycData,
+          fayda_fan_number: p.fayda_fan_number || kycData.fayda_fan_number,
+          tin_number: p.tin_number || kycData.tin_number,
+          signedKycDocs,
+          docPreviews,
+        };
       }),
     );
   }
@@ -133,23 +181,40 @@ export class AdminService {
     profileId: string,
     status: 'approved' | 'rejected',
     notes?: string,
+    adminId?: string,
   ) {
     const profile = await this.prisma.instructorProfile.findUnique({
       where: { id: profileId },
     });
     if (!profile) throw new NotFoundException('Instructor profile not found');
 
-    const data: any = { kyc_status: status };
-    if (status === 'approved') data.is_active = true;
-    if (notes)
-      data.bio = profile.bio
-        ? `${profile.bio}\n\n[Admin note: ${notes}]`
-        : notes;
+    const data: any = {
+      kyc_status: status,
+      kyc_reviewed_at: new Date(),
+      kyc_reviewed_by: adminId || 'admin',
+    };
+    if (status === 'approved') {
+      data.is_active = true;
+      data.kyc_rejection_reason = null;
+    }
+    if (status === 'rejected') {
+      data.is_active = false;
+      data.kyc_rejection_reason = notes || 'Submitted verification documents did not meet requirements.';
+    }
 
-    return this.prisma.instructorProfile.update({
+    const updated = await this.prisma.instructorProfile.update({
       where: { id: profileId },
       data,
     });
+
+    if (status === 'approved') {
+      await this.prisma.user.update({
+        where: { id: profile.user_id },
+        data: { role: 'instructor' },
+      }).catch(() => {});
+    }
+
+    return updated;
   }
 
   // ── Payouts ───────────────────────────────────────────────────────────────

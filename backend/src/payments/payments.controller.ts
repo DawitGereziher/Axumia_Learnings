@@ -83,10 +83,18 @@ export class PaymentsController {
   @ApiOperation({ summary: '[Webhook] Chapa payment confirmation — always returns 200' })
   async chapaWebhook(
     @Req() req: Request,
-    @Headers('x-chapa-signature') signature: string,
+    @Headers('x-chapa-signature') xSignature?: string,
+    @Headers('chapa-signature') chapaSignature?: string,
   ) {
-    const rawBody = JSON.stringify(req.body);
-    return this.payments.handleChapaWebhook(rawBody, signature);
+    const rawBuffer = (req as any).rawBody as Buffer | undefined;
+    const rawPayload = rawBuffer ?? JSON.stringify(req.body ?? {});
+    const signature =
+      xSignature ||
+      chapaSignature ||
+      (req.headers['x-chapa-signature'] as string) ||
+      (req.headers['chapa-signature'] as string) ||
+      '';
+    return this.payments.handleChapaWebhook(rawPayload, signature);
   }
 
   // ── Transaction history ───────────────────────────────────────────────────────

@@ -224,7 +224,17 @@ export class EnrollmentService {
           lessons: {
             orderBy: { position: 'asc' },
             where: { is_published: true },
-            include: { materials: true },
+            include: {
+              materials: true,
+              quiz: {
+                select: {
+                  id: true,
+                  title: true,
+                  pass_score: true,
+                  is_gating: true,
+                },
+              },
+            },
           },
         },
       }),

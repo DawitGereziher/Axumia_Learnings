@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/payment_service.dart';
 import '../../models/course_model.dart';
 import '../../providers/course_provider.dart';
 import '../learning/lesson_player_screen.dart';
+import '../payment/chapa_checkout_screen.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final String slugOrId;
@@ -39,34 +41,68 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   Future<void> _handleEnroll() async {
     if (_course == null) return;
 
+    setState(() => _isEnrolling = true);
+
     if (_course!.isFree) {
-      setState(() => _isEnrolling = true);
-      final success = await context.read<CourseProvider>().enrollFree(_course!.id);
+      final res = await PaymentService.initiateCheckout(
+        entityType: PayableEntityType.course,
+        entityId: _course!.id,
+        isFree: true,
+      );
       if (mounted) {
         setState(() => _isEnrolling = false);
-        if (success) {
+        if (res.isSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Successfully enrolled!'), backgroundColor: AppColors.accentGreen),
           );
-          // Navigate to lesson player with first lesson
-          final firstLesson = _course!.sections.isNotEmpty && _course!.sections.first.lessons.isNotEmpty
-              ? _course!.sections.first.lessons.first
-              : null;
-          if (firstLesson != null) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => LessonPlayerScreen(course: _course!, currentLesson: firstLesson),
-              ),
-            );
-          }
+          _navigateToClassroom();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(res.errorMessage ?? 'Enrollment failed'), backgroundColor: AppColors.error),
+          );
         }
       }
     } else {
       // Chapa Paid Checkout
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Checkout for ${_course!.price.toStringAsFixed(0)} ETB via Chapa'),
-          backgroundColor: AppColors.primary,
+      final res = await PaymentService.initiateCheckout(
+        entityType: PayableEntityType.course,
+        entityId: _course!.id,
+        isFree: false,
+      );
+
+      if (mounted) {
+        setState(() => _isEnrolling = false);
+        if (res.isSuccess && res.checkoutUrl != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ChapaCheckoutScreen(
+                checkoutUrl: res.checkoutUrl!,
+                txRef: res.txRef ?? '',
+                itemTitle: _course!.title,
+                entityType: PayableEntityType.course,
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res.errorMessage ?? 'Payment initiation failed. Please try again.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _navigateToClassroom() {
+    final firstLesson = _course!.sections.isNotEmpty && _course!.sections.first.lessons.isNotEmpty
+        ? _course!.sections.first.lessons.first
+        : null;
+    if (firstLesson != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => LessonPlayerScreen(course: _course!, currentLesson: firstLesson),
         ),
       );
     }
@@ -99,6 +135,23 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           SliverAppBar(
             expandedHeight: 220,
             pinned: true,
+            actions: [
+              Consumer<CourseProvider>(
+                builder: (context, prov, _) {
+                  final isSaved = prov.isWishlisted(_course!.id);
+                  return IconButton(
+                    icon: Icon(
+                      isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      color: isSaved ? AppColors.accentRose : Colors.white,
+                    ),
+                    tooltip: isSaved ? 'Remove from wishlist' : 'Add to wishlist',
+                    onPressed: () {
+                      prov.toggleWishlist(_course!);
+                    },
+                  );
+                },
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: _course!.fullThumbnailUrl != null
                   ? Image.network(

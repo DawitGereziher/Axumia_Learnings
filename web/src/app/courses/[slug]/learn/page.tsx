@@ -65,10 +65,16 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
   const [activeTab, setActiveTab]       = useState<TabId>('overview');
   const [completionToast, setCompletionToast] = useState('');
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null);
+  const [togglingComplete, setTogglingComplete] = useState(false);
+  const nextLessonRef = useRef<CourseLesson | null>(null);
 
   // Certificate
   const [claimingCert, setClaimingCert] = useState(false);
   const [certResult, setCertResult]     = useState<any>(null);
+  const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+  const [copiedLink, setCopiedLink]     = useState(false);
+  const hasTriggeredCelebration         = useRef(false);
 
   // Notes (localStorage per lesson)
   const [noteText, setNoteText]         = useState('');
@@ -127,8 +133,12 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
         if (progRes.ok) {
           const prog: CourseProgress = await progRes.json();
           setProgress(prog);
+
+          const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const targetLessonId = urlParams?.get('lesson');
+          const matchingLesson = targetLessonId ? prog.lessons?.find(l => l.id === targetLessonId) : null;
           const firstUnfinished = prog.lessons?.find(l => !prog.progressMap[l.id]?.completed);
-          const defaultLesson   = firstUnfinished || prog.lessons?.[0];
+          const defaultLesson   = matchingLesson || firstUnfinished || prog.lessons?.[0];
           if (defaultLesson) doLoadLesson(defaultLesson, courseId, prog.purchaseId);
         }
       } catch (e: any) {
@@ -197,7 +207,14 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
     setVideoUrl('');
     setLoadingVideo(true);
     clearHeartbeat();
+    setAutoAdvanceCountdown(null);
     setActiveTab('overview');
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('lesson', lesson.id);
+      window.history.replaceState({}, '', url.toString());
+    }
 
     const pid = purchaseId || progressRef.current?.purchaseId || '';
     const cid = courseId   || courseRef.current?.id || '';
@@ -249,8 +266,12 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+      } else {
+        alert(data.message || 'Could not fetch download link for this material.');
       }
-    } catch { /* silent */ }
+    } catch {
+      alert('Network error while requesting material download.');
+    }
     setDownloadingId(null);
   }, []);
 
@@ -260,8 +281,12 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
       const data = await res.json();
       if (res.ok && data.url) {
         setPdfPreviewModalUrl({ url: data.url, title: mat.title });
+      } else {
+        alert(data.message || 'Could not load PDF document preview.');
       }
-    } catch { /* silent */ }
+    } catch {
+      alert('Network error while loading PDF document preview.');
+    }
   }, []);
 
   // ── Certificate ─────────────────────────────────────────────────────────────
@@ -279,6 +304,32 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
     setClaimingCert(false);
   };
 
+  const handleCopyVerifyLink = () => {
+    if (!certResult?.certificate_number) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/verify/certificate/${certResult.certificate_number}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const getLinkedInCertUrl = () => {
+    if (!certResult?.certificate_number || !course) return '#';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const verifyUrl = `${origin}/verify/certificate/${certResult.certificate_number}`;
+    const now = new Date();
+    const params = new URLSearchParams({
+      startTask: 'CERTIFICATION_NAME',
+      name: course.title || 'Course Certificate',
+      organizationName: 'AXumia Learnings',
+      issueYear: String(now.getFullYear()),
+      issueMonth: String(now.getMonth() + 1),
+      certUrl: verifyUrl,
+      certId: certResult.certificate_number,
+    });
+    return `https://www.linkedin.com/profile/add?${params.toString()}`;
+  };
+
   // ── Derived values ──────────────────────────────────────────────────────────
   const lessons       = progress?.lessons ?? [];
   const currentIndex  = lessons.findIndex(l => l.id === activeLesson?.id);
@@ -286,6 +337,89 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
   const nextLesson    = currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null;
   const completionPct = progress?.completionPct ?? 0;
   const isComplete    = progress?.courseCompleted || completionPct >= 100;
+
+  useEffect(() => {
+    nextLessonRef.current = nextLesson;
+  }, [nextLesson]);
+
+  // Load existing certificate if course is already complete
+  useEffect(() => {
+    if (isComplete && course?.id && !certResult) {
+      authFetch(`/api/certificates/courses/${course.id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d && d.certificate_number) setCertResult(d); })
+        .catch(() => {});
+    }
+  }, [isComplete, course?.id, certResult]);
+
+  // Trigger celebration modal when course completion is reached
+  useEffect(() => {
+    if (isComplete && !hasTriggeredCelebration.current) {
+      hasTriggeredCelebration.current = true;
+      setShowCelebrationModal(true);
+    }
+  }, [isComplete]);
+
+  // Auto-advance countdown timer
+  useEffect(() => {
+    if (autoAdvanceCountdown === null) return;
+    if (autoAdvanceCountdown <= 0) {
+      setAutoAdvanceCountdown(null);
+      if (nextLessonRef.current) {
+        doLoadLesson(nextLessonRef.current);
+      }
+      return;
+    }
+    const timer = setTimeout(() => {
+      setAutoAdvanceCountdown(prev => (prev !== null ? prev - 1 : null));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [autoAdvanceCountdown, doLoadLesson]);
+
+  const handleVideoEnded = useCallback(() => {
+    if (nextLessonRef.current) {
+      setAutoAdvanceCountdown(5);
+    }
+  }, []);
+
+  const isCurrentCompleted = Boolean(activeLesson && progress?.progressMap?.[activeLesson.id]?.completed);
+
+  const handleToggleComplete = async () => {
+    if (!activeLesson) return;
+    setTogglingComplete(true);
+    try {
+      const pid = progress?.purchaseId;
+      const res = await authFetch(`/api/courses/lessons/${activeLesson.id}/toggle-complete`, {
+        method: 'POST',
+        body: JSON.stringify({ purchaseId: pid }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const cid = course?.id || courseRef.current?.id;
+        if (cid) await refreshProgress(cid);
+        if (data.completed) {
+          setCompletionToast(`✅ "${activeLesson.title}" marked completed!`);
+          setTimeout(() => setCompletionToast(''), 3000);
+          awardXP('lesson_complete', { lesson_id: activeLesson.id, course_id: cid });
+        }
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setTogglingComplete(false);
+    }
+  };
+
+  const handleExportNotes = () => {
+    if (!noteText.trim()) return;
+    const blob = new Blob([noteText], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${(activeLesson?.title || 'lesson').replace(/[^a-z0-9]/gi, '_').toLowerCase()}-notes.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const sections = progress?.sections ?? [];
   const sectionMap = useMemo(() => {
@@ -477,27 +611,136 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                 <p style={{ fontSize: '0.88rem', color: '#475569' }}>Select a lesson from the sidebar</p>
               </div>
             ) : isYoutube ? (
-              <ProtectedYouTubePlayer
-                videoUrl={videoUrl}
-                title={activeLesson?.title}
-                autoplay
-                style={{ borderRadius: 0, minHeight: 0, height: '100%' }}
-              />
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <ProtectedYouTubePlayer
+                  videoUrl={videoUrl}
+                  title={activeLesson?.title}
+                  autoplay
+                  style={{ borderRadius: 0, minHeight: 0, height: '100%' }}
+                  onProgress={(cur, dur) => {
+                    const pid = progressRef.current?.purchaseId;
+                    const lid = activeLessonRef.current?.id;
+                    if (lid && pid && dur > 0) {
+                      sendProgress(lid, cur, dur, pid);
+                    }
+                  }}
+                  onEnded={() => {
+                    const pid = progressRef.current?.purchaseId;
+                    const lid = activeLessonRef.current?.id;
+                    if (lid && pid) {
+                      const dur = activeLessonRef.current?.duration_s || 300;
+                      sendProgress(lid, dur, dur, pid);
+                    }
+                    handleVideoEnded();
+                  }}
+                />
+                {/* Auto Advance Overlay */}
+                {autoAdvanceCountdown !== null && (
+                  <div style={{
+                    position: 'absolute', inset: 0, zIndex: 50,
+                    background: 'rgba(7, 9, 15, 0.94)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: '1.25rem', padding: '1.5rem', textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#818cf8', fontWeight: 800 }}>
+                      Up Next in {autoAdvanceCountdown}s
+                    </div>
+                    <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc', maxWidth: 520, lineHeight: 1.3 }}>
+                      {nextLesson?.title}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                      <button
+                        onClick={() => setAutoAdvanceCountdown(null)}
+                        style={{
+                          background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)',
+                          color: '#cbd5e1', padding: '0.55rem 1.4rem', borderRadius: 10, fontWeight: 700,
+                          cursor: 'pointer', fontSize: '0.85rem', transition: 'all 0.15s ease',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAutoAdvanceCountdown(null);
+                          if (nextLesson) doLoadLesson(nextLesson);
+                        }}
+                        style={{
+                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)', border: 'none',
+                          color: '#fff', padding: '0.55rem 1.6rem', borderRadius: 10, fontWeight: 700,
+                          cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 4px 16px rgba(99,102,241,0.45)',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        Play Next ▶
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : isVideo ? (
-              <video
-                ref={videoRef}
-                src={videoUrl}
-                controls
-                autoPlay
-                playsInline
-                style={{ width: '100%', height: '100%', background: '#000' }}
-                onEnded={() => {
-                  const vid = videoRef.current;
-                  const pid = progressRef.current?.purchaseId || '';
-                  const lid = activeLessonRef.current?.id || '';
-                  if (vid && pid && lid) sendProgress(lid, vid.duration, vid.duration, pid);
-                }}
-              />
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  style={{ width: '100%', height: '100%', background: '#000' }}
+                  onEnded={() => {
+                    const vid = videoRef.current;
+                    const pid = progressRef.current?.purchaseId || '';
+                    const lid = activeLessonRef.current?.id || '';
+                    if (vid && pid && lid) {
+                      sendProgress(lid, vid.duration, vid.duration, pid);
+                    }
+                    handleVideoEnded();
+                  }}
+                />
+                {/* Auto Advance Overlay */}
+                {autoAdvanceCountdown !== null && (
+                  <div style={{
+                    position: 'absolute', inset: 0, zIndex: 50,
+                    background: 'rgba(7, 9, 15, 0.94)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: '1.25rem', padding: '1.5rem', textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#818cf8', fontWeight: 800 }}>
+                      Up Next in {autoAdvanceCountdown}s
+                    </div>
+                    <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc', maxWidth: 520, lineHeight: 1.3 }}>
+                      {nextLesson?.title}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                      <button
+                        onClick={() => setAutoAdvanceCountdown(null)}
+                        style={{
+                          background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)',
+                          color: '#cbd5e1', padding: '0.55rem 1.4rem', borderRadius: 10, fontWeight: 700,
+                          cursor: 'pointer', fontSize: '0.85rem', transition: 'all 0.15s ease',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAutoAdvanceCountdown(null);
+                          if (nextLesson) doLoadLesson(nextLesson);
+                        }}
+                        style={{
+                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)', border: 'none',
+                          color: '#fff', padding: '0.55rem 1.6rem', borderRadius: 10, fontWeight: 700,
+                          cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 4px 16px rgba(99,102,241,0.45)',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        Play Next ▶
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <iframe src={videoUrl} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
             )}
@@ -508,7 +751,7 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
             padding: '0.5rem 1rem', background: 'rgba(13,17,23,0.95)',
             borderTop: '1px solid rgba(255,255,255,0.04)',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            flexShrink: 0, height: 52,
+            flexShrink: 0, height: 52, gap: '0.5rem',
           }}>
             <button
               onClick={() => prevLesson && doLoadLesson(prevLesson)}
@@ -519,12 +762,13 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                 borderRadius: 8, color: prevLesson ? '#818cf8' : '#374151',
                 padding: '0.35rem 0.85rem', cursor: prevLesson ? 'pointer' : 'not-allowed',
                 fontSize: '0.82rem', fontWeight: 600, transition: 'all 0.15s',
+                flexShrink: 0,
               }}
             >
               ← Prev
             </button>
 
-            <div style={{ textAlign: 'center', flex: 1, padding: '0 0.75rem', minWidth: 0 }}>
+            <div style={{ textAlign: 'center', flex: 1, padding: '0 0.5rem', minWidth: 0 }}>
               <div style={{
                 fontWeight: 700, fontSize: '0.87rem', color: '#f1f5f9',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -537,6 +781,27 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
               </div>
             </div>
 
+            {/* Toggle Completion Button */}
+            <button
+              onClick={handleToggleComplete}
+              disabled={togglingComplete || !activeLesson}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                background: isCurrentCompleted ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${isCurrentCompleted ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: 8,
+                color: isCurrentCompleted ? '#34d399' : '#94a3b8',
+                padding: '0.35rem 0.85rem',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: togglingComplete ? 'wait' : 'pointer',
+                transition: 'all 0.15s ease',
+                flexShrink: 0,
+              }}
+            >
+              {togglingComplete ? '…' : isCurrentCompleted ? '✓ Completed' : '○ Mark Complete'}
+            </button>
+
             <button
               onClick={() => nextLesson && doLoadLesson(nextLesson)}
               disabled={!nextLesson}
@@ -546,6 +811,7 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                 borderRadius: 8, color: nextLesson ? '#818cf8' : '#374151',
                 padding: '0.35rem 0.85rem', cursor: nextLesson ? 'pointer' : 'not-allowed',
                 fontSize: '0.82rem', fontWeight: 600, transition: 'all 0.15s',
+                flexShrink: 0,
               }}
             >
               Next →
@@ -607,47 +873,107 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                 {/* Course completion + certificate */}
                 {isComplete && (
                   <div style={{
-                    background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(212,175,55,0.05))',
-                    border: '1px solid rgba(16,185,129,0.2)', borderRadius: 14, padding: '1.25rem',
+                    background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(212,175,55,0.08))',
+                    border: '1px solid rgba(212,175,55,0.3)', borderRadius: 16, padding: '1.5rem',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                   }}>
-                    <div style={{ fontWeight: 700, fontSize: '1rem', color: '#34d399', marginBottom: '0.25rem' }}>
-                      🎉 Course Complete!
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.35)', padding: '0.25rem 0.75rem', borderRadius: 99, color: '#fde047', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        🏆 Verified Certificate
+                      </div>
+                      {certResult?.certificate_number && (
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'monospace' }}>
+                          ID: {certResult.certificate_number}
+                        </span>
+                      )}
                     </div>
-                    <p style={{ color: '#94a3b8', fontSize: '0.83rem', marginBottom: '1rem' }}>
-                      You've finished all lessons. Claim your certificate now.
+
+                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#f8fafc', marginBottom: '0.35rem' }}>
+                      🎉 Congratulations on Finishing {course?.title}!
+                    </div>
+                    <p style={{ color: '#cbd5e1', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+                      You have successfully satisfied all learning modules and passed the course curriculum. Your verified credential is permanently registered.
                     </p>
+
                     {certResult?.error && (
-                      <div style={{ color: '#f87171', fontSize: '0.83rem', marginBottom: '0.75rem' }}>
+                      <div style={{ color: '#f87171', fontSize: '0.83rem', marginBottom: '0.75rem', background: 'rgba(239,68,68,0.1)', padding: '0.5rem 0.75rem', borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)' }}>
                         ⚠ {certResult.error}
                       </div>
                     )}
+
                     {certResult?.downloadUrl ? (
-                      <a
-                        href={certResult.downloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                          background: 'linear-gradient(135deg,#d4af37,#b58c28)',
-                          color: '#fff', padding: '0.6rem 1.5rem', borderRadius: 10,
-                          fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
-                        }}
-                      >
-                        📥 Download Certificate PDF
-                      </a>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                          <a
+                            href={certResult.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                              background: 'linear-gradient(135deg,#d4af37,#b58c28)',
+                              color: '#fff', padding: '0.65rem 1.4rem', borderRadius: 10,
+                              fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none',
+                              boxShadow: '0 4px 14px rgba(212,175,55,0.35)',
+                            }}
+                          >
+                            📥 Download PDF
+                          </a>
+
+                          <a
+                            href={`/verify/certificate/${certResult.certificate_number}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                              background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+                              color: '#818cf8', padding: '0.65rem 1.25rem', borderRadius: 10,
+                              fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none',
+                            }}
+                          >
+                            👁 Verify Credential ↗
+                          </a>
+
+                          <a
+                            href={getLinkedInCertUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                              background: 'rgba(10,102,194,0.15)', border: '1px solid rgba(10,102,194,0.35)',
+                              color: '#60a5fa', padding: '0.65rem 1.25rem', borderRadius: 10,
+                              fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none',
+                            }}
+                          >
+                            💼 Add to LinkedIn
+                          </a>
+
+                          <button
+                            type="button"
+                            onClick={handleCopyVerifyLink}
+                            style={{
+                              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                              color: '#cbd5e1', padding: '0.65rem 1.1rem', borderRadius: 10,
+                              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+                            }}
+                          >
+                            {copiedLink ? '✓ Link Copied!' : '📋 Copy Link'}
+                          </button>
+                        </div>
+                      </div>
                     ) : (
                       <button
                         onClick={handleClaimCertificate}
                         disabled={claimingCert}
                         style={{
                           background: 'linear-gradient(135deg,#d4af37,#b58c28)',
-                          border: 'none', color: '#fff', padding: '0.6rem 1.5rem',
-                          borderRadius: 10, fontWeight: 700, fontSize: '0.9rem',
+                          border: 'none', color: '#fff', padding: '0.75rem 1.75rem',
+                          borderRadius: 10, fontWeight: 800, fontSize: '0.92rem',
                           cursor: claimingCert ? 'wait' : 'pointer',
                           opacity: claimingCert ? 0.7 : 1,
+                          boxShadow: '0 4px 18px rgba(212,175,55,0.35)',
                         }}
                       >
-                        🎓 {claimingCert ? 'Generating…' : 'Claim Certificate'}
+                        🎓 {claimingCert ? 'Generating Verified Credential…' : 'Claim Verified Certificate'}
                       </button>
                     )}
                   </div>
@@ -670,11 +996,25 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                   <h3 style={{ fontWeight: 600, fontSize: '0.85rem', color: '#94a3b8' }}>
                     My Notes — {activeLesson?.title || 'Select a lesson'}
                   </h3>
-                  {noteSaved && (
-                    <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
-                      ✓ Saved
-                    </span>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    {noteSaved && (
+                      <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
+                        ✓ Saved
+                      </span>
+                    )}
+                    {noteText.trim() && (
+                      <button
+                        onClick={handleExportNotes}
+                        style={{
+                          background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+                          borderRadius: 6, color: '#818cf8', padding: '0.25rem 0.6rem',
+                          fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        ↓ Export (.md)
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <textarea
                   value={noteText}
@@ -936,6 +1276,118 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
             style={{ width: '100%', flex: 1, border: 'none' }}
             title="PDF Document Preview"
           />
+        </div>
+      )}
+
+      {/* ── Course Completion Celebration Modal ─────────────────────────────── */}
+      {showCelebrationModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 110,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1.5rem', animation: 'fadeIn 0.25s ease',
+        }}>
+          <div style={{
+            maxWidth: 520, width: '100%', background: '#0d1117',
+            border: '1px solid rgba(212,175,55,0.4)', borderRadius: 24,
+            padding: '2.5rem 2rem', textAlign: 'center', position: 'relative',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.8), 0 0 50px rgba(212,175,55,0.15)',
+          }}>
+            <button
+              type="button"
+              onClick={() => setShowCelebrationModal(false)}
+              style={{
+                position: 'absolute', top: 18, right: 18, background: 'none',
+                border: 'none', color: '#64748b', fontSize: '1.2rem', cursor: 'pointer',
+                fontWeight: 700,
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ fontSize: '3.5rem', marginBottom: '0.75rem' }}>
+              🎓
+            </div>
+
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.35)',
+              borderRadius: 99, padding: '0.3rem 0.85rem', color: '#fde047',
+              fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
+              marginBottom: '1rem',
+            }}>
+              ✨ 100% Curriculum Completed
+            </div>
+
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.75rem', lineHeight: 1.25 }}>
+              Congratulations!
+            </h2>
+
+            <p style={{ color: '#94a3b8', fontSize: '0.92rem', lineHeight: 1.6, marginBottom: '1.75rem' }}>
+              You have completed every lesson in <strong style={{ color: '#f1f5f9' }}>{course?.title}</strong>. Your verifiable certificate is ready to claim and add to your resume.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {certResult?.downloadUrl ? (
+                <>
+                  <a
+                    href={certResult.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowCelebrationModal(false)}
+                    style={{
+                      background: 'linear-gradient(135deg,#d4af37,#b58c28)',
+                      color: '#fff', padding: '0.85rem 1.5rem', borderRadius: 12,
+                      fontWeight: 800, fontSize: '0.95rem', textDecoration: 'none',
+                      boxShadow: '0 4px 18px rgba(212,175,55,0.4)',
+                    }}
+                  >
+                    📥 Download Certificate PDF
+                  </a>
+                  <a
+                    href={`/verify/certificate/${certResult.certificate_number}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowCelebrationModal(false)}
+                    style={{
+                      background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+                      color: '#818cf8', padding: '0.75rem 1.5rem', borderRadius: 12,
+                      fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none',
+                    }}
+                  >
+                    👁 View Verified Credential Page ↗
+                  </a>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await handleClaimCertificate();
+                  }}
+                  disabled={claimingCert}
+                  style={{
+                    background: 'linear-gradient(135deg,#d4af37,#b58c28)', border: 'none',
+                    color: '#fff', padding: '0.85rem 1.5rem', borderRadius: 12,
+                    fontWeight: 800, fontSize: '0.95rem', cursor: claimingCert ? 'wait' : 'pointer',
+                    boxShadow: '0 4px 18px rgba(212,175,55,0.4)', opacity: claimingCert ? 0.7 : 1,
+                  }}
+                >
+                  🎓 {claimingCert ? 'Generating Certificate…' : 'Claim Certificate Now'}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowCelebrationModal(false)}
+                style={{
+                  background: 'transparent', border: 'none', color: '#64748b',
+                  fontSize: '0.85rem', cursor: 'pointer', padding: '0.5rem',
+                }}
+              >
+                Continue Reviewing Course
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>

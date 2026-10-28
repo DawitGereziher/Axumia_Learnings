@@ -1,15 +1,45 @@
-// DTO for adding a question to a quiz
-//
-// Question types:
-//   multiple_choice  →  options = ["A","B","C","D"], correct = "0" | "1" | "2" | "3"
-//   true_false       →  options = ["True","False"],  correct = "0" | "1"
-//   text             →  options = [],                correct = "expected keyword or phrase"
-//
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsIn,
+  IsArray,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
 export class CreateQuestionDto {
-  question!: string;
-  type!: 'multiple_choice' | 'true_false' | 'text';
-  options?: string[];    // required for multiple_choice and true_false
-  correct!: string;      // index string for MC/TF, expected text for text type
-  explanation?: string;  // feedback shown after answering
-  points?: number;       // default 1
+  @ApiProperty({ description: 'The question prompt' })
+  @IsString()
+  @IsNotEmpty()
+  question: string;
+
+  @ApiProperty({ enum: ['multiple_choice', 'true_false', 'text'] })
+  @IsIn(['multiple_choice', 'true_false', 'text'])
+  type: 'multiple_choice' | 'true_false' | 'text';
+
+  @ApiPropertyOptional({ description: 'Options array for multiple_choice and true_false' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  options?: string[];
+
+  @ApiProperty({ description: 'Index string for MC/TF or expected text keyword for text' })
+  @IsString()
+  @IsNotEmpty()
+  correct: string;
+
+  @ApiPropertyOptional({ description: 'Explanation feedback shown after quiz submission' })
+  @IsOptional()
+  @IsString()
+  explanation?: string;
+
+  @ApiPropertyOptional({ description: 'Point value for this question', default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  points?: number;
 }

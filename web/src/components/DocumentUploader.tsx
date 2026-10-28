@@ -1,34 +1,45 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { FileText, UploadCloud, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FileText, UploadCloud, Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { authFetch } from '@/lib/auth';
+
+const getFullUrl = (url?: string | null) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) return url;
+  const domain = process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN || 'https://pub-690cc2b08ff243269c59174e79778c39.r2.dev';
+  return `${domain.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
+};
 
 interface DocumentUploaderProps {
   label?: string;
   bucket?: 'public' | 'private';
   folder?: 'pdf' | 'kyc' | 'resource' | 'certificate';
   accept?: string;
-  onUpload: (key: string, fileName: string, fileSize: number) => void;
+  allowedTypes?: string[];
+  currentUrl?: string | null;
+  onUpload: (key: string, fileNameOrUrl: string, fileSize?: number) => void;
 }
 
 /**
  * DocumentUploader — Drag and drop file uploader for private/public documents (PDFs, DOCX, ZIP, etc.)
- * 1. Requests a pre-signed upload URL from backend POST /api/storage/upload-url
- * 2. Uploads file directly to Cloudflare R2 via pre-signed PUT URL
- * 3. Invokes onUpload with the uploaded key, file name, and file size in bytes.
+ * 1. Uploads file to storage via backend /api/storage/upload
+ * 2. Invokes onUpload with the uploaded key, file name, and file size in bytes.
+ * 3. Supports currentUrl preview when an existing document is on file.
  */
 export default function DocumentUploader({
   label = 'Upload Document',
   bucket = 'private',
   folder = 'pdf',
   accept = '.pdf,.doc,.docx,.zip,.png,.jpg,.jpeg',
+  allowedTypes,
+  currentUrl,
   onUpload,
 }: DocumentUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; size?: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFile = async (file: File) => {
@@ -36,7 +47,13 @@ export default function DocumentUploader({
     setError(null);
 
     try {
-      // 1. Get Pre-signed Upload URL from backend API
+      if (allowedTypes && allowedTypes.length > 0) {
+        const matches = allowedTypes.some(t => file.type === t || file.name.endsWith(t.replace('image/', '.')));
+        if (!matches && !file.type.includes('pdf') && !file.type.includes('image')) {
+          // Soft check
+        }
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('bucket', bucket);
@@ -55,7 +72,7 @@ export default function DocumentUploader({
 
       const data = await res.json();
       setUploadedFile({ name: file.name, size: file.size });
-      onUpload(data.key, file.name, file.size);
+      onUpload(data.key, data.url || file.name, file.size);
     } catch (err: any) {
       console.error('Document upload error:', err);
       setError(err.message || 'Upload failed');
@@ -71,15 +88,31 @@ export default function DocumentUploader({
     if (file) handleFile(file);
   };
 
-  const formatSize = (bytes: number) => {
+  const formatSize = (bytes?: number) => {
+    if (!bytes) return '';
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const effectiveAccept = allowedTypes && allowedTypes.length > 0 ? allowedTypes.join(',') : accept;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-      {label && <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8' }}>{label}</label>}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {label && <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8' }}>{label}</label>}
+        {currentUrl && !uploadedFile && (
+          <a
+            href={getFullUrl(currentUrl) || currentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{ fontSize: '0.72rem', color: 'var(--accent)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3, textDecoration: 'none' }}
+          >
+            <ExternalLink size={11} /> View Current
+          </a>
+        )}
+      </div>
 
       <div
         onClick={() => inputRef.current?.click()}
@@ -88,10 +121,10 @@ export default function DocumentUploader({
         onDrop={onDrop}
         style={{
           padding: '1.25rem',
-          borderRadius: 12,
-          background: dragging ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.03)',
+          borderRadius: 14,
+          background: dragging ? 'rgba(12, 59, 46, 0.15)' : 'var(--bg-secondary)',
           border: `2px dashed ${
-            error ? 'rgba(239,68,68,0.5)' : dragging ? '#6366f1' : 'rgba(255,255,255,0.12)'
+            error ? 'rgba(239,68,68,0.5)' : dragging ? 'var(--accent)' : 'var(--card-border)'
           }`,
           cursor: 'pointer',
           textAlign: 'center',
@@ -104,32 +137,44 @@ export default function DocumentUploader({
       >
         {uploading ? (
           <>
-            <Loader2 size={24} className="animate-spin" color="#818cf8" />
-            <span style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 600 }}>
-              Uploading directly to R2...
+            <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
+            <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 700 }}>
+              Uploading document to secure storage...
             </span>
           </>
         ) : uploadedFile ? (
           <>
             <CheckCircle2 size={24} color="#34d399" />
             <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#34d399' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#34d399' }}>
                 {uploadedFile.name}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                {formatSize(uploadedFile.size)} · Uploaded
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                {formatSize(uploadedFile.size)} · Successfully Uploaded
               </div>
+            </div>
+          </>
+        ) : currentUrl ? (
+          <>
+            <CheckCircle2 size={24} color="#34d399" />
+            <div>
+              <span style={{ fontSize: '0.86rem', color: 'var(--text-primary)', fontWeight: 700 }}>
+                Document on File
+              </span>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
+                Click to replace with a new file
+              </span>
             </div>
           </>
         ) : (
           <>
-            <UploadCloud size={26} color="#94a3b8" />
+            <UploadCloud size={26} style={{ color: 'var(--text-muted)' }} />
             <div>
-              <span style={{ fontSize: '0.85rem', color: '#f8fafc', fontWeight: 600 }}>
-                Click to upload document
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 700 }}>
+                Click or drop file to upload
               </span>
-              <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: 2 }}>
-                or drag and drop here (PDF, DOCX, ZIP)
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
+                PDF, JPG, or PNG (up to 15MB)
               </span>
             </div>
           </>
@@ -137,7 +182,7 @@ export default function DocumentUploader({
       </div>
 
       {error && (
-        <div style={{ fontSize: '0.78rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: 4 }}>
+        <div style={{ fontSize: '0.78rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: 2 }}>
           <AlertCircle size={13} /> {error}
         </div>
       )}
@@ -145,7 +190,7 @@ export default function DocumentUploader({
       <input
         ref={inputRef}
         type="file"
-        accept={accept}
+        accept={effectiveAccept}
         style={{ display: 'none' }}
         onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
       />

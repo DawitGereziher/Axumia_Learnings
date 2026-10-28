@@ -65,15 +65,17 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                       final item = enrolled[index];
                       return _EnrolledCourseCard(
                         item: item,
-                        onTap: () {
-                          // Find first lesson
-                          final firstLesson = item.course.sections.isNotEmpty &&
-                                  item.course.sections.first.lessons.isNotEmpty
-                              ? item.course.sections.first.lessons.first
-                              : LessonModel(id: '1', title: 'Course Overview');
+                        onTap: () async {
+                          final fullCourse = await context.read<CourseProvider>().fetchCourseDetail(item.course.id);
+                          if (!context.mounted) return;
+                          final courseToPlay = fullCourse ?? item.course;
+                          final firstLesson = courseToPlay.sections.isNotEmpty &&
+                                  courseToPlay.sections.first.lessons.isNotEmpty
+                              ? courseToPlay.sections.first.lessons.first
+                              : LessonModel(id: 'overview', title: 'Course Overview');
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => LessonPlayerScreen(course: item.course, currentLesson: firstLesson),
+                              builder: (_) => LessonPlayerScreen(course: courseToPlay, currentLesson: firstLesson),
                             ),
                           );
                         },

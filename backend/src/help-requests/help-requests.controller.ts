@@ -27,6 +27,12 @@ import {
 import { HelpRequestsService } from './help-requests.service';
 import { CreateHelpRequestDto } from './dto/create-help-request.dto';
 import { CreateBidDto } from './dto/create-bid.dto';
+import {
+  SetMeetingLinkDto,
+  UpdateSessionDto,
+  CompleteSessionDto,
+  ConfirmSessionDto,
+} from './dto/session-actions.dto';
 
 @ApiTags('Help Requests')
 @ApiBearerAuth()
@@ -124,7 +130,7 @@ export class HelpRequestsController {
   setLink(
     @Param('id') sessionId: string,
     @CurrentUser() user: AuthUser,
-    @Body() body: { meetingLink: string },
+    @Body() body: SetMeetingLinkDto,
   ) {
     return this.helpRequests.setMeetingLink(
       user.id,
@@ -139,7 +145,7 @@ export class HelpRequestsController {
   updateSession(
     @Param('id') sessionId: string,
     @CurrentUser() user: AuthUser,
-    @Body() body: { meeting_link?: string },
+    @Body() body: UpdateSessionDto,
   ) {
     return this.helpRequests.updateSession(user.id, sessionId, body);
   }
@@ -151,7 +157,7 @@ export class HelpRequestsController {
   markComplete(
     @Param('id') sessionId: string,
     @CurrentUser() user: AuthUser,
-    @Body() body: { actualHours: number },
+    @Body() body: CompleteSessionDto,
   ) {
     return this.helpRequests.markHelperCompleted(user.id, sessionId, body.actualHours);
   }
@@ -162,7 +168,7 @@ export class HelpRequestsController {
   confirmCompletion(
     @Param('id') sessionId: string,
     @CurrentUser() user: AuthUser,
-    @Body() body: { confirmed: boolean },
+    @Body() body: ConfirmSessionDto,
   ) {
     return this.helpRequests.confirmCompletion(user.id, sessionId, body.confirmed);
   }

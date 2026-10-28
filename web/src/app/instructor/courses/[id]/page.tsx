@@ -22,6 +22,7 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [publishing, setPublishing] = useState(false);
 
   // Course form state
   const [title, setTitle] = useState('');
@@ -92,6 +93,13 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
 
   useEffect(() => {
     fetchCourse();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const msgParam = params.get('msg');
+      if (msgParam) {
+        setError(decodeURIComponent(msgParam));
+      }
+    }
   }, [courseId]);
 
   const handleUpdateCourse = async (e: React.FormEvent) => {
@@ -104,10 +112,44 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         body: JSON.stringify({ title, description, price, status, level, thumbnail }),
       });
       if (!res.ok) throw new Error('Could not update course');
-      setMessage('Course updated successfully.');
+      setMessage('Course metadata updated successfully.');
       fetchCourse();
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const handlePublishCourse = async () => {
+    setPublishing(true);
+    setMessage('');
+    setError('');
+    try {
+      const res = await authFetch(`/api/courses/${courseId}/publish`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Could not publish course');
+      setMessage('Course published successfully! It is now live in the student catalog.');
+      fetchCourse();
+    } catch (err: any) {
+      setError(err.message || 'Publishing failed. Please make sure your instructor KYC profile is approved and the course has at least one lesson.');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleArchiveCourse = async () => {
+    if (!confirm('Are you sure you want to unpublish/archive this course? It will be hidden from the catalog.')) return;
+    setPublishing(true);
+    setMessage('');
+    setError('');
+    try {
+      const res = await authFetch(`/api/courses/${courseId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Could not archive course');
+      setMessage('Course unpublished and moved to archive.');
+      fetchCourse();
+    } catch (err: any) {
+      setError(err.message || 'Archiving failed');
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -153,8 +195,8 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         title: lessonTitle,
         description: lessonDesc,
         is_free_preview: lessonPreview,
-        content_type: lessonContentType,
-        requires_progress: lessonRequiresProgress,
+        content_type: lessonContentType === 'reading' ? 'text' : lessonContentType,
+        requires_progress: lessonContentType === 'youtube' || lessonContentType === 'video',
       };
 
       // Duration in seconds
@@ -302,16 +344,59 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
       <Navbar />
       <div style={{ paddingTop: '80px', minHeight: '100vh', background: 'radial-gradient(ellipse 60% 30% at 50% 0%, rgba(99,102,241,0.07) 0%, transparent 60%)' }}>
         <div className="container section" style={{ maxWidth: 960 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <h1 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 700, fontSize: '1.8rem' }}>
-                Manage <span className="gradient-text">{course.title}</span>
-              </h1>
-              <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Edit course metadata, status, and manage lessons.</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+                <h1 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 700, fontSize: '1.8rem', margin: 0 }}>
+                  Manage <span className="gradient-text">{course.title}</span>
+                </h1>
+                <span style={{
+                  background: course.status === 'published' ? 'rgba(16,185,129,0.15)' : course.status === 'archived' ? 'rgba(148,163,184,0.15)' : 'rgba(234,179,8,0.15)',
+                  color: course.status === 'published' ? '#34d399' : course.status === 'archived' ? '#94a3b8' : '#facc15',
+                  border: `1px solid ${course.status === 'published' ? 'rgba(16,185,129,0.3)' : course.status === 'archived' ? 'rgba(148,163,184,0.3)' : 'rgba(234,179,8,0.3)'}`,
+                  borderRadius: 99, padding: '0.2rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
+                }}>
+                  ● {course.status}
+                </span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Edit curriculum, attach resources, and manage live status.</p>
             </div>
-            <button onClick={() => router.push(`/courses/${course.slug}`)} className="btn-ghost" style={{ fontSize: '0.85rem' }}>
-              View Public Page ↗
-            </button>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {course.status !== 'published' ? (
+                <button
+                  type="button"
+                  onClick={handlePublishCourse}
+                  disabled={publishing}
+                  className="btn-primary"
+                  style={{ padding: '0.55rem 1.35rem', fontSize: '0.85rem', fontWeight: 700 }}
+                >
+                  {publishing ? 'Publishing…' : '▶ Publish Course'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleArchiveCourse}
+                  disabled={publishing}
+                  style={{
+                    background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                    color: '#f87171', borderRadius: 8, padding: '0.55rem 1.25rem', fontSize: '0.85rem',
+                    fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  {publishing ? '…' : '⏸ Unpublish'}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => router.push(`/courses/${course.slug || course.id}`)}
+                className="btn-ghost"
+                style={{ fontSize: '0.85rem', padding: '0.55rem 1rem' }}
+              >
+                Preview as Student ↗
+              </button>
+            </div>
           </div>
 
           {message && (
@@ -695,16 +780,20 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                                   style={{
                                     padding: '0.4rem 0.8rem',
                                     borderRadius: 6,
-                                    background: 'rgba(12,59,46,0.6)',
-                                    color: '#fde047',
-                                    border: '1px solid rgba(253,224,71,0.25)',
+                                    background: lesson.quiz ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)',
+                                    color: lesson.quiz ? '#34d399' : '#cbd5e1',
+                                    border: `1px solid ${lesson.quiz ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.12)'}`,
                                     cursor: 'pointer',
                                     fontSize: '0.8rem',
                                     textDecoration: 'none',
                                     fontWeight: 600,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5,
                                   }}
+                                  title={lesson.quiz ? `Quiz: ${lesson.quiz.title} (${lesson.quiz._count?.questions ?? 0} Qs, Pass: ${lesson.quiz.pass_score}%)` : 'Create a quiz for this lesson'}
                                 >
-                                  📝 Quiz
+                                  {lesson.quiz ? `✓ Quiz (${lesson.quiz._count?.questions ?? 0} Qs)` : '＋ Quiz'}
                                 </Link>
                                 <button 
                                   onClick={() => handleDeleteLesson(lesson.id)}
@@ -814,10 +903,12 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                             label="Upload File to Private Storage"
                             bucket="private"
                             folder="pdf"
-                            onUpload={(key, name, size) => {
+                            onUpload={(key, name) => {
                               setMaterialUrl(key);
-                              if (!materialFileName) setMaterialFileName(name);
-                              if (!materialTitle) setMaterialTitle(name.replace(/\.[^/.]+$/, ''));
+                              if (name) {
+                                if (!materialFileName) setMaterialFileName(name);
+                                if (!materialTitle) setMaterialTitle(name.replace(/\.[^/.]+$/, ''));
+                              }
                             }}
                           />
                         </div>

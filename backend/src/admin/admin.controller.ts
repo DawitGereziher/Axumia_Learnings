@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorator';
 
 @UseGuards(AdminGuard)
 @Controller('admin')
@@ -50,19 +51,26 @@ export class AdminController {
 
   // ── KYC ───────────────────────────────────────────────────────────────────
   @Get('kyc/pending')
-  pendingKyc() {
-    return this.adminService.getPendingKyc();
+  pendingKyc(@Query('status') status?: string) {
+    return this.adminService.getPendingKyc(status);
+  }
+
+  @Get('kyc/all')
+  allKyc(@Query('status') status?: string) {
+    return this.adminService.getPendingKyc(status || 'all');
   }
 
   @Patch('kyc/:profileId')
   updateKyc(
     @Param('profileId') profileId: string,
     @Body() body: { status: 'approved' | 'rejected'; notes?: string },
+    @CurrentUser() adminUser: AuthUser,
   ) {
     return this.adminService.updateKycStatus(
       profileId,
       body.status,
       body.notes,
+      adminUser?.id,
     );
   }
 

@@ -325,11 +325,12 @@ export default function CourseCreationWizardPage() {
               description: les.description,
               position: lIdx + 1,
               is_free_preview: les.is_free_preview,
-              content_type: les.content_type || 'youtube',
+              content_type: les.content_type === 'reading' ? 'text' : (les.content_type || 'youtube'),
               youtube_url: les.content_type === 'youtube' ? les.youtube_url : undefined,
               external_url: les.content_type === 'pdf' ? les.pdf_url : undefined,
               section_id: sectionId,
               duration_s: Number(les.duration_s) || 300,
+              requires_progress: les.content_type === 'youtube',
             }),
           });
 
@@ -348,10 +349,15 @@ export default function CourseCreationWizardPage() {
 
       // 3. Publish if requested
       if (shouldPublish) {
-        await authFetch(`/api/courses/${courseId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ is_published: true }),
+        const pubRes = await authFetch(`/api/courses/${courseId}/publish`, {
+          method: 'POST',
         });
+        if (!pubRes.ok) {
+          const pubErr = await pubRes.json().catch(() => ({}));
+          console.warn('Publish note:', pubErr.message);
+          router.push(`/instructor/courses/${courseId}?published=0&msg=${encodeURIComponent(pubErr.message || 'Saved as draft. Profile approval required to publish.')}`);
+          return;
+        }
       }
 
       router.push(`/courses/${courseData.slug || courseId}`);

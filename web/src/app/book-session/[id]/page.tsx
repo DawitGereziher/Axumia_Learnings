@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { authFetch } from '@/lib/auth';
+import { initiateUnifiedCheckout } from '@/lib/checkout';
 import {
   User,
   Users,
@@ -114,7 +115,7 @@ export default function BookInstructorSessionPage() {
     setError('');
 
     try {
-      // Step 1: Request Booking
+      // Step 1: Request Booking (Backend locks slot and initiates Chapa checkout)
       const reqRes = await fetch(`${API}/api/bookings/request/${selectedSlotId}`, {
         method: 'POST',
         headers: {
@@ -132,24 +133,29 @@ export default function BookInstructorSessionPage() {
         throw new Error(errData.message || 'Failed to request session slot');
       }
 
-      const booking = await reqRes.json();
+      const bookingRes = await reqRes.json();
+      const checkoutUrl = bookingRes.checkoutUrl;
+      const booking = bookingRes.booking || bookingRes;
 
-      // Step 2: Initiate Payment (Chapa)
-      const payRes = await authFetch(`/api/payments/bookings/${booking.id}/checkout`, {
-        method: 'POST',
-      });
-
-      if (!payRes.ok) {
-        const payErr = await payRes.json();
-        throw new Error(payErr.message || 'Failed to initiate payment');
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
       }
 
-      const payData = await payRes.json();
-
-      if (payData.checkoutUrl) {
-        window.location.href = payData.checkoutUrl;
+      // Step 2: Fallback to unified checkout orchestrator
+      if (booking?.id) {
+        await initiateUnifiedCheckout({
+          entityType: 'booking',
+          entityId: booking.id,
+          onSuccess: (res) => {
+            if (res.checkoutUrl) window.location.href = res.checkoutUrl;
+          },
+          onError: (err) => {
+            setError(err.message);
+          },
+        });
       } else {
-        router.push(`/dashboard?booking_success=${booking.id}`);
+        router.push(`/dashboard?booking_success=${booking?.id || 'true'}`);
       }
     } catch (err: any) {
       console.error(err);

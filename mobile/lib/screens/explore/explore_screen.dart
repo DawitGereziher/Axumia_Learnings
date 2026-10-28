@@ -5,6 +5,8 @@ import '../../models/course_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/course_provider.dart';
 import '../course/course_detail_screen.dart';
+import '../course/wishlist_screen.dart';
+import '../gamification/leaderboard_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -21,6 +23,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CourseProvider>().fetchCourses();
+      context.read<CourseProvider>().fetchWishlist();
     });
   }
 
@@ -54,38 +57,62 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user != null ? 'Hello, ${user.firstName ?? 'Learner'} 👋' : 'Welcome to AXumia',
+                                  style: const TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Explore Courses',
+                                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Quick Actions: Leaderboard, Wishlist, Profile
+                          Row(
                             children: [
-                              Text(
-                                user != null ? 'Hello, ${user.firstName ?? 'Learner'} 👋' : 'Welcome to AXumia',
-                                style: const TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                              IconButton(
+                                icon: const Icon(Icons.emoji_events_outlined, color: AppColors.accentAmber),
+                                tooltip: 'Leaderboard',
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.favorite_outline_rounded, color: AppColors.accentRose),
+                                tooltip: 'Saved Courses',
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const WishlistScreen()),
+                                  );
+                                },
+                              ),
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: AppColors.surfaceElevated,
+                                child: Text(
+                                  (user?.firstName?.isNotEmpty == true ? user!.firstName![0] : 'A').toUpperCase(),
+                                  style: const TextStyle(
+                                    color: AppColors.primaryLight,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Explore Courses',
-                                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                              ),
                             ],
-                          ),
-                          // Avatar / Role badge
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: AppColors.surfaceElevated,
-                            child: Text(
-                              (user?.firstName?.isNotEmpty == true ? user!.firstName![0] : 'A').toUpperCase(),
-                              style: const TextStyle(
-                                color: AppColors.primaryLight,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
                           ),
                         ],
                       ),

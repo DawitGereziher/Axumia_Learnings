@@ -1,6 +1,6 @@
 import { Injectable, Logger, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac, randomBytes, createHash } from 'crypto';
+import { createHmac, randomBytes, createHash, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface SignedUrlOptions {
@@ -30,7 +30,13 @@ export class ContentSecurityService {
     private config: ConfigService,
     private prisma: PrismaService,
   ) {
-    this.signatureSecret = this.config.get('CONTENT_SIGNATURE_SECRET') || 'default-signature-secret-change-in-production';
+    const isProd = this.config.get('NODE_ENV') === 'production';
+    const secret = this.config.get('CONTENT_SIGNATURE_SECRET');
+    if (isProd && (!secret || secret.includes('change-in-production'))) {
+      this.logger.error('CRITICAL: CONTENT_SIGNATURE_SECRET must be configured with a strong secret in production');
+      throw new Error('CONTENT_SIGNATURE_SECRET configuration missing in production');
+    }
+    this.signatureSecret = secret || 'dev-signature-secret-change-in-production';
     this.defaultTtl = parseInt(this.config.get('SIGNED_URL_TTL_MS') || '3600000', 10); // 1 hour default
   }
 
@@ -85,7 +91,10 @@ export class ContentSecurityService {
         signature: '', // Don't include signature in signature calculation
       });
 
-      if (payload.signature !== expectedSignature) {
+      const sigBuf = Buffer.from(payload.signature || '', 'utf8');
+      const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+
+      if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
         throw new ForbiddenException('Invalid signature');
       }
 

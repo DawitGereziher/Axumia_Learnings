@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  UnauthorizedException,
+  ServiceUnavailableException,
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
@@ -88,8 +90,12 @@ export class PaymentsService implements OnModuleInit {
     return { firstName: fn || 'Student', lastName: ln.join(' ') || '' };
   }
 
-  /** Detect mock/dev mode (Chapa key not configured) */
+  /** Detect mock/dev mode (Chapa key not configured) — NEVER allowed in production */
   private isMockMode(): boolean {
+    const isProd = this.config.get('NODE_ENV') === 'production';
+    if (isProd) {
+      return false;
+    }
     const chapaKey = this.config.get('CHAPA_SECRET_KEY');
     return !chapaKey || chapaKey.includes('mock') || chapaKey.includes('change-me') || chapaKey === '';
   }
@@ -164,18 +170,26 @@ export class PaymentsService implements OnModuleInit {
         metadata: {
           entity_type: entityType,
           entity_id: entityId,
+          item_title: options.description,
           ...(options.extraMetadata || {}),
         },
       },
     });
 
-    // Mock mode — immediately fulfill without hitting Chapa
+    const isProd = this.config.get('NODE_ENV') === 'production';
+
+    // Mock mode — immediately fulfill without hitting Chapa (dev/test only)
     if (this.isMockMode()) {
-      this.logger.log(`[Mock] Chapa ${entityType} checkout for txRef: ${txRef}`);
+      this.logger.log(`[Dev-Mock] Chapa ${entityType} checkout for txRef: ${txRef}`);
       if (options.mockPaymentHandler) {
         await options.mockPaymentHandler(txRef);
       }
       return { checkoutUrl: `${frontendUrl}/payment-success?ref=${txRef}`, txRef };
+    }
+
+    if (isProd && (!this.config.get('CHAPA_SECRET_KEY') || this.config.get('CHAPA_SECRET_KEY').includes('change-me'))) {
+      this.logger.error('CRITICAL: Payment attempted in production with invalid or unconfigured CHAPA_SECRET_KEY');
+      throw new ServiceUnavailableException('Payment processing is currently unavailable. Please contact support.');
     }
 
     const chapaRes = await this.chapa.initiatePayment({
@@ -197,6 +211,9 @@ export class PaymentsService implements OnModuleInit {
   async initiateCoursePayment(userId: string, courseId: string, userEmail: string, userName: string) {
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException('Course not found');
+    if (Number(course.price) === 0) {
+      throw new BadRequestException('This course is free. Please use the free enrollment endpoint.');
+    }
 
     return this.initiatePaymentCommon('course', courseId, userId, userEmail, userName, {
       amount: Number(course.price),
@@ -223,6 +240,9 @@ export class PaymentsService implements OnModuleInit {
       include: { instructor: true },
     });
     if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.status !== 'awaiting_payment') {
+      throw new BadRequestException(`Booking cannot be checked out because its status is '${booking.status}'`);
+    }
 
     return this.initiatePaymentCommon('booking', bookingId, userId, userEmail, userName, {
       amount: Number(booking.price_paid || booking.instructor.hourly_rate),
@@ -246,6 +266,9 @@ export class PaymentsService implements OnModuleInit {
       include: { bid: true, request: true },
     });
     if (!session) throw new NotFoundException('Help session not found');
+    if (session.status !== 'awaiting_payment') {
+      throw new BadRequestException(`Help session cannot be checked out because its status is '${session.status}'`);
+    }
 
     return this.initiatePaymentCommon('help_session', sessionId, userId, userEmail, userName, {
       amount: Number(session.bid.quoted_rate) * Number(session.bid.estimated_hours),
@@ -270,17 +293,17 @@ export class PaymentsService implements OnModuleInit {
    * Any internal error is logged but never surfaced as a non-200 response,
    * which would cause Chapa to retry and potentially double-process payments.
    */
-  async handleChapaWebhook(rawBody: string, signature: string): Promise<{ received: boolean; status?: string }> {
+  async handleChapaWebhook(rawBody: string | Buffer, signature: string): Promise<{ received: boolean; status?: string }> {
     // ── Signature check ──────────────────────────────────────────────────────
     const isValid = this.chapa.verifyWebhookSignature(rawBody, signature);
     if (!isValid) {
-      this.logger.warn('Invalid Chapa webhook signature — ignoring');
-      // Still return 200 so Chapa doesn't retry a known-bad signature
-      return { received: true, status: 'invalid_signature' };
+      this.logger.warn('Invalid Chapa webhook signature — rejecting forged request');
+      throw new UnauthorizedException('Invalid webhook signature');
     }
 
     try {
-      const payload = JSON.parse(rawBody);
+      const payloadString = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : rawBody;
+      const payload = JSON.parse(payloadString);
       const txRef = payload.tx_ref;
 
       const transaction = await this.prisma.transaction.findFirst({
@@ -333,26 +356,36 @@ export class PaymentsService implements OnModuleInit {
       transaction.status === TransactionStatus.PAID ||
       transaction.status === TransactionStatus.FAILED
     ) {
-      const meta = transaction.metadata as Record<string, string> | null;
+      const meta = transaction.metadata as Record<string, any> | null;
       return {
         status: transaction.status,
         txRef,
         verified: true,
+        amount: Number(transaction.amount),
         entityType: meta?.entity_type ?? null,
+        entityId: meta?.entity_id ?? null,
+        itemTitle: meta?.item_title ?? null,
         courseSlug: meta?.course_slug ?? null,
+        bookingId: transaction.booking_id || (meta?.entity_type === 'booking' ? meta?.entity_id : null),
+        helpSessionId: transaction.help_session_id || (meta?.entity_type === 'help_session' ? meta?.entity_id : null),
       };
     }
 
     // Only call Chapa if status is still pending
     const status = await this.updateTransactionStatus(transaction, txRef);
-    const meta = transaction.metadata as Record<string, string> | null;
+    const meta = transaction.metadata as Record<string, any> | null;
 
     return {
       status,
       txRef,
       verified: status !== transaction.status,
+      amount: Number(transaction.amount),
       entityType: meta?.entity_type ?? null,
+      entityId: meta?.entity_id ?? null,
+      itemTitle: meta?.item_title ?? null,
       courseSlug: meta?.course_slug ?? null,
+      bookingId: transaction.booking_id || (meta?.entity_type === 'booking' ? meta?.entity_id : null),
+      helpSessionId: transaction.help_session_id || (meta?.entity_type === 'help_session' ? meta?.entity_id : null),
     };
   }
 
@@ -464,17 +497,33 @@ export class PaymentsService implements OnModuleInit {
       const chapaStatus = verified.data?.status;
 
       if (chapaStatus === 'success') {
-        const metadata = transaction.metadata;
-        if (metadata?.entity_type && metadata?.entity_id) {
-          await this.linkTransactionToEntity(transaction, metadata.entity_type, metadata.entity_id, txRef);
+        const paidAmount = Number(verified.data?.amount);
+        const expectedAmount = Number(transaction.amount);
+
+        // Security check: verify the paid amount meets or exceeds the expected transaction amount
+        if (isNaN(paidAmount) || paidAmount < expectedAmount) {
+          this.logger.error(
+            `SECURITY ALERT: Payment underpaid for tx ${txRef}. Expected ${expectedAmount} ETB, received ${paidAmount} ETB. Rejecting.`,
+          );
+          await this.prisma.transaction.updateMany({
+            where: { id: transaction.id, status: { not: TransactionStatus.FAILED } },
+            data: { status: TransactionStatus.FAILED },
+          });
+          return TransactionStatus.FAILED;
         }
 
-        if (transaction.status !== TransactionStatus.PAID) {
-          // Use updateMany with status filter — idempotent, safe against race condition
-          await this.prisma.transaction.updateMany({
-            where: { id: transaction.id, status: { not: TransactionStatus.PAID } },
-            data: { status: TransactionStatus.PAID },
-          });
+        // Atomic state transition: only proceed with linking if this worker transitioned PENDING -> PAID
+        const txUpdate = await this.prisma.transaction.updateMany({
+          where: { id: transaction.id, status: { not: TransactionStatus.PAID } },
+          data: { status: TransactionStatus.PAID },
+        });
+
+        // Exactly-once execution guard against concurrent webhook and client verification poller
+        if (txUpdate.count > 0) {
+          const metadata = transaction.metadata as any;
+          if (metadata?.entity_type && metadata?.entity_id) {
+            await this.linkTransactionToEntity(transaction, metadata.entity_type, metadata.entity_id, txRef);
+          }
 
           // Async notification — failure here must never affect the payment outcome
           try {
@@ -484,7 +533,7 @@ export class PaymentsService implements OnModuleInit {
                 email: user.email,
                 amount: transaction.amount,
                 currency: transaction.currency || 'ETB',
-                itemTitle: metadata?.entity_type || 'Axumia Purchase',
+                itemTitle: metadata?.item_title || metadata?.entity_type || 'Axumia Purchase',
                 phone: (user as any).phone ?? undefined,
               });
             }

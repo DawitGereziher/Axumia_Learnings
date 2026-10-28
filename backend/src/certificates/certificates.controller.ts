@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CertificatesService } from './certificates.service';
 import { DAuthGuard } from '../common/guards/d-auth.guard';
@@ -14,6 +14,17 @@ export class CertificatesController {
   @UseGuards(DAuthGuard)
   @ApiOperation({ summary: 'Get or generate certificate of completion for a course' })
   async getOrCreateCertificate(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.certificatesService.getOrCreateCertificate(user.id, courseId);
+  }
+
+  @Post('courses/:courseId')
+  @ApiBearerAuth()
+  @UseGuards(DAuthGuard)
+  @ApiOperation({ summary: 'Get or generate certificate of completion for a course (POST alias)' })
+  async createOrGetCertificatePost(
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthUser,
   ) {

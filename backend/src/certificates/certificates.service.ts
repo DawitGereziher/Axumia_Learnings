@@ -118,25 +118,55 @@ export class CertificatesService {
     const publishedLessons = (purchase.course as any).lessons as any[];
     if (publishedLessons.length > 0) {
       // Require that every published lesson has a completed progress record
-      const completedRows = await this.prisma.lessonProgress.findMany({
-        where: { purchase_id: purchase.id, completed: true },
+      const progressRows = await this.prisma.lessonProgress.findMany({
+        where: { purchase_id: purchase.id },
       });
-      const completedIds = new Set(completedRows.map((r) => r.lesson_id));
-      const allComplete = publishedLessons.every((l: any) => completedIds.has(l.id));
+      const progressMap = new Map(progressRows.map((r) => [r.lesson_id, r]));
 
-      if (!allComplete) {
-        const completedCount = completedIds.size;
-        throw new ForbiddenException(
-          `You must complete all lessons first. (${completedCount}/${publishedLessons.length} completed)`
-        );
+      let totalExpectedDurationSeconds = 0;
+      let totalWatchedSeconds = 0;
+
+      for (const lesson of publishedLessons) {
+        const prog = progressMap.get(lesson.id);
+        if (!prog || !prog.completed) {
+          throw new ForbiddenException(
+            `You must complete all lessons first. Lesson "${lesson.title}" is incomplete.`,
+          );
+        }
+
+        // For video lessons with duration, verify authentic watch engagement (min 70% required)
+        if (lesson.duration_s && lesson.duration_s > 60 && lesson.requires_progress !== false) {
+          totalExpectedDurationSeconds += lesson.duration_s;
+          totalWatchedSeconds += prog.watched_s || 0;
+
+          const watchPct = prog.min_watch_pct || 0;
+          const watchedSecs = prog.watched_s || 0;
+          const meetsWatchRequirement = watchPct >= 70 || watchedSecs >= lesson.duration_s * 0.7;
+
+          if (!meetsWatchRequirement) {
+            throw new ForbiddenException(
+              `Insufficient watch time for "${lesson.title}". At least 70% watch completion is required.`,
+            );
+          }
+        }
       }
 
-      // Pace check: must have taken at least (lessons × 2) minutes total since enrollment
+      // If the course has substantial video duration, verify cumulative watch integrity
+      if (totalExpectedDurationSeconds > 300) {
+        const cumulativePct = (totalWatchedSeconds / totalExpectedDurationSeconds) * 100;
+        if (cumulativePct < 70) {
+          throw new ForbiddenException(
+            `Course cumulative watch time requirement not met (${Math.round(cumulativePct)}%/70% verified).`,
+          );
+        }
+      }
+
+      // Pace check: minimum time elapsed since enrollment (at least 2 minutes per lesson)
       const enrolledAt = purchase.created_at;
-      const minElapsedMs = publishedLessons.length * 2 * 60 * 1000; // 2 min per lesson
+      const minElapsedMs = publishedLessons.length * 2 * 60 * 1000;
       if (Date.now() - new Date(enrolledAt).getTime() < minElapsedMs) {
         throw new ForbiddenException(
-          'Course completed too quickly. Please take more time with the material.'
+          'Course completed too quickly. Please review the material thoroughly.',
         );
       }
     }

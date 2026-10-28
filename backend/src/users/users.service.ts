@@ -8,6 +8,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import {
   SubmitInstructorProfileDto,
   UpdateRichInstructorProfileDto,
+  SubmitKycApplicationDto,
   CreateInstructorReviewDto,
 } from './dto/instructor-profile.dto';
 
@@ -70,30 +71,109 @@ export class UsersService {
   // ── Instructor KYC ────────────────────────────────────────────────────────
 
   /** Create or update instructor profile (KYC submission) */
+  /** Create or update instructor profile (KYC submission) */
   async submitInstructorProfile(userId: string, dto: SubmitInstructorProfileDto) {
     return this.prisma.instructorProfile.upsert({
       where: { user_id: userId },
-      create: { user_id: userId, ...dto, kyc_status: 'submitted' },
-      update: { ...dto, kyc_status: 'submitted' },
+      create: { user_id: userId, ...dto, kyc_status: 'submitted', kyc_submitted_at: new Date() },
+      update: { ...dto, kyc_status: 'submitted', kyc_submitted_at: new Date() },
+    });
+  }
+
+  /** International-grade KYC submission with Fayda FAN, National ID photos, and verification selfie */
+  async submitKycApplication(userId: string, dto: SubmitKycApplicationDto) {
+    const allDocs = Array.from(
+      new Set(
+        [
+          dto.id_front_doc,
+          dto.id_back_doc,
+          dto.selfie_doc,
+          dto.certificate_doc,
+          ...(dto.kyc_docs || []),
+        ].filter(Boolean) as string[],
+      ),
+    );
+
+    const kycData = {
+      legal_name: dto.legal_name,
+      phone: dto.phone,
+      date_of_birth: dto.date_of_birth,
+      gender: dto.gender,
+      country: dto.country || 'Ethiopia',
+      region: dto.region,
+      residential_address: dto.residential_address,
+      id_type: dto.id_type,
+      id_number: dto.id_number,
+      id_expiry: dto.id_expiry,
+      fayda_fan_number: dto.fayda_fan_number,
+      tin_number: dto.tin_number,
+      id_front_doc: dto.id_front_doc,
+      id_back_doc: dto.id_back_doc,
+      selfie_doc: dto.selfie_doc,
+      certificate_doc: dto.certificate_doc,
+      education_level: dto.education_level,
+      institution: dto.institution,
+      notes: dto.notes,
+    };
+
+    return this.prisma.instructorProfile.upsert({
+      where: { user_id: userId },
+      create: {
+        user_id: userId,
+        kyc_status: 'submitted',
+        kyc_docs: allDocs,
+        kyc_data: kycData,
+        fayda_fan_number: dto.fayda_fan_number || null,
+        tin_number: dto.tin_number || null,
+        kyc_submitted_at: new Date(),
+        kyc_rejection_reason: null,
+      },
+      update: {
+        kyc_status: 'submitted',
+        kyc_docs: allDocs,
+        kyc_data: kycData,
+        fayda_fan_number: dto.fayda_fan_number || null,
+        tin_number: dto.tin_number || null,
+        kyc_submitted_at: new Date(),
+        kyc_rejection_reason: null,
+      },
     });
   }
 
   /**
    * Update rich instructor profile (bio, skills, social links, etc.).
-   * kyc_status and is_active are NOT accepted here — admin-only via updateKycStatus().
+   * Safely upserts if profile does not exist yet.
    */
   async updateRichInstructorProfile(
     userId: string,
     dto: UpdateRichInstructorProfileDto,
   ) {
-    const profile = await this.prisma.instructorProfile.findUnique({
-      where: { user_id: userId },
-    });
-    if (!profile) throw new NotFoundException('Instructor profile not found');
+    const isSubmittingKyc =
+      dto.kyc_status === 'submitted' ||
+      (dto.kyc_docs && dto.kyc_docs.length > 0);
 
-    return this.prisma.instructorProfile.update({
+    return this.prisma.instructorProfile.upsert({
       where: { user_id: userId },
-      data: {
+      create: {
+        user_id: userId,
+        bio: dto.bio,
+        headline: dto.headline,
+        hourly_rate: dto.hourly_rate ?? 0,
+        cover_image: dto.cover_image,
+        profile_image: dto.profile_image,
+        skills: dto.skills,
+        languages: dto.languages,
+        experience_years: dto.experience_years,
+        location: dto.location,
+        website_url: dto.website_url,
+        linkedin_url: dto.linkedin_url,
+        twitter_url: dto.twitter_url,
+        youtube_url: dto.youtube_url,
+        kyc_docs: dto.kyc_docs || [],
+        kyc_status: isSubmittingKyc ? 'submitted' : 'pending',
+        kyc_submitted_at: isSubmittingKyc ? new Date() : undefined,
+      },
+      update: {
         bio: dto.bio,
         headline: dto.headline,
         hourly_rate: dto.hourly_rate,
@@ -108,7 +188,13 @@ export class UsersService {
         twitter_url: dto.twitter_url,
         youtube_url: dto.youtube_url,
         ...(dto.kyc_docs !== undefined ? { kyc_docs: dto.kyc_docs } : {}),
-        // kyc_status and is_active are intentionally excluded here
+        ...(isSubmittingKyc
+          ? {
+              kyc_status: 'submitted',
+              kyc_submitted_at: new Date(),
+              kyc_rejection_reason: null,
+            }
+          : {}),
       },
     });
   }

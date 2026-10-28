@@ -46,21 +46,39 @@ function RegisterContent() {
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)' }}>
       <Navbar />
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 'calc(100vh - 64px)', marginTop: 64 }}>
+      <style>{`
+        .auth-split-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          min-height: calc(100vh - 64px);
+          margin-top: 64px;
+          flex: 1;
+        }
+        @media (max-width: 900px) {
+          .auth-split-grid {
+            grid-template-columns: 1fr;
+          }
+          .auth-split-media {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      <div className="auth-split-grid">
 
         {/* ── Left — full-height info panel ─────────────────────────────── */}
-        <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
+        <div className="auth-split-media" style={{ position: 'relative', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
           <img
-            src="/assets/join-community.jpg"
-            onError={(e) => { e.currentTarget.src = '/assets/hero-student.jpg'; }}
-            alt="Join AXumia Learnings community"
+            src={isInstructor ? '/assets/login-instructor-banner.jpg' : '/assets/join-community.jpg'}
+            onError={(e) => { e.currentTarget.src = isInstructor ? '/assets/instructor-2.jpg' : '/assets/hero-student.jpg'; }}
+            alt={isInstructor ? 'Join AXumia Instructor Community' : 'Join AXumia Learnings Community'}
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(to right, rgba(7, 38, 31, 0.94) 0%, rgba(12, 59, 46, 0.7) 100%)',
+            background: 'linear-gradient(to right, rgba(7, 38, 31, 0.94) 0%, rgba(12, 59, 46, 0.72) 100%)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            padding: '3rem',
+            padding: 'clamp(2rem, 5vw, 4rem)',
           }}>
             <div style={{ marginBottom: '1rem' }}>
               <span style={{
@@ -69,7 +87,7 @@ function RegisterContent() {
                 borderRadius: 999, padding: '5px 14px', fontSize: '0.72rem',
                 color: '#fde047', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase',
               }}>
-                A X U M I A  L E A R N I N G S
+                {isInstructor ? 'A X U M I A  I N S T R U C T O R' : 'A X U M I A  L E A R N I N G S'}
               </span>
             </div>
             <h2 style={{
@@ -77,18 +95,35 @@ function RegisterContent() {
               fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)',
               color: '#ffffff', lineHeight: 1.2, marginBottom: '1rem',
             }}>
-              Knowledge Meets<br /><span style={{ color: '#fde047' }}>Innovation</span>
+              {isInstructor ? (
+                <>
+                  Teach, Inspire<br />
+                  <span style={{ color: '#fde047' }}>& Earn With Impact</span>
+                </>
+              ) : (
+                <>
+                  Knowledge Meets<br />
+                  <span style={{ color: '#fde047' }}>Innovation</span>
+                </>
+              )}
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.92rem', lineHeight: 1.65, marginBottom: '1.75rem', maxWidth: 380 }}>
-              Join thousands of learners and verified educators building career skills with Telebirr & CBE integration.
+            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.92rem', lineHeight: 1.65, marginBottom: '1.75rem', maxWidth: 400 }}>
+              {isInstructor
+                ? 'Join elite educators across Ethiopia. Create courses, offer 1-on-1 tutoring, and get paid with guaranteed Telebirr & CBE settlement.'
+                : 'Join thousands of learners and verified educators building career skills with Telebirr & CBE integration.'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {[
+              {(isInstructor ? [
+                'Free instructor registration — start teaching in minutes',
+                'Teach in Amharic, Afaan Oromoo, Tigrinya or English',
+                'Host live 1-on-1 tutoring with built-in escrow protection',
+                'Instant Telebirr and Commercial Bank of Ethiopia payouts',
+              ] : [
                 'Free to join — no credit card needed',
                 '5,000+ courses taught in Amharic, Oromo & English',
                 '1-on-1 live video mentoring sessions',
                 'Escrow-protected academic help marketplace',
-              ].map(item => (
+              ]).map(item => (
                 <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.92)', fontSize: '0.88rem', fontWeight: 600 }}>
                   <CheckCircle2 size={16} color="#fde047" style={{ flexShrink: 0 }} />
                   {item}
@@ -133,7 +168,14 @@ function RegisterContent() {
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setForm(f => ({ ...f, role: r }))}
+                  onClick={() => {
+                    setForm(f => ({ ...f, role: r }));
+                    if (typeof window !== 'undefined') {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set('role', r);
+                      window.history.replaceState({}, '', url.toString());
+                    }
+                  }}
                   style={{
                     flex: 1, padding: '0.6rem 1rem', borderRadius: 999, border: 'none',
                     background: form.role === r ? 'var(--pine-deep)' : 'transparent',
@@ -210,7 +252,7 @@ function RegisterContent() {
 
             <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
               Already have an account?{' '}
-              <Link href="/login" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
+              <Link href={`/login?role=${form.role}`} style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
                 Sign in →
               </Link>
             </p>

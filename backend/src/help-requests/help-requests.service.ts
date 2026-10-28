@@ -24,19 +24,30 @@ export class HelpRequestsService {
 
   // ── Student: Create a help request ─────────────────────────────────────────
   async createRequest(studentId: string, dto: CreateHelpRequestDto) {
-    const parsedDate = new Date(dto.deadline);
-    const validDeadline = isNaN(parsedDate.getTime())
-      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      : parsedDate;
+    const title = (dto.title || dto.subject || 'Help Request').trim();
+    const subjectArea = (dto.subject_area || dto.subject || 'General').trim();
+    const rawBudget = dto.budget_max_per_hour ?? dto.budget ?? 100;
+    const budget = Number(rawBudget);
+    const estimatedHours = Number(dto.estimated_hours ?? 1);
+
+    let validDeadline: Date;
+    if (dto.deadline) {
+      const parsed = new Date(dto.deadline);
+      validDeadline = isNaN(parsed.getTime())
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        : parsed;
+    } else {
+      validDeadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    }
 
     return this.prisma.helpRequest.create({
       data: {
         student_id: studentId,
-        title: dto.title,
-        description: dto.description,
-        subject_area: dto.subject_area,
-        budget_max_per_hour: Number(dto.budget_max_per_hour),
-        estimated_hours: Number(dto.estimated_hours ?? 1),
+        title,
+        description: dto.description.trim(),
+        subject_area: subjectArea,
+        budget_max_per_hour: budget > 0 ? budget : 100,
+        estimated_hours: estimatedHours > 0 ? estimatedHours : 1,
         deadline: validDeadline,
         status: 'open',
       },
@@ -109,10 +120,26 @@ export class HelpRequestsService {
     if (request.status !== 'open')
       throw new BadRequestException('This request is no longer accepting bids');
 
+    // Prevent bidding on own help request
+    if (request.student_id === instructorUserId) {
+      throw new BadRequestException('You cannot submit a bid on your own help request');
+    }
+
+    const quotedRate = Number(dto.quoted_rate ?? dto.amount);
+    if (!quotedRate || quotedRate <= 0) {
+      throw new BadRequestException('A valid positive quoted rate (ETB/hr) is required');
+    }
+
+    const estimatedHours = Math.max(0.25, Number(dto.estimated_hours ?? dto.hours ?? 1));
+    const message = (dto.message ?? dto.proposal ?? '').trim();
+    if (!message) {
+      throw new BadRequestException('A proposal message is required');
+    }
+
     // Validate quoted rate is within student's budget
-    if (dto.quoted_rate > Number(request.budget_max_per_hour)) {
+    if (quotedRate > Number(request.budget_max_per_hour)) {
       throw new BadRequestException(
-        `Quoted rate exceeds the student's maximum budget of ${request.budget_max_per_hour} ETB/hr`,
+        `Quoted rate (${quotedRate} ETB/hr) exceeds the student's maximum budget of ${request.budget_max_per_hour} ETB/hr`,
       );
     }
 
@@ -131,10 +158,24 @@ export class HelpRequestsService {
       data: {
         request_id: requestId,
         helper_id: profile.id,
-        quoted_rate: dto.quoted_rate,
-        estimated_hours: dto.estimated_hours,
-        message: dto.message,
+        quoted_rate: quotedRate,
+        estimated_hours: estimatedHours,
+        message: message,
         status: 'pending',
+      },
+      include: {
+        helper: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                image: true,
+              },
+            },
+          },
+        },
       },
     });
   }
