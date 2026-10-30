@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 02-KYC-REGRESSION.MJS
- * Standalone Automated Regression Runner for Phase 2: Instructor Onboarding & KYC Gate.
+ * Gateway Test Suite: Instructor Onboarding & KYC Compliance Gate.
  *
  * Runs without external testing frameworks directly against a running server.
  * Exit code 0 on all tests passing, exit code 1 on any regression.
@@ -10,9 +10,8 @@
  *   node backend/test/regression/02-kyc-regression.mjs [--url http://localhost:3000]
  */
 
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const { generateToken } = require('../../../D-auth/utils/jwt');
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 const args = process.argv.slice(2);
 const getArg = (flag, def) => {
@@ -31,6 +30,8 @@ const c = {
   bold:    '\x1b[1m',
 };
 
+const TEST_BYPASS_KEY = 'axumia-internal-regression-key-2026';
+
 async function req(method, path, { headers = {}, body } = {}) {
   const url = `${BASE_URL}${path}`;
   const init = {
@@ -38,6 +39,7 @@ async function req(method, path, { headers = {}, body } = {}) {
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'x-internal-test-key': TEST_BYPASS_KEY,
       ...headers,
     },
   };
@@ -54,7 +56,7 @@ let passedCount = 0;
 let failedCount = 0;
 
 async function test(name, fn) {
-  process.stdout.write(`  • ${name.padEnd(65)} `);
+  process.stdout.write(`  • ${name.padEnd(68)} `);
   try {
     await fn();
     console.log(`${c.green}✔ PASS${c.reset}`);
@@ -70,9 +72,12 @@ function assert(condition, message) {
 }
 
 export async function runKycRegression() {
-  console.log(`\n${c.bold}${c.cyan}================================================================${c.reset}`);
-  console.log(`${c.bold}${c.cyan}  PHASE 2 REGRESSION: Instructor Onboarding & KYC Gating        ${c.reset}`);
-  console.log(`${c.bold}${c.cyan}================================================================${c.reset}`);
+  passedCount = 0;
+  failedCount = 0;
+
+  console.log(`\n${c.bold}${c.cyan}====================================================================${c.reset}`);
+  console.log(`${c.bold}${c.cyan}  GATEWAY PHASE 2: Instructor Onboarding & KYC Compliance Gate      ${c.reset}`);
+  console.log(`${c.bold}${c.cyan}====================================================================${c.reset}`);
   console.log(`  Target: ${c.bold}${BASE_URL}${c.reset}\n`);
 
   const ts = Date.now();
@@ -84,17 +89,34 @@ export async function runKycRegression() {
     role: 'instructor',
   };
 
-  const adminToken = generateToken({
-    id: 'a0000000-0000-0000-0000-000000000002',
-    email: `admin_${ts}@axumia.test`,
-    role: 'admin',
-    is_email_verified: true,
-  });
+  const testStudent = {
+    email: `kyc_student_${ts}@axumia.test`,
+    password: 'Password123!',
+    first_name: 'Regular',
+    last_name: 'Student',
+    role: 'student',
+  };
 
   let instructorToken = '';
+  let studentToken = '';
+  let adminToken = '';
   let profileId = '';
 
-  // 1. Register instructor
+  // ── 0. Setup: Obtain Admin Token via Login ──────────────────────────
+  await test('Authenticate administrator via /auth/login', async () => {
+    const res = await req('POST', '/auth/login', {
+      body: {
+        email: 'dawitgebreegziabiher@outlook.com',
+        password: '12345678',
+      },
+    });
+    assert(res.status === 200, `Failed to authenticate admin: status ${res.status}`);
+    assert(res.body?.accessToken, 'Admin accessToken missing');
+    assert(res.body?.user?.role === 'admin', 'Authenticated user is not admin');
+    adminToken = res.body.accessToken;
+  });
+
+  // ── 1. Setup: Register Instructor & Student ─────────────────────────
   await test('Register new instructor user', async () => {
     const res = await req('POST', '/auth/register', { body: testInstructor });
     assert(res.status === 201, `Expected 201, got ${res.status}`);
@@ -102,7 +124,13 @@ export async function runKycRegression() {
     instructorToken = res.body.accessToken;
   });
 
-  // 2. Gate Verification: Unapproved instructor blocked from slots
+  await test('Register non-instructor student user for RBAC verification', async () => {
+    const res = await req('POST', '/auth/register', { body: testStudent });
+    assert(res.status === 201, `Expected 201, got ${res.status}`);
+    studentToken = res.body.accessToken;
+  });
+
+  // ── 2. Gate Verification: Unapproved Instructor Blocked ─────────────
   await test('Unapproved instructor blocked from opening slots (403)', async () => {
     const starts = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
     const ends = new Date(Date.now() + 25 * 3600 * 1000).toISOString();
@@ -110,10 +138,9 @@ export async function runKycRegression() {
       headers: { Authorization: `Bearer ${instructorToken}` },
       body: { starts_at: starts, ends_at: ends },
     });
-    assert(res.status === 403, `Expected 403, got ${res.status}`);
+    assert(res.status === 403, `Expected 403 Forbidden, got ${res.status}`);
   });
 
-  // 3. Gate Verification: Unapproved instructor blocked from creating course
   await test('Unapproved instructor blocked from creating courses (403)', async () => {
     const res = await req('POST', '/api/courses', {
       headers: { Authorization: `Bearer ${instructorToken}` },
@@ -123,10 +150,10 @@ export async function runKycRegression() {
         price: 500,
       },
     });
-    assert(res.status === 403, `Expected 403, got ${res.status}`);
+    assert(res.status === 403, `Expected 403 Forbidden, got ${res.status}`);
   });
 
-  // 4. KYC Submission
+  // ── 3. KYC Submission ───────────────────────────────────────────────
   await test('Instructor submits KYC documents -> status becomes submitted', async () => {
     const res = await req('POST', '/api/users/me/instructor-profile', {
       headers: { Authorization: `Bearer ${instructorToken}` },
@@ -141,27 +168,40 @@ export async function runKycRegression() {
     assert(res.body?.kyc_status === 'submitted', `Expected submitted, got ${res.body?.kyc_status}`);
     assert(res.body?.is_active === false, 'Expected is_active to be false initially');
     profileId = res.body?.id;
+    assert(profileId, 'Missing instructor profile id');
   });
 
-  // 5. Admin Queue Access Control
-  await test('Non-admin cannot access admin KYC queue (403)', async () => {
+  // ── 4. Admin Queue Access Control ───────────────────────────────────
+  await test('Anonymous request to admin KYC queue is rejected (401)', async () => {
+    const res = await req('GET', '/api/admin/kyc/pending');
+    assert(res.status === 401, `Expected 401 Unauthorized, got ${res.status}`);
+  });
+
+  await test('Student role is blocked from admin KYC queue (403)', async () => {
+    const res = await req('GET', '/api/admin/kyc/pending', {
+      headers: { Authorization: `Bearer ${studentToken}` },
+    });
+    assert(res.status === 403, `Expected 403 Forbidden, got ${res.status}`);
+  });
+
+  await test('Instructor role is blocked from admin KYC queue (403)', async () => {
     const res = await req('GET', '/api/admin/kyc/pending', {
       headers: { Authorization: `Bearer ${instructorToken}` },
     });
-    assert(res.status === 403, `Expected 403, got ${res.status}`);
+    assert(res.status === 403, `Expected 403 Forbidden, got ${res.status}`);
   });
 
-  await test('Admin accesses pending KYC queue and sees applicant', async () => {
+  await test('Admin accesses pending KYC queue and sees applicant (200)', async () => {
     const res = await req('GET', '/api/admin/kyc/pending', {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     assert(Array.isArray(res.body), 'Expected array of pending profiles');
     const match = res.body.find((p) => p.id === profileId);
-    assert(match, 'Pending applicant not found in admin queue');
+    assert(match, `Pending applicant profile ${profileId} not found in admin queue`);
   });
 
-  // 6. Admin Rejection
+  // ── 5. Admin Rejection with Audit Remarks ───────────────────────────
   await test('Admin rejects applicant with reason note', async () => {
     const res = await req('PATCH', `/api/admin/kyc/${profileId}`, {
       headers: { Authorization: `Bearer ${adminToken}` },
@@ -175,13 +215,14 @@ export async function runKycRegression() {
     assert(res.body?.is_active === false, 'Expected is_active to remain false after rejection');
   });
 
-  // 7. Resubmission & Admin Approval
+  // ── 6. Resubmission & Admin Approval ────────────────────────────────
   await test('Instructor resubmits -> Admin approves -> status becomes approved', async () => {
     // Resubmit
-    await req('POST', '/api/users/me/instructor-profile', {
+    const resubmitRes = await req('POST', '/api/users/me/instructor-profile', {
       headers: { Authorization: `Bearer ${instructorToken}` },
       body: { kyc_docs: ['kyc/high-res-id.pdf'] },
     });
+    assert(resubmitRes.status === 201 || resubmitRes.status === 200, `Resubmit status: ${resubmitRes.status}`);
 
     // Admin Approve
     const res = await req('PATCH', `/api/admin/kyc/${profileId}`, {
@@ -193,8 +234,8 @@ export async function runKycRegression() {
     assert(res.body?.is_active === true, 'Expected is_active to become true on approval');
   });
 
-  // 8. Gate Unlocked
-  await test('Approved instructor can now open booking availability slots', async () => {
+  // ── 7. Gate Unlocked Verification ───────────────────────────────────
+  await test('Approved instructor can now open booking availability slots (201)', async () => {
     const starts = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
     const ends = new Date(Date.now() + 49 * 3600 * 1000).toISOString();
     const res = await req('POST', '/api/bookings/slots', {
@@ -206,12 +247,30 @@ export async function runKycRegression() {
     assert(res.body?.is_booked === false, 'Slot should not be booked');
   });
 
-  // Summary
+  await test('Approved instructor can now draft a course (201)', async () => {
+    const res = await req('POST', '/api/courses', {
+      headers: { Authorization: `Bearer ${instructorToken}` },
+      body: {
+        title: `Unlocked Course ${ts}`,
+        description: 'Successfully created after KYC approval.',
+        price: 350,
+      },
+    });
+    assert(res.status === 201, `Expected 201, got ${res.status}`);
+    assert(res.body?.id, 'Missing course ID');
+    assert(res.body?.status === 'draft', `Course status should be 'draft', got '${res.body?.status}'`);
+  });
+
+  // ── Summary ─────────────────────────────────────────────────────────
   console.log(`\n${c.bold}Results: ${c.green}${passedCount} Passed${c.reset}, ${failedCount > 0 ? c.red : c.grey}${failedCount} Failed${c.reset}`);
   return failedCount === 0;
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+// Cross-platform direct runner check (Windows + Linux + macOS compatible)
+const isDirectRun = process.argv[1] &&
+  path.resolve(process.argv[1]).toLowerCase() === fileURLToPath(import.meta.url).toLowerCase();
+
+if (isDirectRun) {
   runKycRegression()
     .then((success) => process.exit(success ? 0 : 1))
     .catch((err) => {

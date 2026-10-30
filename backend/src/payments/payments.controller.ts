@@ -78,8 +78,18 @@ export class PaymentsController {
 
   // ── Webhook — MUST be public (Chapa posts here, no auth token) ───────────────
 
+  /**
+   * CRITICAL CONTRACT: This endpoint MUST always return HTTP 200.
+   *
+   * Chapa retries on any non-200 response, which could cause duplicate payment
+   * processing. All errors — including invalid signatures — are caught here and
+   * swallowed. The service may throw UnauthorizedException for forged signatures;
+   * the try/catch ensures Chapa always receives 200.
+   *
+   * The `status` field in the response body tells us what happened for observability.
+   */
   @Post('webhook/chapa')
-  @HttpCode(HttpStatus.OK) // Always 200 — Chapa must never see non-200 or it retries
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '[Webhook] Chapa payment confirmation — always returns 200' })
   async chapaWebhook(
     @Req() req: Request,
@@ -94,7 +104,12 @@ export class PaymentsController {
       (req.headers['x-chapa-signature'] as string) ||
       (req.headers['chapa-signature'] as string) ||
       '';
-    return this.payments.handleChapaWebhook(rawPayload, signature);
+    try {
+      return await this.payments.handleChapaWebhook(rawPayload, signature);
+    } catch (_err) {
+      // Swallow all errors — never surface a non-200 to Chapa
+      return { received: true, status: 'rejected' };
+    }
   }
 
   // ── Transaction history ───────────────────────────────────────────────────────

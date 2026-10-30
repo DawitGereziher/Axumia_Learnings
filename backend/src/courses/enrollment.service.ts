@@ -98,7 +98,7 @@ export class EnrollmentService {
 
     // Text/reading lessons — complete immediately on first call
     if (!lesson.requires_progress) {
-      return this.prisma.lessonProgress.upsert({
+      const progress = await this.prisma.lessonProgress.upsert({
         where: { purchase_id_lesson_id: { purchase_id: purchaseId, lesson_id: lessonId } },
         create: {
           purchase_id: purchaseId,
@@ -110,6 +110,8 @@ export class EnrollmentService {
         },
         update: {},
       });
+      await this.recalculateCourseCompletion(purchaseId);
+      return progress;
     }
 
     // Rate limit: skip if last heartbeat was < 9 seconds ago
@@ -184,8 +186,12 @@ export class EnrollmentService {
         lesson_id: lessonId,
         completed: true,
         watched_s: lesson.duration_s ?? 300,
+        min_watch_pct: 100,
       },
-      update: { completed: newCompleted },
+      update: {
+        completed: newCompleted,
+        ...(newCompleted ? { watched_s: lesson.duration_s ?? 300, min_watch_pct: 100 } : {}),
+      },
     });
 
     await this.recalculateCourseCompletion(pid);

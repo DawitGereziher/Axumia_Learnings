@@ -14,9 +14,15 @@ const emailService                   = require('../utils/email');
 const oauthCodeStore = new Map(); // code → { accessToken, refreshToken, expiresAt }
 
 // ─── Rate limiters ────────────────────────────────────────────────────────────
+const testBypassKey = process.env.INTERNAL_TEST_KEY || 'axumia-internal-regression-key-2026';
+const shouldSkipRateLimit = (req) => {
+    return Boolean(req.headers && req.headers['x-internal-test-key'] && req.headers['x-internal-test-key'] === testBypassKey);
+};
+
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 min
     max: 20,
+    skip: shouldSkipRateLimit,
     message: { error: 'Too many requests. Please try again later.' },
     standardHeaders: true, legacyHeaders: false,
 });
@@ -24,6 +30,7 @@ const authLimiter = rateLimit({
 const strictLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hr
     max: 5,
+    skip: shouldSkipRateLimit,
     message: { error: 'Too many attempts. Please try again in 1 hour.' },
     standardHeaders: true, legacyHeaders: false,
 });

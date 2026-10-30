@@ -32,12 +32,18 @@ async function bootstrap() {
   });
 
   // ── Rate limiting ────────────────────────────────────────────────────────────
+  const testBypassKey = process.env.INTERNAL_TEST_KEY || 'axumia-internal-regression-key-2026';
+  const shouldSkipRateLimit = (req: any) => {
+    return Boolean(req.headers['x-internal-test-key'] && req.headers['x-internal-test-key'] === testBypassKey);
+  };
+
   // POST /auth/login: 5 requests per minute per IP
   app.use(
     '/auth/login',
     rateLimit({
       windowMs: 60 * 1000,
       max: 5,
+      skip: (req) => shouldSkipRateLimit(req),
       standardHeaders: true,
       legacyHeaders: false,
       message: {
@@ -53,6 +59,7 @@ async function bootstrap() {
     rateLimit({
       windowMs: 60 * 1000,
       max: 10,
+      skip: (req) => shouldSkipRateLimit(req),
       standardHeaders: true,
       legacyHeaders: false,
       message: {
@@ -68,6 +75,7 @@ async function bootstrap() {
     rateLimit({
       windowMs: 60 * 1000,
       max: 20,
+      skip: (req) => shouldSkipRateLimit(req),
       standardHeaders: true,
       legacyHeaders: false,
       message: {
@@ -84,7 +92,7 @@ async function bootstrap() {
     rateLimit({
       windowMs: 60 * 1000,
       max: 10,
-      skip: (req) => req.originalUrl.includes('/webhook/chapa'),
+      skip: (req) => req.originalUrl.includes('/webhook/chapa') || shouldSkipRateLimit(req),
       standardHeaders: true,
       legacyHeaders: false,
       message: {

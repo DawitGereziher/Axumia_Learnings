@@ -234,7 +234,11 @@ export class ContentSecurityService {
         signature: '',
       } as any);
 
-      return payload.signature === expectedSignature;
+      // Timing-safe comparison to prevent timing-oracle attacks on embed tokens
+      const sigBuf = Buffer.from(payload.signature || '', 'utf8');
+      const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+      if (sigBuf.length !== expectedBuf.length) return false;
+      return timingSafeEqual(sigBuf, expectedBuf);
     } catch {
       return false;
     }

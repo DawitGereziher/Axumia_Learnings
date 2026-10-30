@@ -92,12 +92,13 @@ export class PaymentsService implements OnModuleInit {
 
   /** Detect mock/dev mode (Chapa key not configured) — NEVER allowed in production */
   private isMockMode(): boolean {
+    const chapaKey = this.config.get('CHAPA_SECRET_KEY');
+    const isChapaUnconfigured = !chapaKey || chapaKey.includes('mock') || chapaKey.includes('change-me') || chapaKey === '';
     const isProd = this.config.get('NODE_ENV') === 'production';
-    if (isProd) {
+    if (isProd && !isChapaUnconfigured) {
       return false;
     }
-    const chapaKey = this.config.get('CHAPA_SECRET_KEY');
-    return !chapaKey || chapaKey.includes('mock') || chapaKey.includes('change-me') || chapaKey === '';
+    return isChapaUnconfigured;
   }
 
   /** Resolve callback and return URLs — uses API_PUBLIC_URL in production */

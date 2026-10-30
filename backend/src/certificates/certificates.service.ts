@@ -100,7 +100,7 @@ export class CertificatesService {
     });
   }
 
-  async getOrCreateCertificate(userId: string, courseId: string) {
+  async getOrCreateCertificate(userId: string, courseId: string, options?: { skipPaceCheck?: boolean }) {
     // Check purchase/enrollment
     const purchase = await this.prisma.coursePurchase.findUnique({
       where: { user_id_course_id: { user_id: userId, course_id: courseId } },
@@ -162,12 +162,14 @@ export class CertificatesService {
       }
 
       // Pace check: minimum time elapsed since enrollment (at least 2 minutes per lesson)
-      const enrolledAt = purchase.created_at;
-      const minElapsedMs = publishedLessons.length * 2 * 60 * 1000;
-      if (Date.now() - new Date(enrolledAt).getTime() < minElapsedMs) {
-        throw new ForbiddenException(
-          'Course completed too quickly. Please review the material thoroughly.',
-        );
+      if (!options?.skipPaceCheck) {
+        const enrolledAt = purchase.created_at;
+        const minElapsedMs = publishedLessons.length * 2 * 60 * 1000;
+        if (Date.now() - new Date(enrolledAt).getTime() < minElapsedMs) {
+          throw new ForbiddenException(
+            'Course completed too quickly. Please review the material thoroughly.',
+          );
+        }
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
@@ -209,10 +211,20 @@ export class CertificatesService {
 
     let downloadUrl: string | null = null;
     if (cert.pdf_key) {
-      downloadUrl = await this.storage.getSignedUrl(cert.pdf_key);
+      try {
+        downloadUrl = await this.storage.getSignedUrl(cert.pdf_key);
+      } catch {
+        downloadUrl = `/api/certificates/download/${cert.certificate_number}`;
+      }
     }
 
-    return { ...cert, downloadUrl };
+    const studentName = `${purchase.user.first_name || ''} ${purchase.user.last_name || ''}`.trim() || purchase.user.email;
+    return {
+      ...cert,
+      student_name: studentName,
+      verification_url: `/api/certificates/verify/${cert.certificate_number}`,
+      downloadUrl,
+    };
   }
 
   async verifyCertificate(certificateNumber: string) {

@@ -101,7 +101,10 @@ export class StorageController {
     }
 
     // Sanitise filename — strip path traversal, keep extension
-    const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+    const safeName = fileName
+      .replace(/\.\.+/g, '_')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .slice(0, 100);
 
     // Build a unique key: folder/userId/timestamp-filename
     const key = `${folder}/${user.id}/${Date.now()}-${safeName}`;
