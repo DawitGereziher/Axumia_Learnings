@@ -145,6 +145,7 @@ export declare class CoursesController {
             created_at: Date;
             updated_at: Date;
             version: number;
+            is_published: boolean;
             position: number;
             section_id: string | null;
             content_type: string;
@@ -157,7 +158,6 @@ export declare class CoursesController {
             embed_code: string | null;
             is_encrypted: boolean;
             access_level: string;
-            is_published: boolean;
             published_at: Date | null;
             is_free_preview: boolean;
             requires_progress: boolean;
@@ -202,6 +202,7 @@ export declare class CoursesController {
             created_at: Date;
             updated_at: Date;
             version: number;
+            is_published: boolean;
             position: number;
             section_id: string | null;
             content_type: string;
@@ -214,7 +215,6 @@ export declare class CoursesController {
             embed_code: string | null;
             is_encrypted: boolean;
             access_level: string;
-            is_published: boolean;
             published_at: Date | null;
             is_free_preview: boolean;
             requires_progress: boolean;
@@ -351,6 +351,87 @@ export declare class CoursesController {
         total_materials: number;
         version: number;
         last_published_at: Date | null;
+    } | {
+        message: string;
+        course: {
+            instructor: {
+                id: string;
+                bio: string | null;
+                headline: string | null;
+                hourly_rate: import("@prisma/client-runtime-utils").Decimal;
+                kyc_docs: string[];
+                cover_image: string | null;
+                profile_image: string | null;
+                skills: string[];
+                languages: string[];
+                experience_years: number | null;
+                location: string | null;
+                website_url: string | null;
+                linkedin_url: string | null;
+                twitter_url: string | null;
+                youtube_url: string | null;
+                created_at: Date;
+                updated_at: Date;
+                user_id: string;
+                kyc_status: string;
+                is_active: boolean;
+                total_students: number;
+                total_sessions: number;
+                avg_rating: import("@prisma/client-runtime-utils").Decimal;
+            };
+            lessons: {
+                id: string;
+                description: string | null;
+                title: string;
+                course_id: string;
+                created_at: Date;
+                updated_at: Date;
+                version: number;
+                is_published: boolean;
+                position: number;
+                section_id: string | null;
+                content_type: string;
+                storage_type: string;
+                video_key: string | null;
+                hls_key: string | null;
+                youtube_video_id: string | null;
+                duration_s: number | null;
+                external_url: string | null;
+                embed_code: string | null;
+                is_encrypted: boolean;
+                access_level: string;
+                published_at: Date | null;
+                is_free_preview: boolean;
+                requires_progress: boolean;
+            }[];
+        } & {
+            id: string;
+            description: string | null;
+            title: string;
+            status: string;
+            created_at: Date;
+            updated_at: Date;
+            total_lessons: number;
+            instructor_id: string;
+            category_id: string | null;
+            slug: string;
+            price: import("@prisma/client-runtime-utils").Decimal;
+            currency: string;
+            thumbnail: string | null;
+            level: string;
+            language: string;
+            tags: string[];
+            search_vector: string | null;
+            estimated_hours: number | null;
+            skill_level: string | null;
+            prerequisites: string[];
+            learning_objectives: string[];
+            promo_video_id: string | null;
+            thumbnail_url: string | null;
+            total_materials: number;
+            version: number;
+            last_published_at: Date | null;
+        };
     }>;
     publishCourse(id: string, user: AuthUser): Promise<{
         id: string;
@@ -415,6 +496,7 @@ export declare class CoursesController {
                 created_at: Date;
                 updated_at: Date;
                 version: number;
+                is_published: boolean;
                 position: number;
                 section_id: string | null;
                 content_type: string;
@@ -427,7 +509,6 @@ export declare class CoursesController {
                 embed_code: string | null;
                 is_encrypted: boolean;
                 access_level: string;
-                is_published: boolean;
                 published_at: Date | null;
                 is_free_preview: boolean;
                 requires_progress: boolean;
@@ -502,6 +583,7 @@ export declare class CoursesController {
         created_at: Date;
         updated_at: Date;
         version: number;
+        is_published: boolean;
         position: number;
         section_id: string | null;
         content_type: string;
@@ -514,7 +596,6 @@ export declare class CoursesController {
         embed_code: string | null;
         is_encrypted: boolean;
         access_level: string;
-        is_published: boolean;
         published_at: Date | null;
         is_free_preview: boolean;
         requires_progress: boolean;
@@ -527,6 +608,7 @@ export declare class CoursesController {
         created_at: Date;
         updated_at: Date;
         version: number;
+        is_published: boolean;
         position: number;
         section_id: string | null;
         content_type: string;
@@ -539,7 +621,6 @@ export declare class CoursesController {
         embed_code: string | null;
         is_encrypted: boolean;
         access_level: string;
-        is_published: boolean;
         published_at: Date | null;
         is_free_preview: boolean;
         requires_progress: boolean;
@@ -552,6 +633,7 @@ export declare class CoursesController {
         created_at: Date;
         updated_at: Date;
         version: number;
+        is_published: boolean;
         position: number;
         section_id: string | null;
         content_type: string;
@@ -564,7 +646,6 @@ export declare class CoursesController {
         embed_code: string | null;
         is_encrypted: boolean;
         access_level: string;
-        is_published: boolean;
         published_at: Date | null;
         is_free_preview: boolean;
         requires_progress: boolean;
@@ -582,6 +663,7 @@ export declare class CoursesController {
             created_at: Date;
             updated_at: Date;
             version: number;
+            is_published: boolean;
             position: number;
             section_id: string | null;
             content_type: string;
@@ -594,7 +676,6 @@ export declare class CoursesController {
             embed_code: string | null;
             is_encrypted: boolean;
             access_level: string;
-            is_published: boolean;
             published_at: Date | null;
             is_free_preview: boolean;
             requires_progress: boolean;
@@ -711,6 +792,7 @@ export declare class CoursesController {
             created_at: Date;
             updated_at: Date;
             version: number;
+            is_published: boolean;
             position: number;
             section_id: string | null;
             content_type: string;
@@ -723,7 +805,6 @@ export declare class CoursesController {
             embed_code: string | null;
             is_encrypted: boolean;
             access_level: string;
-            is_published: boolean;
             published_at: Date | null;
             is_free_preview: boolean;
             requires_progress: boolean;

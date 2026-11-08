@@ -31,7 +31,7 @@ export class NotificationsService {
   }
 
   private from() {
-    return `"EthioLearn Platform" <${this.config.get('SMTP_FROM') || this.config.get('SMTP_USER') || 'noreply@ethiolearn.com'}>`;
+    return `"Axumia Learnings" <${this.config.get('SMTP_FROM') || this.config.get('SMTP_USER') || 'noreply@Axumia.com'}>`;
   }
 
   private wrapHtmlTemplate(title: string, bodyHtml: string): string {
@@ -52,7 +52,7 @@ export class NotificationsService {
                 <tr>
                   <td style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px; text-align: center;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">
-                      EthioLearn <span style="font-weight: 300; opacity: 0.9;">ኢትዮ-learn</span>
+                      Axumia <span style="font-weight: 300; opacity: 0.9;">ኢትዮ-learn</span>
                     </h1>
                     <p style="margin: 6px 0 0; color: rgba(255, 255, 255, 0.85); font-size: 14px;">Ethiopia's Premier Digital Learning Platform</p>
                   </td>
@@ -66,7 +66,7 @@ export class NotificationsService {
                 <!-- Footer -->
                 <tr>
                   <td style="background-color: #0f172a; padding: 24px 32px; text-align: center; border-top: 1px solid #334155; color: #64748b; font-size: 12px;">
-                    <p style="margin: 0 0 8px;">© ${new Date().getFullYear()} EthioLearn Platform. All rights reserved.</p>
+                    <p style="margin: 0 0 8px;">© ${new Date().getFullYear()} Axumia Learnings. All rights reserved.</p>
                     <p style="margin: 0;">Addis Ababa, Ethiopia · Live Interactive Education</p>
                   </td>
                 </tr>
@@ -134,7 +134,7 @@ export class NotificationsService {
 
   async sendWelcomeEmail(to: string, name: string) {
     const html = `
-      <h2 style="color: #ffffff; font-size: 20px; margin-top: 0;">Welcome to EthioLearn, ${name}! 👋</h2>
+      <h2 style="color: #ffffff; font-size: 20px; margin-top: 0;">Welcome to Axumia, ${name}! 👋</h2>
       <p>We're thrilled to have you join Ethiopia's fastest-growing online learning community.</p>
       <p>Here is what you can do right away:</p>
       <ul style="padding-left: 20px; color: #cbd5e1;">
@@ -146,13 +146,13 @@ export class NotificationsService {
         <a href="${this.config.get('FRONTEND_URL') || 'http://localhost:3000'}/courses" style="background: #4f46e5; color: #ffffff; padding: 12px 28px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Explore Courses Now</a>
       </div>
     `;
-    await this.sendEmail(to, 'Welcome to EthioLearn! 🎉', html);
+    await this.sendEmail(to, 'Welcome to Axumia! 🎉', html);
   }
 
   async notifyInstructorNewBooking(instructorEmail: string, bookingId: string, studentName?: string) {
     const html = `
       <h2 style="color: #ffffff; font-size: 20px; margin-top: 0;">New Booking Request Received 📅</h2>
-      <p>Hello! A student (${studentName || 'Student'}) has requested a live tutoring session with you on EthioLearn.</p>
+      <p>Hello! A student (${studentName || 'Student'}) has requested a live tutoring session with you on Axumia.</p>
       <p>Please log into your instructor dashboard to confirm the session and provide your Google Meet or Zoom link.</p>
       <div style="margin: 28px 0; text-align: center;">
         <a href="${this.config.get('FRONTEND_URL') || 'http://localhost:3000'}/dashboard" style="background: #10b981; color: #ffffff; padding: 12px 28px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Confirm Booking</a>
@@ -176,7 +176,7 @@ export class NotificationsService {
     await this.sendEmail(studentEmail, 'Booking Confirmed — Live Session Link Inside', html);
 
     if (studentPhone) {
-      const smsText = `EthioLearn: Your live session is confirmed! Join link: ${meetingLink}`;
+      const smsText = `Axumia: Your live session is confirmed! Join link: ${meetingLink}`;
       await this.sendSms(studentPhone, smsText);
     }
   }
@@ -192,7 +192,7 @@ export class NotificationsService {
     await this.sendEmail(email, `Session Reminder: Starting ${timeLabel}`, html);
 
     if (phone) {
-      await this.sendSms(phone, `EthioLearn Reminder: Your session starts ${timeLabel}! Join: ${meetingLink}`);
+      await this.sendSms(phone, `Axumia Reminder: Your session starts ${timeLabel}! Join: ${meetingLink}`);
     }
   }
 
@@ -202,7 +202,7 @@ export class NotificationsService {
       <p>Thank you! Your payment has been processed successfully via Chapa.</p>
       <div style="background-color: #0f172a; border: 1px solid #334155; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <p style="margin: 0; color: #94a3b8; font-size: 13px;">ITEM / COURSE</p>
-        <p style="margin: 4px 0 12px; font-weight: 700; color: #ffffff; font-size: 16px;">${itemTitle || 'EthioLearn Purchase'}</p>
+        <p style="margin: 4px 0 12px; font-weight: 700; color: #ffffff; font-size: 16px;">${itemTitle || 'Axumia Purchase'}</p>
         <p style="margin: 0; color: #94a3b8; font-size: 13px;">AMOUNT PAID</p>
         <p style="margin: 4px 0 0; font-weight: 800; color: #34d399; font-size: 20px;">${amount} ${currency}</p>
       </div>
@@ -213,7 +213,7 @@ export class NotificationsService {
     await this.sendEmail(email, `Payment Receipt — ${amount} ${currency}`, html);
 
     if (phone) {
-      await this.sendSms(phone, `EthioLearn: Payment of ${amount} ${currency} received for ${itemTitle || 'your purchase'}. Thank you!`);
+      await this.sendSms(phone, `Axumia: Payment of ${amount} ${currency} received for ${itemTitle || 'your purchase'}. Thank you!`);
     }
   }
 
@@ -225,13 +225,13 @@ export class NotificationsService {
     await this.sendEmail(email, `Payout Released — ${amount} ${currency}`, html);
 
     if (phone) {
-      await this.sendSms(phone, `EthioLearn: Payout of ${amount} ${currency} has been transferred to your account.`);
+      await this.sendSms(phone, `Axumia: Payout of ${amount} ${currency} has been transferred to your account.`);
     }
   }
 
   async notifyCoursePublished(instructorEmail: string, courseTitle: string) {
     const html = `
-      <h2 style="color: #ffffff; font-size: 20px; margin-top: 0;">Course Live on EthioLearn! 🚀</h2>
+      <h2 style="color: #ffffff; font-size: 20px; margin-top: 0;">Course Live on Axumia! 🚀</h2>
       <p>Congratulations! Your course <strong>${courseTitle}</strong> is now officially published and accessible to students across Ethiopia.</p>
     `;
     await this.sendEmail(instructorEmail, `Course Published: ${courseTitle}`, html);

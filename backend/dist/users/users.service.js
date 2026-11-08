@@ -40,10 +40,24 @@ let UsersService = class UsersService {
         return user;
     }
     async getProfile(id) {
-        return this.prisma.user.findUnique({
+        let user = await this.prisma.user.findUnique({
             where: { id },
             include: { instructorProfile: true },
         });
+        if (user && (user.role === 'instructor' || user.role === 'admin') && !user.instructorProfile) {
+            await this.prisma.instructorProfile.create({
+                data: {
+                    user_id: user.id,
+                    kyc_status: 'pending',
+                    is_active: true,
+                },
+            });
+            user = await this.prisma.user.findUnique({
+                where: { id },
+                include: { instructorProfile: true },
+            });
+        }
+        return user;
     }
     async updateProfile(id, dto) {
         return this.prisma.user.update({
@@ -64,11 +78,24 @@ let UsersService = class UsersService {
         });
     }
     async updateRichInstructorProfile(userId, dto) {
-        const profile = await this.prisma.instructorProfile.findUnique({
+        let profile = await this.prisma.instructorProfile.findUnique({
             where: { user_id: userId },
         });
-        if (!profile)
-            throw new common_1.NotFoundException('Instructor profile not found');
+        if (!profile) {
+            const user = await this.prisma.user.findUnique({ where: { id: userId } });
+            if (user?.role === 'instructor' || user?.role === 'admin') {
+                profile = await this.prisma.instructorProfile.create({
+                    data: {
+                        user_id: userId,
+                        kyc_status: 'pending',
+                        is_active: true,
+                    },
+                });
+            }
+            else {
+                throw new common_1.NotFoundException('Instructor profile not found');
+            }
+        }
         return this.prisma.instructorProfile.update({
             where: { user_id: userId },
             data: {

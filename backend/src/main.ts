@@ -20,6 +20,24 @@ import {
 import { Pool } from 'pg';
 
 async function bootstrap() {
+  // ── Production safety checks ─────────────────────────────────────────────────
+  if (process.env.NODE_ENV === 'production') {
+    const required = [
+      'DATABASE_URL',
+      'JWT_SECRET',
+      'CHAPA_SECRET_KEY',
+      'CHAPA_WEBHOOK_SECRET',
+      'REDIS_HOST',
+    ];
+    const missing = required.filter((key) => !process.env[key]);
+    if (missing.length > 0) {
+      console.error(
+        `\n❌ FATAL: Missing required environment variables in production:\n  ${missing.join('\n  ')}\n`,
+      );
+      process.exit(1);
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // ── Security ────────────────────────────────────────────────────────────────
@@ -130,7 +148,7 @@ async function bootstrap() {
   const dAuth = new AuthManager({
     adapter: new PgAdapter(pgPool),
     plugins,
-    appName: 'AXumia Learnings',
+    appName: 'Axumia Learnings',
     jwt: { accessTokenExpiry: '15m' },
     cors: {
       origin: process.env.FRONTEND_URL || 'http://localhost:3002',
@@ -144,8 +162,8 @@ async function bootstrap() {
   // ── Swagger API Docs ────────────────────────────────────────────────────────
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('AXumia Learnings API')
-      .setDescription('Online Learning Platform — AXumia')
+      .setTitle('Axumia Learnings API')
+      .setDescription('Online Learning Platform — Axumia')
       .setVersion('1.0')
       .addBearerAuth()
       .build();
@@ -155,7 +173,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`\n🚀 AXumia Learnings API running on http://localhost:${port}`);
+  console.log(`\n🚀 Axumia Learnings API running on http://localhost:${port}`);
   console.log(`📖 Swagger docs: http://localhost:${port}/api/docs`);
   console.log(`🔐 Auth endpoints: http://localhost:${port}/auth`);
 }

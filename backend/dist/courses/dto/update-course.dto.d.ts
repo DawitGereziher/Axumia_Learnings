@@ -4,6 +4,7 @@ export declare class UpdateCourseDto {
     description?: string;
     price?: number;
     status?: CourseStatus;
+    is_published?: boolean;
     level?: string;
     language?: string;
     tags?: string[];

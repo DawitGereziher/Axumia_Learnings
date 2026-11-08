@@ -103,7 +103,22 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         method: 'PATCH',
         body: JSON.stringify({ title, description, price, status, level, thumbnail }),
       });
-      if (!res.ok) throw new Error('Could not update course');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Could not update course');
+      }
+
+      // Handle status transitions
+      if (status === 'published' && course?.status !== 'published') {
+        const pubRes = await authFetch(`/api/courses/${courseId}/publish`, { method: 'POST' });
+        if (!pubRes.ok) {
+          const pubData = await pubRes.json().catch(() => ({}));
+          throw new Error(pubData.message || 'Course details saved, but publishing failed. Ensure title, description, and at least 1 lesson exist.');
+        }
+      } else if (status === 'archived' && course?.status !== 'archived') {
+        await authFetch(`/api/courses/${courseId}/archive`, { method: 'POST' });
+      }
+
       setMessage('Course updated successfully.');
       fetchCourse();
     } catch (err: any) {

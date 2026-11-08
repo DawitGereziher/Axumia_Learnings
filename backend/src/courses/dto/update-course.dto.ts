@@ -39,6 +39,11 @@ export class UpdateCourseDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsBoolean()
+  is_published?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
   level?: string;
 

@@ -19,6 +19,7 @@ class UpdateCourseDto {
     description;
     price;
     status;
+    is_published;
     level;
     language;
     tags;
@@ -56,6 +57,12 @@ __decorate([
     (0, class_validator_1.IsIn)(Object.values(enums_1.CourseStatus)),
     __metadata("design:type", String)
 ], UpdateCourseDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateCourseDto.prototype, "is_published", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),

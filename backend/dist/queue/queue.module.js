@@ -11,6 +11,10 @@ const common_1 = require("@nestjs/common");
 const bullmq_1 = require("@nestjs/bullmq");
 const config_1 = require("@nestjs/config");
 const queue_constants_1 = require("./queue.constants");
+const notifications_processor_1 = require("./notifications.processor");
+const payouts_processor_1 = require("./payouts.processor");
+const notifications_module_1 = require("../notifications/notifications.module");
+const prisma_module_1 = require("../prisma/prisma.module");
 let QueueModule = class QueueModule {
 };
 exports.QueueModule = QueueModule;
@@ -35,7 +39,10 @@ exports.QueueModule = QueueModule = __decorate([
                 inject: [config_1.ConfigService],
             }),
             bullmq_1.BullModule.registerQueue({ name: queue_constants_1.QUEUE_NOTIFICATIONS }, { name: queue_constants_1.QUEUE_TRANSCODING }, { name: queue_constants_1.QUEUE_PAYOUTS }),
+            notifications_module_1.NotificationsModule,
+            prisma_module_1.PrismaModule,
         ],
+        providers: [notifications_processor_1.NotificationsProcessor, payouts_processor_1.PayoutsProcessor],
         exports: [bullmq_1.BullModule],
     })
 ], QueueModule);

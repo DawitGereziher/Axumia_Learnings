@@ -44,8 +44,62 @@ model User {
   lessonQuestions      LessonQuestion[]
   lessonAnswers        LessonAnswer[]
   instructorFollows    InstructorFollow[]
+  accounts             Account[]
+  refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
+  emailVerifications   EmailVerification[]
 
   @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// D-auth Auth Tables (Owned in DB, mapped in Prisma to prevent accidental drops)
+// ─────────────────────────────────────────────────────────────────────────────
+model Account {
+  id                  String   @id @default(uuid()) @db.Uuid
+  user_id             String   @db.Uuid
+  provider            String   @db.VarChar(100)
+  provider_account_id String   @db.VarChar(255)
+  created_at          DateTime @default(now()) @db.Timestamptz
+  user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([provider, provider_account_id])
+  @@map("accounts")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  token      String   @unique
+  expires_at DateTime @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  token      String   @unique
+  expires_at DateTime @db.Timestamptz
+  used       Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model EmailVerification {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  code       String   @db.VarChar(10)
+  expires_at DateTime @db.Timestamptz
+  used       Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("email_verifications")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

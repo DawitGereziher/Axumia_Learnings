@@ -285,6 +285,52 @@ function InstructorDashboardView({ user }: any) {
         </div>
       </div>
 
+      {/* Onboarding Guide for New Instructors */}
+      {(!user?.instructorProfile?.bio || user?.instructorProfile?.kyc_status === 'pending') && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(12, 59, 46, 0.9) 0%, rgba(7, 38, 31, 0.95) 100%)',
+          border: '1px solid rgba(253, 224, 71, 0.3)',
+          borderRadius: 20,
+          padding: '1.5rem 2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1.25rem',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#fde047', fontWeight: 800, fontSize: '0.82rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>
+              <Sparkles size={16} /> Educator Onboarding
+            </div>
+            <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0, marginBottom: 4 }}>
+              Complete your Instructor Profile & KYC
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.88rem', margin: 0, maxWidth: 520 }}>
+              Add your bio, hourly tutoring rate, teaching subjects, and submit your ID to get verified for instant CBE & Telebirr payouts.
+            </p>
+          </div>
+          <Link
+            href="/settings/instructor"
+            style={{
+              padding: '0.65rem 1.4rem',
+              borderRadius: 999,
+              fontSize: '0.88rem',
+              fontWeight: 700,
+              background: '#fde047',
+              color: '#0c3b2e',
+              border: 'none',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            Complete Profile Now →
+          </Link>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <Link href="/instructor/courses/new" className="btn-primary" style={{ padding: '0.75rem 1.5rem', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -292,6 +338,9 @@ function InstructorDashboardView({ user }: any) {
         </Link>
         <Link href="/instructor/availability" className="btn-ghost" style={{ padding: '0.75rem 1.5rem', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
           <Calendar size={18} /> Manage Availability Slots
+        </Link>
+        <Link href="/settings/instructor" className="btn-ghost" style={{ padding: '0.75rem 1.5rem', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <ShieldCheck size={18} /> Instructor Profile & KYC
         </Link>
       </div>
 

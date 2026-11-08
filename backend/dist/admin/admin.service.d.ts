@@ -193,10 +193,6 @@ export declare class AdminService {
                 slug: string;
                 icon: string | null;
             } | null;
-            _count: {
-                purchases: number;
-                lessons: number;
-            };
             instructor: {
                 user: {
                     email: string;
@@ -227,6 +223,10 @@ export declare class AdminService {
                 total_students: number;
                 total_sessions: number;
                 avg_rating: import("@prisma/client-runtime-utils").Decimal;
+            };
+            _count: {
+                purchases: number;
+                lessons: number;
             };
         } & {
             id: string;

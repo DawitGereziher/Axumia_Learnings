@@ -348,10 +348,13 @@ export default function CourseCreationWizardPage() {
 
       // 3. Publish if requested
       if (shouldPublish) {
-        await authFetch(`/api/courses/${courseId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ is_published: true }),
+        const pubRes = await authFetch(`/api/courses/${courseId}/publish`, {
+          method: 'POST',
         });
+        if (!pubRes.ok) {
+          const errData = await pubRes.json().catch(() => ({}));
+          console.warn('Could not auto-publish course:', errData.message);
+        }
       }
 
       router.push(`/courses/${courseData.slug || courseId}`);

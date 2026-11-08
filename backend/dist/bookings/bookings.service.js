@@ -301,7 +301,7 @@ let BookingsService = class BookingsService {
             where: { user_id: instructorUserId },
         });
         if (!profile)
-            throw new common_1.NotFoundException('Instructor profile not found');
+            return [];
         return this.prisma.booking.findMany({
             where: { instructor_id: profile.id },
             include: { student: true, slot: true },

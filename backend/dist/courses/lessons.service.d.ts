@@ -24,6 +24,7 @@ export declare class LessonsService {
         created_at: Date;
         updated_at: Date;
         version: number;
+        is_published: boolean;
         position: number;
         section_id: string | null;
         content_type: string;
@@ -36,7 +37,6 @@ export declare class LessonsService {
         embed_code: string | null;
         is_encrypted: boolean;
         access_level: string;
-        is_published: boolean;
         published_at: Date | null;
         is_free_preview: boolean;
         requires_progress: boolean;
@@ -49,6 +49,7 @@ export declare class LessonsService {
         created_at: Date;
         updated_at: Date;
         version: number;
+        is_published: boolean;
         position: number;
         section_id: string | null;
         content_type: string;
@@ -61,7 +62,6 @@ export declare class LessonsService {
         embed_code: string | null;
         is_encrypted: boolean;
         access_level: string;
-        is_published: boolean;
         published_at: Date | null;
         is_free_preview: boolean;
         requires_progress: boolean;
@@ -74,6 +74,7 @@ export declare class LessonsService {
         created_at: Date;
         updated_at: Date;
         version: number;
+        is_published: boolean;
         position: number;
         section_id: string | null;
         content_type: string;
@@ -86,7 +87,6 @@ export declare class LessonsService {
         embed_code: string | null;
         is_encrypted: boolean;
         access_level: string;
-        is_published: boolean;
         published_at: Date | null;
         is_free_preview: boolean;
         requires_progress: boolean;
@@ -110,6 +110,7 @@ export declare class LessonsService {
             created_at: Date;
             updated_at: Date;
             version: number;
+            is_published: boolean;
             position: number;
             section_id: string | null;
             content_type: string;
@@ -122,7 +123,6 @@ export declare class LessonsService {
             embed_code: string | null;
             is_encrypted: boolean;
             access_level: string;
-            is_published: boolean;
             published_at: Date | null;
             is_free_preview: boolean;
             requires_progress: boolean;

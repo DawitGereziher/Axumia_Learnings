@@ -253,8 +253,7 @@ export class CoursesService {
     const isAdmin = user?.role === 'admin';
     if (!isOwner && !isAdmin) throw new ForbiddenException('You do not own this course');
 
-    // Explicit field pick — instructor_id, slug, status cannot be changed here
-    // Status changes must go through publish() or archive()
+    // Explicit field pick — instructor_id, slug cannot be changed directly
     const updated = await this.prisma.course.update({
       where: { id: courseId },
       data: {
@@ -271,6 +270,21 @@ export class CoursesService {
         ...(dto.learning_objectives !== undefined ? { learning_objectives: dto.learning_objectives } : {}),
       },
     });
+
+    // Support status transition if requested in update payload
+    const requestedStatus = dto.status || ((dto as any).is_published ? CourseStatus.PUBLISHED : undefined);
+    if (requestedStatus === CourseStatus.PUBLISHED && course.status !== CourseStatus.PUBLISHED) {
+      return this.publishCourse(courseId, instructorUserId);
+    } else if (requestedStatus === CourseStatus.ARCHIVED && course.status !== CourseStatus.ARCHIVED) {
+      return this.archiveCourse(courseId, instructorUserId);
+    } else if (requestedStatus === CourseStatus.DRAFT && course.status !== CourseStatus.DRAFT) {
+      const drafted = await this.prisma.course.update({
+        where: { id: courseId },
+        data: { status: CourseStatus.DRAFT },
+      });
+      await this.cache.delPattern('courses:list:*');
+      return drafted;
+    }
 
     await this.cache.delPattern('courses:list:*');
     return updated;

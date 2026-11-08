@@ -49,6 +49,20 @@ const all_exceptions_filter_1 = require("./common/filters/all-exceptions.filter"
 const D_auth_1 = require("../../D-auth");
 const pg_1 = require("pg");
 async function bootstrap() {
+    if (process.env.NODE_ENV === 'production') {
+        const required = [
+            'DATABASE_URL',
+            'JWT_SECRET',
+            'CHAPA_SECRET_KEY',
+            'CHAPA_WEBHOOK_SECRET',
+            'REDIS_HOST',
+        ];
+        const missing = required.filter((key) => !process.env[key]);
+        if (missing.length > 0) {
+            console.error(`\n❌ FATAL: Missing required environment variables in production:\n  ${missing.join('\n  ')}\n`);
+            process.exit(1);
+        }
+    }
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.use((0, helmet_1.default)());
     app.use((0, compression_1.default)());
@@ -123,7 +137,7 @@ async function bootstrap() {
     const dAuth = new D_auth_1.AuthManager({
         adapter: new D_auth_1.PgAdapter(pgPool),
         plugins,
-        appName: 'AXumia Learnings',
+        appName: 'Axumia Learnings',
         jwt: { accessTokenExpiry: '15m' },
         cors: {
             origin: process.env.FRONTEND_URL || 'http://localhost:3002',
@@ -133,8 +147,8 @@ async function bootstrap() {
     app.use('/auth', dAuth.router);
     if (process.env.NODE_ENV !== 'production') {
         const config = new swagger_1.DocumentBuilder()
-            .setTitle('AXumia Learnings API')
-            .setDescription('Online Learning Platform — AXumia')
+            .setTitle('Axumia Learnings API')
+            .setDescription('Online Learning Platform — Axumia')
             .setVersion('1.0')
             .addBearerAuth()
             .build();
@@ -143,7 +157,7 @@ async function bootstrap() {
     }
     const port = process.env.PORT || 3000;
     await app.listen(port);
-    console.log(`\n🚀 AXumia Learnings API running on http://localhost:${port}`);
+    console.log(`\n🚀 Axumia Learnings API running on http://localhost:${port}`);
     console.log(`📖 Swagger docs: http://localhost:${port}/api/docs`);
     console.log(`🔐 Auth endpoints: http://localhost:${port}/auth`);
 }

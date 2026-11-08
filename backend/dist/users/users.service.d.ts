@@ -364,15 +364,15 @@ export declare class UsersService {
             completed: boolean;
             id: string;
             title: string;
-            total_lessons: number;
-            slug: string;
-            thumbnail_url: string | null;
             instructor: {
                 user: {
                     first_name: string | null;
                     last_name: string | null;
                 };
             };
+            total_lessons: number;
+            slug: string;
+            thumbnail_url: string | null;
         }[];
         upcoming_bookings: ({
             instructor: {

@@ -71,12 +71,28 @@ export async function getMe(): Promise<AuthUser | null> {
 
 
 export async function login(email: string, password: string) {
-  const res = await fetch(`${API}/auth/login`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Login failed');
+  let res: Response;
+  try {
+    res = await fetch(`${API}/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch (err: any) {
+    throw new Error('Unable to connect to server. Please ensure the backend is running.');
+  }
+
+  let data: any = {};
+  const text = await res.text();
+  try {
+    data = JSON.parse(text);
+  } catch {
+    if (!res.ok) {
+      throw new Error(`Server error (${res.status}): Please check backend logs or try again shortly.`);
+    }
+    throw new Error('Invalid response from server.');
+  }
+
+  if (!res.ok) throw new Error(data.error || data.message || 'Login failed');
   setTokens(data.accessToken, data.refreshToken);
   return data;
 }
@@ -84,12 +100,28 @@ export async function login(email: string, password: string) {
 export async function register(payload: {
   email: string; password: string; first_name: string; last_name: string; role?: string;
 }) {
-  const res = await fetch(`${API}/auth/register`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Registration failed');
+  let res: Response;
+  try {
+    res = await fetch(`${API}/auth/register`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (err: any) {
+    throw new Error('Unable to connect to server. Please ensure the backend is running.');
+  }
+
+  let data: any = {};
+  const text = await res.text();
+  try {
+    data = JSON.parse(text);
+  } catch {
+    if (!res.ok) {
+      throw new Error(`Server error (${res.status}): Please check backend logs or try again shortly.`);
+    }
+    throw new Error('Invalid response from server.');
+  }
+
+  if (!res.ok) throw new Error(data.error || data.message || 'Registration failed');
   setTokens(data.accessToken, data.refreshToken);
   return data;
 }

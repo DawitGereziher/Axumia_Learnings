@@ -28,6 +28,10 @@ class PgAdapter extends BaseAdapter {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
             ALTER TABLE users ALTER COLUMN id SET DEFAULT gen_random_uuid();
+            ALTER TABLE accounts ALTER COLUMN id SET DEFAULT gen_random_uuid();
+            ALTER TABLE refresh_tokens ALTER COLUMN id SET DEFAULT gen_random_uuid();
+            ALTER TABLE password_reset_tokens ALTER COLUMN id SET DEFAULT gen_random_uuid();
+            ALTER TABLE email_verifications ALTER COLUMN id SET DEFAULT gen_random_uuid();
 
             CREATE TABLE IF NOT EXISTS accounts (
                 id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,7 +103,20 @@ class PgAdapter extends BaseAdapter {
              profile.role || 'student', profile.image || null,
              profile.is_email_verified || false]
         );
-        return rows[0];
+        const user = rows[0];
+        if (user && user.role === 'instructor') {
+            try {
+                await this.pool.query(
+                    `INSERT INTO instructor_profiles (id, user_id, kyc_status, is_active, hourly_rate, total_students, total_sessions, avg_rating, created_at, updated_at)
+                     VALUES (gen_random_uuid(), $1, 'pending', true, 0, 0, 0, 0, NOW(), NOW())
+                     ON CONFLICT (user_id) DO NOTHING`,
+                    [userId]
+                );
+            } catch (err) {
+                console.warn('[D-auth] Auto-creation of instructor_profile failed:', err.message);
+            }
+        }
+        return user;
     }
 
     async updateUser(id, fields) {
@@ -139,12 +156,13 @@ class PgAdapter extends BaseAdapter {
     // ── OAuth Account Linking ─────────────────────────────────────────────────
 
     async linkAccount(userId, provider, providerAccountId) {
+        const id = crypto.randomUUID();
         const { rows } = await this.pool.query(
-            `INSERT INTO accounts (user_id, provider, provider_account_id)
-             VALUES ($1,$2,$3)
+            `INSERT INTO accounts (id, user_id, provider, provider_account_id)
+             VALUES ($1,$2,$3,$4)
              ON CONFLICT (provider, provider_account_id) DO NOTHING
              RETURNING *`,
-            [userId, provider, providerAccountId]
+            [id, userId, provider, providerAccountId]
         );
         return rows[0];
     }
@@ -160,9 +178,10 @@ class PgAdapter extends BaseAdapter {
     // ── Refresh Tokens ────────────────────────────────────────────────────────
 
     async saveRefreshToken(userId, token, expiresAt) {
+        const id = crypto.randomUUID();
         await this.pool.query(
-            'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1,$2,$3)',
-            [userId, token, expiresAt]
+            'INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES ($1,$2,$3,$4)',
+            [id, userId, token, expiresAt]
         );
     }
 
@@ -185,11 +204,12 @@ class PgAdapter extends BaseAdapter {
 
     async createPasswordResetToken(userId) {
         await this.pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
+        const id        = crypto.randomUUID();
         const token     = crypto.randomBytes(48).toString('hex');
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
         await this.pool.query(
-            'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1,$2,$3)',
-            [userId, token, expiresAt]
+            'INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES ($1,$2,$3,$4)',
+            [id, userId, token, expiresAt]
         );
         return token;
     }
@@ -210,11 +230,12 @@ class PgAdapter extends BaseAdapter {
 
     async createEmailVerification(userId) {
         await this.pool.query('DELETE FROM email_verifications WHERE user_id = $1', [userId]);
+        const id        = crypto.randomUUID();
         const code      = crypto.randomInt(100000, 1000000).toString(); // 6-digit CSPRNG OTP
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
         await this.pool.query(
-            'INSERT INTO email_verifications (user_id, code, expires_at) VALUES ($1,$2,$3)',
-            [userId, code, expiresAt]
+            'INSERT INTO email_verifications (id, user_id, code, expires_at) VALUES ($1,$2,$3,$4)',
+            [id, userId, code, expiresAt]
         );
         return code;
     }

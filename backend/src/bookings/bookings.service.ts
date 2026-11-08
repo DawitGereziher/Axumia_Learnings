@@ -372,7 +372,7 @@ export class BookingsService {
     const profile = await this.prisma.instructorProfile.findUnique({
       where: { user_id: instructorUserId },
     });
-    if (!profile) throw new NotFoundException('Instructor profile not found');
+    if (!profile) return [];
     return this.prisma.booking.findMany({
       where: { instructor_id: profile.id },
       include: { student: true, slot: true },

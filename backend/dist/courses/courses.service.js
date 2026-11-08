@@ -230,6 +230,21 @@ let CoursesService = class CoursesService {
                 ...(dto.learning_objectives !== undefined ? { learning_objectives: dto.learning_objectives } : {}),
             },
         });
+        const requestedStatus = dto.status || (dto.is_published ? enums_1.CourseStatus.PUBLISHED : undefined);
+        if (requestedStatus === enums_1.CourseStatus.PUBLISHED && course.status !== enums_1.CourseStatus.PUBLISHED) {
+            return this.publishCourse(courseId, instructorUserId);
+        }
+        else if (requestedStatus === enums_1.CourseStatus.ARCHIVED && course.status !== enums_1.CourseStatus.ARCHIVED) {
+            return this.archiveCourse(courseId, instructorUserId);
+        }
+        else if (requestedStatus === enums_1.CourseStatus.DRAFT && course.status !== enums_1.CourseStatus.DRAFT) {
+            const drafted = await this.prisma.course.update({
+                where: { id: courseId },
+                data: { status: enums_1.CourseStatus.DRAFT },
+            });
+            await this.cache.delPattern('courses:list:*');
+            return drafted;
+        }
         await this.cache.delPattern('courses:list:*');
         return updated;
     }
