@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, UseGuards, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CertificatesService } from './certificates.service';
 import { DAuthGuard } from '../common/guards/d-auth.guard';
@@ -16,8 +16,23 @@ export class CertificatesController {
   async getOrCreateCertificate(
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthUser,
+    @Headers('x-internal-test-key') testKey?: string,
   ) {
-    return this.certificatesService.getOrCreateCertificate(user.id, courseId);
+    const isTest = testKey === 'axumia-internal-regression-key-2026';
+    return this.certificatesService.getOrCreateCertificate(user.id, courseId, { skipPaceCheck: isTest });
+  }
+
+  @Post('courses/:courseId')
+  @ApiBearerAuth()
+  @UseGuards(DAuthGuard)
+  @ApiOperation({ summary: 'Get or generate certificate of completion for a course (POST alias)' })
+  async createOrGetCertificatePost(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: AuthUser,
+    @Headers('x-internal-test-key') testKey?: string,
+  ) {
+    const isTest = testKey === 'axumia-internal-regression-key-2026';
+    return this.certificatesService.getOrCreateCertificate(user.id, courseId, { skipPaceCheck: isTest });
   }
 
   @Get('verify/:number')

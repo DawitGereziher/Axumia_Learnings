@@ -30,6 +30,7 @@ class CourseModel {
   });
 
   bool get isFree => price == 0;
+  String? get instructorName => instructor?.name;
 
   String? get fullThumbnailUrl {
     if (thumbnail == null || thumbnail!.isEmpty) return null;
@@ -56,10 +57,39 @@ class CourseModel {
       instructor: json['instructor'] != null
           ? CourseInstructorModel.fromJson(json['instructor'])
           : null,
-      sections: (json['sections'] as List<dynamic>?)
-              ?.map((s) => CourseSectionModel.fromJson(s))
-              .toList() ??
-          [],
+      sections: () {
+        final parsedSections = (json['sections'] as List<dynamic>?)
+                ?.map((s) => CourseSectionModel.fromJson(s))
+                .toList() ??
+            [];
+
+        final flatLessons = (json['lessons'] as List<dynamic>?)
+                ?.map((l) => LessonModel.fromJson(l))
+                .toList() ??
+            [];
+
+        if (flatLessons.isNotEmpty) {
+          if (parsedSections.isEmpty) {
+            return [
+              CourseSectionModel(
+                id: 'curriculum',
+                title: 'Course Curriculum',
+                order: 0,
+                lessons: flatLessons,
+              ),
+            ];
+          }
+          return parsedSections.map((sec) {
+            if (sec.lessons.isEmpty) {
+              final matching = flatLessons.where((l) => l.sectionId == sec.id).toList();
+              return sec.copyWith(lessons: matching);
+            }
+            return sec;
+          }).toList();
+        }
+
+        return parsedSections;
+      }(),
     );
   }
 }
@@ -104,11 +134,25 @@ class CourseSectionModel {
     this.lessons = const [],
   });
 
+  CourseSectionModel copyWith({
+    String? id,
+    String? title,
+    int? order,
+    List<LessonModel> lessons = const [],
+  }) {
+    return CourseSectionModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      order: order ?? this.order,
+      lessons: lessons.isNotEmpty ? lessons : this.lessons,
+    );
+  }
+
   factory CourseSectionModel.fromJson(Map<String, dynamic> json) {
     return CourseSectionModel(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Section',
-      order: int.tryParse(json['order']?.toString() ?? '0') ?? 0,
+      order: int.tryParse(json['order']?.toString() ?? json['position']?.toString() ?? '0') ?? 0,
       lessons: (json['lessons'] as List<dynamic>?)
               ?.map((l) => LessonModel.fromJson(l))
               .toList() ??
@@ -117,31 +161,75 @@ class CourseSectionModel {
   }
 }
 
+class LessonMaterialModel {
+  final String id;
+  final String title;
+  final String fileUrl;
+  final String? fileType;
+  final int? fileSize;
+
+  LessonMaterialModel({
+    required this.id,
+    required this.title,
+    required this.fileUrl,
+    this.fileType,
+    this.fileSize,
+  });
+
+  factory LessonMaterialModel.fromJson(Map<String, dynamic> json) {
+    return LessonMaterialModel(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Resource File',
+      fileUrl: json['file_url']?.toString() ?? '',
+      fileType: json['file_type']?.toString(),
+      fileSize: int.tryParse(json['file_size']?.toString() ?? '0'),
+    );
+  }
+}
+
 class LessonModel {
   final String id;
   final String title;
+  final String? youtubeUrl;
   final String? videoUrl;
+  final String contentType;
   final int durationMinutes;
   final bool isPreview;
   final bool isCompleted;
+  final String? sectionId;
+  final List<LessonMaterialModel> materials;
 
   LessonModel({
     required this.id,
     required this.title,
+    this.youtubeUrl,
     this.videoUrl,
+    this.contentType = 'youtube',
     this.durationMinutes = 0,
     this.isPreview = false,
     this.isCompleted = false,
+    this.sectionId,
+    this.materials = const [],
   });
+
+  /// Resolves the actual playable video link or YouTube URL
+  String? get activeVideoUrl => youtubeUrl ?? videoUrl;
 
   factory LessonModel.fromJson(Map<String, dynamic> json) {
     return LessonModel(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Lesson',
-      videoUrl: json['video_url']?.toString(),
+      youtubeUrl: json['youtube_url']?.toString() ?? json['video_url']?.toString(),
+      videoUrl: json['video_url']?.toString() ?? json['youtube_url']?.toString(),
+      contentType: json['content_type']?.toString() ?? 'youtube',
       durationMinutes: int.tryParse(json['duration_minutes']?.toString() ?? '0') ?? 0,
-      isPreview: json['is_preview'] == true,
+      isPreview: json['is_preview'] == true || json['is_free_preview'] == true,
       isCompleted: json['is_completed'] == true,
+      sectionId: json['section_id']?.toString(),
+      materials: (json['materials'] as List<dynamic>?)
+              ?.map((m) => LessonMaterialModel.fromJson(m))
+              .toList() ??
+          [],
     );
   }
 }

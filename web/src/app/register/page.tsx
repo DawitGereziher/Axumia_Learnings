@@ -54,13 +54,31 @@ function RegisterContent() {
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)' }}>
       <Navbar />
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 'calc(100vh - 64px)', marginTop: 64 }}>
+      <style>{`
+        .auth-split-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          min-height: calc(100vh - 64px);
+          margin-top: 64px;
+          flex: 1;
+        }
+        @media (max-width: 900px) {
+          .auth-split-grid {
+            grid-template-columns: 1fr;
+          }
+          .auth-split-media {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      <div className="auth-split-grid">
 
         {/* ── Left — full-height info panel ─────────────────────────────── */}
-        <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
+        <div className="auth-split-media" style={{ position: 'relative', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
           <img
             src={isInstructor ? '/assets/hero-instructor.jpg' : '/assets/join-community.jpg'}
-            onError={(e) => { e.currentTarget.src = '/assets/hero-student.jpg'; }}
+            onError={(e) => { e.currentTarget.src = isInstructor ? '/assets/login-instructor-banner.jpg' : '/assets/hero-student.jpg'; }}
             alt={isInstructor ? 'Teach on AXumia Learnings' : 'Join AXumia Learnings community'}
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'all 0.5s ease' }}
           />
@@ -68,7 +86,7 @@ function RegisterContent() {
             position: 'absolute', inset: 0,
             background: 'linear-gradient(to right, rgba(7, 38, 31, 0.95) 0%, rgba(12, 59, 46, 0.72) 100%)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            padding: '3rem',
+            padding: 'clamp(2rem, 5vw, 4rem)',
           }}>
             <div style={{ marginBottom: '1rem' }}>
               <span style={{
@@ -156,7 +174,14 @@ function RegisterContent() {
                   key={r}
                   type="button"
                   id={`reg-role-${r}`}
-                  onClick={() => setForm(f => ({ ...f, role: r }))}
+                  onClick={() => {
+                    setForm(f => ({ ...f, role: r }));
+                    if (typeof window !== 'undefined') {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set('role', r);
+                      window.history.replaceState({}, '', url.toString());
+                    }
+                  }}
                   style={{
                     flex: 1, padding: '0.65rem 1rem', borderRadius: 999, border: 'none',
                     background: form.role === r ? 'var(--pine-deep)' : 'transparent',

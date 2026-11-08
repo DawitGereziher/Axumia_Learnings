@@ -1,9 +1,37 @@
-// DTO for submitting a quiz attempt
-// The student sends all their answers in one request; the server grades everything.
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsArray,
+  ValidateNested,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class SubmittedAnswerDto {
+  @ApiProperty({ description: 'ID of the question being answered' })
+  @IsString()
+  @IsNotEmpty()
+  question_id: string;
+
+  @ApiProperty({ description: 'Student response value' })
+  @IsString()
+  answer: string;
+}
+
 export class SubmitAttemptDto {
-  answers!: {
-    question_id: string;
-    answer: string;  // index string for MC/TF, free text for text questions
-  }[];
-  time_taken?: number;  // seconds spent (for analytics; not enforced here)
+  @ApiProperty({ type: [SubmittedAnswerDto], description: 'List of answers submitted for the quiz' })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SubmittedAnswerDto)
+  answers: SubmittedAnswerDto[];
+
+  @ApiPropertyOptional({ description: 'Time taken in seconds to complete the attempt' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  time_taken?: number;
 }

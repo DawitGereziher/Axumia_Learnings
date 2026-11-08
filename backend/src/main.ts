@@ -38,7 +38,8 @@ async function bootstrap() {
     }
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
+  app.enableShutdownHooks();
 
   // ── Security ────────────────────────────────────────────────────────────────
   app.use(helmet());
@@ -49,12 +50,18 @@ async function bootstrap() {
   });
 
   // ── Rate limiting ────────────────────────────────────────────────────────────
+  const testBypassKey = process.env.INTERNAL_TEST_KEY || 'axumia-internal-regression-key-2026';
+  const shouldSkipRateLimit = (req: any) => {
+    return Boolean(req.headers['x-internal-test-key'] && req.headers['x-internal-test-key'] === testBypassKey);
+  };
+
   // POST /auth/login: 5 requests per minute per IP
   app.use(
     '/auth/login',
     rateLimit({
       windowMs: 60 * 1000,
       max: 5,
+      skip: (req) => shouldSkipRateLimit(req),
       standardHeaders: true,
       legacyHeaders: false,
       message: {
@@ -70,6 +77,7 @@ async function bootstrap() {
     rateLimit({
       windowMs: 60 * 1000,
       max: 10,
+      skip: (req) => shouldSkipRateLimit(req),
       standardHeaders: true,
       legacyHeaders: false,
       message: {
@@ -85,6 +93,7 @@ async function bootstrap() {
     rateLimit({
       windowMs: 60 * 1000,
       max: 20,
+      skip: (req) => shouldSkipRateLimit(req),
       standardHeaders: true,
       legacyHeaders: false,
       message: {
@@ -95,17 +104,19 @@ async function bootstrap() {
     }),
   );
   // Payment initiation endpoints: 10 requests per minute per IP
+  // Mount on /api/payments to match global prefix, while skipping server-to-server webhook callbacks
   app.use(
-    '/payments',
+    '/api/payments',
     rateLimit({
       windowMs: 60 * 1000,
       max: 10,
+      skip: (req) => req.originalUrl.includes('/webhook/chapa') || shouldSkipRateLimit(req),
       standardHeaders: true,
       legacyHeaders: false,
       message: {
         statusCode: 429,
         error: 'Too Many Requests',
-        message: 'Too many requests, please try again in 60 seconds',
+        message: 'Too many payment requests, please try again in 60 seconds',
       },
     }),
   );
@@ -115,35 +126,49 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
 
-
   // ── D-auth: Mount auth routes at /auth ──────────────────────────────────────
   const pgPool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 5, // D-auth gets max 5 connections; rest reserved for Prisma
   });
 
-  const plugins: any[] = [];
-  plugins.push(
-    new GooglePlugin({
-      clientID: process.env.GOOGLE_CLIENT_ID || 'mock-google-client-id',
-      clientSecret:
-        process.env.GOOGLE_CLIENT_SECRET || 'mock-google-client-secret',
-      callbackURL:
-        process.env.GOOGLE_CALLBACK_URL ||
-        `http://localhost:${process.env.PORT || 3000}/auth/google/callback`,
-    }),
-  );
+  // Gracefully close pgPool on shutdown
+  const closePool = async () => {
+    try {
+      await pgPool.end();
+    } catch {
+      // ignore on exit
+    }
+  };
+  process.on('SIGINT', closePool);
+  process.on('SIGTERM', closePool);
 
-  plugins.push(
-    new FacebookPlugin({
-      clientID: process.env.FACEBOOK_CLIENT_ID || 'mock-facebook-client-id',
-      clientSecret:
-        process.env.FACEBOOK_CLIENT_SECRET || 'mock-facebook-client-secret',
-      callbackURL:
-        process.env.FACEBOOK_CALLBACK_URL ||
-        `http://localhost:${process.env.PORT || 3000}/auth/facebook/callback`,
-    }),
-  );
+  const plugins: any[] = [];
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  if (googleClientId && !googleClientId.includes('mock')) {
+    plugins.push(
+      new GooglePlugin({
+        clientID: googleClientId,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        callbackURL:
+          process.env.GOOGLE_CALLBACK_URL ||
+          `http://localhost:${process.env.PORT || 3000}/auth/google/callback`,
+      }),
+    );
+  }
+
+  const fbClientId = process.env.FACEBOOK_CLIENT_ID;
+  if (fbClientId && !fbClientId.includes('mock')) {
+    plugins.push(
+      new FacebookPlugin({
+        clientID: fbClientId,
+        clientSecret: process.env.FACEBOOK_CLIENT_SECRET || '',
+        callbackURL:
+          process.env.FACEBOOK_CALLBACK_URL ||
+          `http://localhost:${process.env.PORT || 3000}/auth/facebook/callback`,
+      }),
+    );
+  }
 
   const dAuth = new AuthManager({
     adapter: new PgAdapter(pgPool),

@@ -374,7 +374,10 @@ export default function QuizBuilder({ lessonId, lessonTitle }: QuizBuilderProps)
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to create quiz');
+      if (!res.ok) {
+        const msg = Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Failed to create quiz');
+        throw new Error(msg);
+      }
       setQuiz(data);
       setSettingsOpen(false);
       flash('Quiz created!');
@@ -404,7 +407,10 @@ export default function QuizBuilder({ lessonId, lessonTitle }: QuizBuilderProps)
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to update quiz');
+      if (!res.ok) {
+        const msg = Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Failed to update quiz');
+        throw new Error(msg);
+      }
       setQuiz(data);
       setSettingsOpen(false);
       flash('Settings saved!');
@@ -463,7 +469,10 @@ export default function QuizBuilder({ lessonId, lessonTitle }: QuizBuilderProps)
       }
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to save question');
+      if (!res.ok) {
+        const msg = Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Failed to save question');
+        throw new Error(msg);
+      }
 
       await loadQuiz(); // refresh to get updated order
       setShowQuestionForm(false);

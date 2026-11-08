@@ -39,7 +39,10 @@ export default function CourseCard({ course, initialWishlisted = false }: Course
     e.stopPropagation();
 
     const token = getAccessToken();
-    if (!token) return;
+    if (!token) {
+      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
 
     setToggling(true);
     try {

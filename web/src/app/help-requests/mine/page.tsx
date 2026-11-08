@@ -10,9 +10,10 @@ import { useRouter } from 'next/navigation';
 import {
   ClipboardList, Clock, CheckCircle2, XCircle, RefreshCw,
   ExternalLink, AlertTriangle, Loader2, Video, CalendarDays,
-  PlusCircle, ChevronRight, BookOpen, Link2,
+  PlusCircle, ChevronRight, BookOpen, Link2, CreditCard,
 } from 'lucide-react';
 import SessionMonitoringIndicator from '@/components/settings/SessionMonitoringIndicator';
+import { initiateUnifiedCheckout } from '@/lib/checkout';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -31,7 +32,7 @@ interface MyRequest {
   _count: { bids: number };
   session: {
     id: string;
-    status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+    status: 'awaiting_payment' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
     meeting_link: string | null;
     actual_hours: number | null;
     started_at: string | null;
@@ -68,10 +69,11 @@ function StatusBadge({ status }: { status: string }) {
 
 function SessionBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; color: string }> = {
-    scheduled:   { label: '📅 Session Scheduled',  color: '#818cf8' },
-    in_progress: { label: '🔴 Session Live',        color: '#f59e0b' },
-    completed:   { label: '✓ Session Completed',   color: '#10b981' },
-    cancelled:   { label: '✕ Session Cancelled',   color: '#ef4444' },
+    awaiting_payment: { label: '💳 Escrow Required',    color: '#f59e0b' },
+    scheduled:        { label: '📅 Session Scheduled',  color: '#818cf8' },
+    in_progress:      { label: '🔴 Session Live',        color: '#f59e0b' },
+    completed:        { label: '✓ Session Completed',   color: '#10b981' },
+    cancelled:        { label: '✕ Session Cancelled',   color: '#ef4444' },
   };
   const s = map[status] || { label: status, color: '#94a3b8' };
   return (
@@ -162,7 +164,42 @@ function RequestCard({ req, onRefresh }: { req: MyRequest; onRefresh: () => void
             <Video size={14} /> Session
           </div>
 
-          {req.session.meeting_link ? (
+          {req.session.status === 'awaiting_payment' ? (
+            <div style={{
+              background: 'rgba(245,158,11,0.08)',
+              border: '1px solid rgba(245,158,11,0.25)',
+              borderRadius: 12,
+              padding: '1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}>
+              <p style={{ fontSize: '0.86rem', color: '#fbbf24', margin: 0, lineHeight: 1.5 }}>
+                ⚠️ <strong>Escrow Deposit Pending:</strong> You accepted an offer, but escrow payment has not been confirmed yet. Your helper is not scheduled until funds are deposited into Axumia Escrow.
+              </p>
+              <div>
+                <button
+                  onClick={async () => {
+                    try {
+                      await initiateUnifiedCheckout({
+                        entityType: 'help_session',
+                        entityId: req.session!.id,
+                      });
+                    } catch (err: any) {
+                      alert(err.message || 'Payment initiation failed');
+                    }
+                  }}
+                  className="btn-primary"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                    padding: '0.5rem 1.1rem', fontSize: '0.85rem', fontWeight: 700,
+                  }}
+                >
+                  <CreditCard size={15} /> Pay Escrow via Chapa →
+                </button>
+              </div>
+            </div>
+          ) : req.session.meeting_link ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Meeting link:</span>
               <a
@@ -267,29 +304,29 @@ export default function MyRequestsPage() {
   );
 
   return (
-    <main style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#080a0f' }}>
+    <main style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary, #0a0d14)' }}>
       <Navbar />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       <div style={{ paddingTop: '80px', flex: 1 }}>
 
         {/* Header */}
-        <div style={{ background: 'linear-gradient(180deg, rgba(99,102,241,0.07) 0%, transparent 60%)', padding: '2.5rem 1.5rem 0' }}>
-          <div className="container" style={{ maxWidth: 900 }}>
+        <div style={{ background: 'linear-gradient(180deg, rgba(99,102,241,0.07) 0%, transparent 60%)', padding: '2.5rem 2rem 0' }}>
+          <div className="container" style={{ maxWidth: 1720 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  <Link href="/help-requests" style={{ color: '#475569', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <Link href="/help-requests" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <BookOpen size={14} /> Help Requests
                   </Link>
                   <ChevronRight size={14} color="#334155" />
                   <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>My Requests</span>
                 </div>
-                <h1 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '2rem', marginBottom: '0.35rem' }}>
-                  My <span className="gradient-text">Requests</span>
+                <h1 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '2.25rem', marginBottom: '0.35rem', letterSpacing: '-0.02em' }}>
+                  My <span className="gradient-text">Requests & Sessions</span>
                 </h1>
-                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                  Track all your posted help requests and active sessions.
+                <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+                  Track all your posted 1-on-1 help requests, review mentor bids, and manage active tutoring sessions.
                 </p>
               </div>
 
@@ -306,7 +343,7 @@ export default function MyRequestsPage() {
                 <Link
                   href="/help-requests/new"
                   className="btn-primary"
-                  style={{ padding: '0.6rem 1.25rem', fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                  style={{ padding: '0.65rem 1.4rem', fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                 >
                   <PlusCircle size={15} /> New Request
                 </Link>
@@ -315,16 +352,16 @@ export default function MyRequestsPage() {
 
             {/* Stats */}
             {!loading && reqs.length > 0 && (
-              <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', padding: '1rem 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', padding: '1rem 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                 {[
-                  { label: 'Total',       value: counts.all,         color: '#94a3b8' },
-                  { label: 'Open',        value: counts.open,        color: '#10b981' },
-                  { label: 'In Progress', value: counts.in_progress, color: '#f59e0b' },
-                  { label: 'Completed',   value: counts.completed,   color: '#818cf8' },
+                  { label: 'Total Requests',       value: counts.all,         color: '#94a3b8' },
+                  { label: 'Open For Bidding',     value: counts.open,        color: '#10b981' },
+                  { label: 'In Progress Sessions', value: counts.in_progress, color: '#f59e0b' },
+                  { label: 'Completed',            value: counts.completed,   color: '#818cf8' },
                 ].map(s => (
-                  <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}>
-                    <span style={{ fontWeight: 800, color: s.color, fontSize: '1rem' }}>{s.value}</span>
-                    <span style={{ color: '#475569' }}>{s.label}</span>
+                  <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <span style={{ fontWeight: 800, color: s.color, fontSize: '1.1rem' }}>{s.value}</span>
+                    <span style={{ color: '#64748b' }}>{s.label}</span>
                   </div>
                 ))}
               </div>
@@ -333,7 +370,7 @@ export default function MyRequestsPage() {
         </div>
 
         {/* Content */}
-        <div className="container" style={{ maxWidth: 900, padding: '2rem 1.5rem 4rem' }}>
+        <div className="container" style={{ maxWidth: 1720, padding: '2rem 2rem 4rem' }}>
 
           {/* Filter tabs */}
           {!loading && reqs.length > 0 && (
@@ -388,7 +425,7 @@ export default function MyRequestsPage() {
           )}
 
           {!loading && filtered.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(500px, 1fr))', gap: '1.25rem' }}>
               {filtered.map(req => (
                 <RequestCard key={req.id} req={req} onRefresh={load} />
               ))}

@@ -1,7 +1,14 @@
 const jwt = require('jsonwebtoken');
 
 function getSecret() {
-    return process.env.JWT_SECRET || 'dev-super-secret-change-in-production';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('FATAL: JWT_SECRET environment variable is required in production');
+        }
+        return 'dev-super-secret-change-in-production';
+    }
+    return secret;
 }
 
 /**

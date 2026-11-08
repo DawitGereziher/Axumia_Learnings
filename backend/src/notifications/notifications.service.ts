@@ -84,7 +84,12 @@ export class NotificationsService {
     try {
       const fullHtml = this.wrapHtmlTemplate(subject, html);
       if (!this.config.get('SMTP_USER')) {
-        this.logger.warn(`[SMTP Mock] Email to ${to} | Subject: ${subject}`);
+        const isProd = this.config.get('NODE_ENV') === 'production';
+        if (isProd) {
+          this.logger.error(`[SMTP Config Error] Cannot send email to ${to} — SMTP_USER is not configured in production.`);
+        } else {
+          this.logger.warn(`[SMTP Mock] Email to ${to} | Subject: ${subject}`);
+        }
         return;
       }
       await this.transport.sendMail({ from: this.from(), to, subject, html: fullHtml });
@@ -100,7 +105,12 @@ export class NotificationsService {
     const senderId = this.config.get<string>('AFROMESSAGE_SENDER_ID');
 
     if (!token) {
-      this.logger.log(`[AfroMessage Mock SMS] To: ${phone} | Text: "${message}"`);
+      const isProd = this.config.get('NODE_ENV') === 'production';
+      if (isProd) {
+        this.logger.error(`[AfroMessage Config Error] Cannot send SMS to ${phone} — AFROMESSAGE_TOKEN is not configured in production.`);
+      } else {
+        this.logger.log(`[AfroMessage Mock SMS] To: ${phone} | Text: "${message}"`);
+      }
       return;
     }
 

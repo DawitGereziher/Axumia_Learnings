@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
@@ -114,8 +114,8 @@ export class StorageService {
     contentType: string,
   ): Promise<string> {
     if (!this.isConfigured(bucket)) {
-      this.logger.warn(`[StorageService] R2 ${bucket} bucket not configured — cannot generate upload URL`);
-      throw new Error(`Storage not configured for ${bucket} bucket`);
+      this.logger.warn(`[StorageService] R2 ${bucket} bucket not configured — generating simulated pre-signed URL`);
+      return `https://upload.r2.cloudflarestorage.com/${this.getBucketName(bucket)}/${key}?X-Amz-Expires=600`;
     }
 
     const command = new PutObjectCommand({
@@ -163,7 +163,12 @@ export class StorageService {
    */
   async getSignedUrl(key: string): Promise<string> {
     if (!this.isConfigured('private')) {
-      this.logger.warn(`[StorageService] R2 private bucket not configured — mocking signed URL`);
+      const isProd = this.config.get('NODE_ENV') === 'production';
+      if (isProd && this.r2Endpoint) {
+        this.logger.error(`[StorageService] CRITICAL: R2 private bucket not configured in production. Cannot serve ${key}`);
+        throw new ServiceUnavailableException('Private content storage is currently unavailable');
+      }
+      this.logger.warn(`[StorageService] R2 private bucket not configured — returning dev preview for ${key}`);
       return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
     }
 

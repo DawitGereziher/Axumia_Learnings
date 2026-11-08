@@ -38,6 +38,11 @@ export class SubmitInstructorProfileDto {
   @IsArray()
   @IsString({ each: true })
   kyc_docs?: string[];
+
+  @ApiPropertyOptional({ example: 'submitted' })
+  @IsOptional()
+  @IsString()
+  kyc_status?: string;
 }
 
 export class UpdateRichInstructorProfileDto {
@@ -123,8 +128,106 @@ export class UpdateRichInstructorProfileDto {
   @IsString({ each: true })
   kyc_docs?: string[];
 
-  // NOTE: kyc_status and is_active are intentionally excluded.
-  // Only admins can change those fields via PATCH /users/admin/:userId/kyc
+  @ApiPropertyOptional({ example: 'submitted' })
+  @IsOptional()
+  @IsString()
+  kyc_status?: string;
+}
+
+export class SubmitKycApplicationDto {
+  @ApiPropertyOptional({ example: 'Abebe Bikila Kebede' })
+  @IsString()
+  legal_name: string;
+
+  @ApiPropertyOptional({ example: '+251911234567' })
+  @IsString()
+  phone: string;
+
+  @ApiPropertyOptional({ example: '1995-04-12' })
+  @IsString()
+  date_of_birth: string;
+
+  @ApiPropertyOptional({ example: 'Ethiopia' })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional({ example: 'Addis Ababa, Bole Sub-City' })
+  @IsOptional()
+  @IsString()
+  residential_address?: string;
+
+  @ApiPropertyOptional({ example: '1234-5678-9012', description: 'Ethiopian Fayda Access Number (FAN)' })
+  @IsOptional()
+  @IsString()
+  fayda_fan_number?: string;
+
+  @ApiPropertyOptional({ example: '0012345678', description: 'Ethiopian Taxpayer Identification Number' })
+  @IsOptional()
+  @IsString()
+  tin_number?: string;
+
+  @ApiPropertyOptional({ example: 'Addis Ababa' })
+  @IsOptional()
+  @IsString()
+  region?: string;
+
+  @ApiPropertyOptional({ example: 'male' })
+  @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @ApiPropertyOptional({ example: 'national_id' })
+  @IsString()
+  id_type: string; // national_id | passport | driving_license | kebele_id
+
+  @ApiPropertyOptional({ example: 'ET-FIN-987654321' })
+  @IsString()
+  id_number: string;
+
+  @ApiPropertyOptional({ example: '2028-12-31' })
+  @IsOptional()
+  @IsString()
+  id_expiry?: string;
+
+  @ApiPropertyOptional({ description: 'Storage key for front of ID' })
+  @IsString()
+  id_front_doc: string;
+
+  @ApiPropertyOptional({ description: 'Storage key for back of ID' })
+  @IsOptional()
+  @IsString()
+  id_back_doc?: string;
+
+  @ApiPropertyOptional({ description: 'Storage key for selfie photo holding ID' })
+  @IsString()
+  selfie_doc: string;
+
+  @ApiPropertyOptional({ description: 'Storage key for degree/certificate' })
+  @IsOptional()
+  @IsString()
+  certificate_doc?: string;
+
+  @ApiPropertyOptional({ example: 'MSc in Computer Science' })
+  @IsOptional()
+  @IsString()
+  education_level?: string;
+
+  @ApiPropertyOptional({ example: 'Addis Ababa University' })
+  @IsOptional()
+  @IsString()
+  institution?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  kyc_docs?: string[];
 }
 
 export class CreateInstructorReviewDto {

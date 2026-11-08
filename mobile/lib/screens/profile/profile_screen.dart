@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
+import '../course/wishlist_screen.dart';
+import '../gamification/leaderboard_screen.dart';
+import '../instructor/instructor_earnings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -71,7 +74,50 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Settings & Navigation Tiles
+            // Instructor Portal Section
+            if (user?.isInstructor == true) ...[
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4, bottom: 8),
+                  child: Text(
+                    'INSTRUCTOR PORTAL',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primaryLight, letterSpacing: 0.8),
+                  ),
+                ),
+              ),
+              _SettingsTile(
+                icon: Icons.account_balance_wallet_rounded,
+                title: 'Instructor Earnings & Ledger',
+                subtitle: 'Manage revenue, ledger & request payouts',
+                trailingColor: AppColors.accentGreen,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const InstructorEarningsScreen()),
+                  );
+                },
+              ),
+              _SettingsTile(
+                icon: Icons.verified_user_rounded,
+                title: 'KYC & Tutor Verification',
+                subtitle: user?.instructorProfile?.kycStatus.toUpperCase() ?? 'APPROVED / VERIFIED',
+                trailingColor: AppColors.accentGreen,
+                onTap: () {},
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // General Settings & Navigation Tiles
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: EdgeInsets.only(left: 4, bottom: 8),
+                child: Text(
+                  'PREFERENCES & SECURITY',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textMuted, letterSpacing: 0.8),
+                ),
+              ),
+            ),
             _SettingsTile(
               icon: Icons.badge_outlined,
               title: 'Account Role',
@@ -85,13 +131,33 @@ class ProfileScreen extends StatelessWidget {
               onTap: () {},
             ),
             _SettingsTile(
-              icon: Icons.verified_user_outlined,
+              icon: Icons.mark_email_read_outlined,
               title: 'Email Verification',
               subtitle: user?.isEmailVerified == true ? 'Verified' : 'Unverified',
               trailingColor: user?.isEmailVerified == true ? AppColors.accentGreen : AppColors.accentAmber,
               onTap: () {},
             ),
-            const SizedBox(height: 12),
+            _SettingsTile(
+              icon: Icons.favorite_border_rounded,
+              title: 'Saved Courses (Wishlist)',
+              subtitle: 'Courses bookmarked for later',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const WishlistScreen()),
+                );
+              },
+            ),
+            _SettingsTile(
+              icon: Icons.emoji_events_outlined,
+              title: 'XP Leaderboard & Badges',
+              subtitle: 'View learner rankings, streaks and badges',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
 
             // Support & About
             _SettingsTile(

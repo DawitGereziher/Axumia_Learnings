@@ -510,36 +510,46 @@ export const bookingsApi = {
 
 export const paymentsApi = {
   initiateBooking: (bookingId: string) =>
-    apiFetch<{ checkoutUrl: string }>('/api/payments/initiate-booking', {
+    apiFetch<{ checkoutUrl: string; txRef: string }>(`/api/payments/bookings/${bookingId}/checkout`, {
       method: 'POST',
-      body: JSON.stringify({ bookingId }),
     }),
 
   initiateCourse: (courseId: string) =>
-    apiFetch<{ checkoutUrl: string }>('/api/payments/initiate-course', {
+    apiFetch<{ checkoutUrl: string; txRef: string }>(`/api/payments/courses/${courseId}/checkout`, {
       method: 'POST',
-      body: JSON.stringify({ courseId }),
     }),
 
-  verify: (txRef: string) => apiFetch<Transaction>(`/api/payments/verify/${txRef}`),
-
-  listTransactions: () => apiFetch<Transaction[]>('/api/payments/my-transactions'),
-
-  requestPayout: (data?: { method?: string; account_details?: string }) =>
-    apiFetch<Payout>('/api/payments/request-payout', {
+  initiateHelpSession: (sessionId: string) =>
+    apiFetch<{ checkoutUrl: string; txRef: string }>(`/api/payments/help-sessions/${sessionId}/checkout`, {
       method: 'POST',
-      body: JSON.stringify(data ?? {}),
     }),
 
-  listPayouts: () => apiFetch<Payout[]>('/api/payments/my-payouts'),
+  verify: (txRef: string) => apiFetch<any>(`/api/payments/verify/${txRef}`),
+
+  listTransactions: (page?: number, limit?: number) => {
+    const params = new URLSearchParams();
+    if (page) params.set('page', String(page));
+    if (limit) params.set('limit', String(limit));
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return apiFetch<any>(`/api/payments/transactions${qs}`);
+  },
+
+  requestPayout: (data: { amount: number; method: string; account_details: string }) =>
+    apiFetch<any>('/api/payments/instructor/payout-request', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   getEarnings: () =>
     apiFetch<{
-      available: string;
-      pending: string;
-      totalEarned: string;
-      platformFeeTotal: string;
-    }>('/api/payments/earnings'),
+      grossEarned: number;
+      platformFees: number;
+      netEarned: number;
+      totalWithdrawn: number;
+      availableBalance: number;
+      pendingEarnings: number;
+      payoutHistory: any[];
+    }>('/api/payments/instructor/earnings'),
 };
 
 // ── Certificates API ──────────────────────────────────────────────────────────

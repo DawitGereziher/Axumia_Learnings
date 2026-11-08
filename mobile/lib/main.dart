@@ -6,6 +6,7 @@ import 'providers/auth_provider.dart';
 import 'providers/course_provider.dart';
 import 'providers/booking_provider.dart';
 import 'providers/help_request_provider.dart';
+import 'providers/instructor_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_nav_screen.dart';
 
@@ -25,6 +26,7 @@ class AxumiaMobileApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CourseProvider()),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
         ChangeNotifierProvider(create: (_) => HelpRequestProvider()),
+        ChangeNotifierProvider(create: (_) => InstructorProvider()),
       ],
       child: MaterialApp(
         title: 'AXumia Learnings',

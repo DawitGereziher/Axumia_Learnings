@@ -325,11 +325,12 @@ export default function CourseCreationWizardPage() {
               description: les.description,
               position: lIdx + 1,
               is_free_preview: les.is_free_preview,
-              content_type: les.content_type || 'youtube',
+              content_type: les.content_type === 'reading' ? 'text' : (les.content_type || 'youtube'),
               youtube_url: les.content_type === 'youtube' ? les.youtube_url : undefined,
               external_url: les.content_type === 'pdf' ? les.pdf_url : undefined,
               section_id: sectionId,
               duration_s: Number(les.duration_s) || 300,
+              requires_progress: les.content_type === 'youtube',
             }),
           });
 
@@ -352,8 +353,10 @@ export default function CourseCreationWizardPage() {
           method: 'POST',
         });
         if (!pubRes.ok) {
-          const errData = await pubRes.json().catch(() => ({}));
-          console.warn('Could not auto-publish course:', errData.message);
+          const pubErr = await pubRes.json().catch(() => ({}));
+          console.warn('Publish note:', pubErr.message);
+          router.push(`/instructor/courses/${courseId}?published=0&msg=${encodeURIComponent(pubErr.message || 'Saved as draft. Profile approval required to publish.')}`);
+          return;
         }
       }
 

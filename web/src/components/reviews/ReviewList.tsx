@@ -58,6 +58,37 @@ export default function ReviewList({ courseId, showWriteReview, onWriteReview, u
     sort_by: 'recent' as 'recent' | 'helpful' | 'rating_high' | 'rating_low',
   });
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
+  const [votedReviews, setVotedReviews] = useState<Record<string, boolean>>({});
+  const [reportedReviews, setReportedReviews] = useState<Record<string, boolean>>({});
+
+  const handleVoteHelpful = async (reviewId: string) => {
+    try {
+      const res = await authFetch(`/api/reviews/${reviewId}/helpful`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, helpful_count: data.helpful_count } : r));
+        setVotedReviews(prev => ({ ...prev, [reviewId]: data.voted }));
+      }
+    } catch (e) {
+      console.error('Failed to vote review helpful', e);
+    }
+  };
+
+  const handleReport = async (reviewId: string) => {
+    if (reportedReviews[reviewId]) return;
+    try {
+      const res = await authFetch(`/api/reviews/${reviewId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Reported by user for moderation' }),
+      });
+      if (res.ok) {
+        setReportedReviews(prev => ({ ...prev, [reviewId]: true }));
+      }
+    } catch (e) {
+      console.error('Failed to report review', e);
+    }
+  };
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -295,19 +326,21 @@ export default function ReviewList({ courseId, showWriteReview, onWriteReview, u
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: '#64748b' }}>
+        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: '#64748b', alignItems: 'center' }}>
           <button
-            onClick={() => {
-              // TODO: Implement helpful voting
-            }}
+            onClick={() => handleVoteHelpful(review.id)}
             style={{
-              background: 'none',
-              border: 'none',
-              color: '#64748b',
+              background: votedReviews[review.id] ? 'rgba(12,59,46,0.15)' : 'none',
+              border: votedReviews[review.id] ? '1px solid var(--accent)' : '1px solid transparent',
+              borderRadius: 6,
+              padding: '0.2rem 0.5rem',
+              color: votedReviews[review.id] ? 'var(--accent)' : '#64748b',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem',
+              gap: '0.35rem',
+              fontWeight: votedReviews[review.id] ? 700 : 500,
+              transition: 'all 0.15s ease',
             }}
           >
             👍 {review.helpful_count} helpful
@@ -316,17 +349,17 @@ export default function ReviewList({ courseId, showWriteReview, onWriteReview, u
           <span>{review.reply_count} replies</span>
           <span>•</span>
           <button
-            onClick={() => {
-              // TODO: Implement report
-            }}
+            onClick={() => handleReport(review.id)}
+            disabled={reportedReviews[review.id]}
             style={{
               background: 'none',
               border: 'none',
-              color: '#64748b',
-              cursor: 'pointer',
+              color: reportedReviews[review.id] ? '#ef4444' : '#64748b',
+              cursor: reportedReviews[review.id] ? 'default' : 'pointer',
+              fontWeight: reportedReviews[review.id] ? 600 : 400,
             }}
           >
-            Report
+            {reportedReviews[review.id] ? '✓ Reported' : 'Report'}
           </button>
         </div>
       </div>

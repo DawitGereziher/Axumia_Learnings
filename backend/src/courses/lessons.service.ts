@@ -182,12 +182,20 @@ export class LessonsService {
   async addMaterial(lessonId: string, instructorUserId: string, dto: AddMaterialDto) {
     const lesson = await this.prisma.courseLesson.findUnique({
       where: { id: lessonId },
-      include: { course: true },
+      include: { course: { include: { instructor: true } } },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
-    if (lesson.course.instructor_id !== instructorUserId) {
-      throw new ForbiddenException('Not authorised');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: instructorUserId },
+      select: { role: true },
+    });
+    const isOwner = lesson.course.instructor?.user_id === instructorUserId;
+    const isAdmin = user?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Not authorised to add materials to this lesson');
     }
+
     const material = await this.prisma.lessonMaterial.create({
       data: {
         lesson_id: lessonId,
@@ -212,17 +220,26 @@ export class LessonsService {
   async deleteMaterial(materialId: string, instructorUserId: string) {
     const material = await this.prisma.lessonMaterial.findUnique({
       where: { id: materialId },
-      include: { lesson: { include: { course: true } } },
+      include: { lesson: { include: { course: { include: { instructor: true } } } } },
     });
     if (!material) throw new NotFoundException('Material not found');
-    if (material.lesson.course.instructor_id !== instructorUserId) {
-      throw new ForbiddenException('Not authorised');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: instructorUserId },
+      select: { role: true },
+    });
+    const isOwner = material.lesson.course.instructor?.user_id === instructorUserId;
+    const isAdmin = user?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Not authorised to delete this material');
     }
+
     await this.prisma.lessonMaterial.delete({ where: { id: materialId } });
     await this.prisma.course.update({
       where: { id: material.lesson.course_id },
       data: { total_materials: { decrement: 1 } },
     });
+    return { message: 'Material deleted successfully' };
   }
 
   async getMaterialDownloadUrl(

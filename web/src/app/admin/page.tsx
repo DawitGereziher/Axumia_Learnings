@@ -11,6 +11,7 @@ import {
   XCircle, Clock, Search, RefreshCw, ChevronRight,
   TrendingUp, DollarSign, BookOpen, AlertTriangle,
   Loader2, Eye, Filter, Download, Plus, Trash2, Edit3, Settings, Cpu,
+  Copy, Check, ExternalLink, Image as ImageIcon, FileText, Phone, MapPin, Award, Calendar,
 } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -28,7 +29,36 @@ interface KycProfile {
   bio: string | null;
   headline: string | null;
   hourly_rate: string;
+  fayda_fan_number?: string | null;
+  tin_number?: string | null;
+  kyc_submitted_at?: string | null;
+  kyc_reviewed_at?: string | null;
+  kyc_reviewed_by?: string | null;
+  kyc_rejection_reason?: string | null;
+  kyc_data?: {
+    legal_name?: string;
+    phone?: string;
+    date_of_birth?: string;
+    gender?: string;
+    region?: string;
+    residential_address?: string;
+    country?: string;
+    id_type?: string;
+    id_number?: string;
+    id_expiry?: string;
+    education_level?: string;
+    institution?: string;
+    notes?: string;
+    fayda_fan_number?: string;
+    tin_number?: string;
+  };
   signedKycDocs?: Array<{ key: string; url: string | null }>;
+  docPreviews?: {
+    id_front?: { key: string; url: string | null; label: string };
+    id_back?: { key: string; url: string | null; label: string };
+    selfie?: { key: string; url: string | null; label: string };
+    certificate?: { key: string; url: string | null; label: string };
+  };
   created_at: string;
   updated_at: string;
   user: { email: string; first_name: string | null; last_name: string | null };
@@ -118,9 +148,9 @@ const api = {
 };
 
 function NoteDialog({
-  title, actionLabel, actionColor, onConfirm, onCancel, busy,
+  title, actionLabel, actionColor, placeholder, onConfirm, onCancel, busy,
 }: {
-  title: string; actionLabel: string; actionColor: string;
+  title: string; actionLabel: string; actionColor: string; placeholder?: string;
   onConfirm: (note: string) => void; onCancel: () => void; busy: boolean;
 }) {
   const [note, setNote] = useState('');
@@ -137,7 +167,7 @@ function NoteDialog({
       }}>
         <h3 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '1rem', color: '#f8fafc' }}>{title}</h3>
         <textarea
-          placeholder="Internal note (optional)…"
+          placeholder={placeholder || 'Internal note (optional)…'}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
@@ -189,6 +219,15 @@ export default function AdminPage() {
   const [kyc, setKyc] = useState<KycProfile[]>([]);
   const [kycDialog, setKycDialog] = useState<{ profile: KycProfile; action: 'approved' | 'rejected' } | null>(null);
   const [kycBusy, setKycBusy] = useState(false);
+  const [kycFilter, setKycFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [docModal, setDocModal] = useState<{ url: string; title: string } | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(id);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
 
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [payoutDialog, setPayoutDialog] = useState<{ payout: Payout; action: 'paid' | 'failed' } | null>(null);
@@ -230,9 +269,18 @@ export default function AdminPage() {
     } catch (e: any) { showToast(e.message, false); }
   }, [showToast]);
 
-  const loadKyc = useCallback(async () => {
-    try { setKyc(await api.get('/kyc/pending')); } catch (e: any) { showToast(e.message, false); }
-  }, [showToast]);
+  const loadKyc = useCallback(async (filter: 'pending' | 'approved' | 'rejected' | 'all' = kycFilter) => {
+    try {
+      let endpoint = '/kyc/pending';
+      if (filter === 'all') {
+        endpoint = '/kyc/all';
+      } else if (filter !== 'pending') {
+        endpoint = `/kyc/all?status=${filter}`;
+      }
+      const data = await api.get(endpoint);
+      setKyc(data || []);
+    } catch (e: any) { showToast(e.message, false); }
+  }, [kycFilter, showToast]);
 
   const loadPayouts = useCallback(async () => {
     try { setPayouts(await api.get('/payouts/all')); } catch (e: any) { showToast(e.message, false); }
@@ -268,13 +316,17 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
-    if (tab === 'kyc') loadKyc();
+    if (tab === 'kyc') loadKyc(kycFilter);
     else if (tab === 'payouts') loadPayouts();
     else if (tab === 'users') loadUsers();
     else if (tab === 'courses') loadCourses();
     else if (tab === 'transactions') loadTransactions();
     else if (tab === 'categories') loadCategories();
   }, [tab, user]); // eslint-disable-line
+
+  useEffect(() => {
+    if (tab === 'kyc') loadKyc(kycFilter);
+  }, [kycFilter]); // eslint-disable-line
 
   useEffect(() => {
     if (tab === 'users') {
@@ -295,9 +347,9 @@ export default function AdminPage() {
     setKycBusy(true);
     try {
       await api.patch(`/kyc/${kycDialog.profile.id}`, { status: kycDialog.action, notes: note || undefined });
-      showToast(`KYC ${kycDialog.action} successfully.`);
+      showToast(`KYC application ${kycDialog.action} successfully.`);
       setKycDialog(null);
-      loadKyc();
+      loadKyc(kycFilter);
       loadOverview();
     } catch (e: any) { showToast(e.message, false); }
     finally { setKycBusy(false); }
@@ -402,13 +454,84 @@ export default function AdminPage() {
 
       {kycDialog && (
         <NoteDialog
-          title={kycDialog.action === 'approved' ? 'Approve Instructor KYC' : 'Reject Instructor KYC'}
-          actionLabel={kycDialog.action === 'approved' ? 'Approve' : 'Reject'}
+          title={kycDialog.action === 'approved' ? 'Approve Instructor KYC' : 'Reject Instructor KYC Application'}
+          actionLabel={kycDialog.action === 'approved' ? 'Approve & Activate' : 'Reject Application'}
           actionColor={kycDialog.action === 'approved' ? '#10b981' : '#ef4444'}
+          placeholder={kycDialog.action === 'approved'
+            ? 'Approval note (optional)...'
+            : 'Specific rejection reason (e.g. Fayda FAN mismatch, blurry ID photo) - this will be shown to the applicant...'}
           onConfirm={handleKycAction}
           onCancel={() => setKycDialog(null)}
           busy={kycBusy}
         />
+      )}
+
+      {/* Document Inspection Lightbox Modal */}
+      {docModal && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 700,
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem',
+          }}
+          onClick={() => setDocModal(null)}
+        >
+          <div
+            style={{
+              background: '#0f172a', border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 20, maxWidth: 880, width: '100%', maxHeight: '92vh',
+              display: 'flex', flexDirection: 'column', overflow: 'hidden',
+              boxShadow: '0 30px 90px rgba(0,0,0,0.8)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              padding: '1.1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <ShieldCheck size={18} color="#d4af37" /> {docModal.title}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <a
+                  href={docModal.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    padding: '0.4rem 0.8rem', borderRadius: 8, background: 'rgba(255,255,255,0.08)',
+                    color: '#818cf8', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: '0.35rem',
+                  }}
+                >
+                  <ExternalLink size={14} /> Full Resolution
+                </a>
+                <button
+                  onClick={() => setDocModal(null)}
+                  style={{
+                    background: 'none', border: 'none', color: '#94a3b8',
+                    fontSize: '1.25rem', cursor: 'pointer', padding: '0.2rem 0.5rem',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div style={{
+              flex: 1, overflow: 'auto', padding: '1.5rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#020617',
+            }}>
+              {docModal.url.match(/\.(pdf)($|\?)/i) ? (
+                <iframe src={docModal.url} style={{ width: '100%', height: '65vh', border: 'none', borderRadius: 12 }} />
+              ) : (
+                <img
+                  src={docModal.url}
+                  alt={docModal.title}
+                  style={{ maxWidth: '100%', maxHeight: '68vh', objectFit: 'contain', borderRadius: 12 }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {payoutDialog && (
@@ -522,61 +645,461 @@ export default function AdminPage() {
 
           {/* KYC REVIEWS */}
           {tab === 'kyc' && (
-            <div>
-              <h2 style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '1rem' }}>Pending Instructor KYC Applications</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Header & Filter Controls */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                flexWrap: 'wrap', gap: '1rem',
+                background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 16, padding: '1rem 1.25rem',
+              }}>
+                <div>
+                  <h2 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#f8fafc', margin: 0 }}>
+                    Instructor Identity Verification (KYC)
+                  </h2>
+                  <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '2px 0 0' }}>
+                    Verify Ethiopian Fayda FAN numbers, government IDs, and selfie liveness before activating instructor status.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {(['pending', 'approved', 'rejected', 'all'] as const).map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setKycFilter(f)}
+                      style={{
+                        padding: '0.45rem 0.9rem', borderRadius: 999, border: 'none',
+                        background: kycFilter === f ? '#d4af37' : 'rgba(255,255,255,0.06)',
+                        color: kycFilter === f ? '#0f172a' : '#cbd5e1',
+                        fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                        textTransform: 'capitalize', transition: 'all 0.15s',
+                      }}
+                    >
+                      {f === 'pending' ? 'Pending Review' : f}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => loadKyc(kycFilter)}
+                    style={{
+                      background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#94a3b8', borderRadius: 8, padding: '0.45rem 0.75rem',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem',
+                      fontSize: '0.8rem', fontWeight: 600,
+                    }}
+                  >
+                    <RefreshCw size={13} /> Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Applications List */}
               {kyc.length === 0 ? (
-                <div style={{ padding: '3rem', textAlign: 'center', background: 'rgba(15,23,42,0.5)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', color: '#64748b' }}>
-                  No pending KYC applications. All instructors are verified!
+                <div style={{
+                  padding: '4rem 2rem', textAlign: 'center',
+                  background: 'rgba(15,23,42,0.4)', borderRadius: 18,
+                  border: '1px solid rgba(255,255,255,0.06)', color: '#64748b',
+                }}>
+                  <ShieldCheck size={42} color="#334155" style={{ margin: '0 auto 1rem' }} />
+                  <div style={{ fontWeight: 700, fontSize: '1rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
+                    No {kycFilter === 'all' ? '' : kycFilter} KYC applications found
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', maxWidth: 400, margin: '0 auto' }}>
+                    When instructors submit their Fayda Access Number and ID documents, they will appear here for compliance review.
+                  </p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {kyc.map((p) => (
-                    <div key={p.id} style={{ background: 'rgba(15,23,42,0.7)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '1.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#f8fafc' }}>
-                            {p.user.first_name} {p.user.last_name} ({p.user.email})
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {kyc.map((p) => {
+                    const kd = p.kyc_data || {};
+                    const fan = p.fayda_fan_number || kd.fayda_fan_number;
+                    const tin = p.tin_number || kd.tin_number;
+                    const legalName = kd.legal_name || [p.user.first_name, p.user.last_name].filter(Boolean).join(' ').trim() || 'Instructor Applicant';
+                    const docs = p.docPreviews || {};
+
+                    return (
+                      <div
+                        key={p.id}
+                        style={{
+                          background: 'rgba(15,23,42,0.7)',
+                          border: `1px solid ${
+                            p.kyc_status === 'submitted'
+                              ? 'rgba(212,175,55,0.35)'
+                              : p.kyc_status === 'approved'
+                              ? 'rgba(16,185,129,0.25)'
+                              : 'rgba(255,255,255,0.08)'
+                          }`,
+                          borderRadius: 20, padding: '1.75rem',
+                          display: 'flex', flexDirection: 'column', gap: '1.25rem',
+                          boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+                        }}
+                      >
+                        {/* Header: User Info & Actions */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{
+                              width: 48, height: 48, borderRadius: '50%',
+                              background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+                              border: '2px solid rgba(212,175,55,0.3)',
+                              color: '#d4af37', fontWeight: 800, fontSize: '1.1rem',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              {(legalName[0] || 'I').toUpperCase()}
+                            </div>
+
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 800, fontSize: '1.15rem', color: '#f8fafc' }}>
+                                  {legalName}
+                                </span>
+                                <span style={{
+                                  padding: '0.2rem 0.65rem', borderRadius: 999, fontSize: '0.72rem',
+                                  fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                  background:
+                                    p.kyc_status === 'approved'
+                                      ? 'rgba(16,185,129,0.18)'
+                                      : p.kyc_status === 'rejected'
+                                      ? 'rgba(239,68,68,0.18)'
+                                      : 'rgba(245,158,11,0.18)',
+                                  color:
+                                    p.kyc_status === 'approved'
+                                      ? '#34d399'
+                                      : p.kyc_status === 'rejected'
+                                      ? '#f87171'
+                                      : '#fbbf24',
+                                  border: `1px solid ${
+                                    p.kyc_status === 'approved'
+                                      ? 'rgba(16,185,129,0.4)'
+                                      : p.kyc_status === 'rejected'
+                                      ? 'rgba(239,68,68,0.4)'
+                                      : 'rgba(245,158,11,0.4)'
+                                  }`,
+                                }}>
+                                  {p.kyc_status === 'submitted' ? 'Under Review' : p.kyc_status}
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: 4, flexWrap: 'wrap', fontSize: '0.82rem', color: '#94a3b8' }}>
+                                <span>✉ {p.user.email}</span>
+                                {kd.phone && (
+                                  <a href={`tel:${kd.phone}`} style={{ color: '#818cf8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <Phone size={13} /> {kd.phone}
+                                  </a>
+                                )}
+                                {(kd.region || kd.residential_address) && (
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#cbd5e1' }}>
+                                    <MapPin size={13} color="#d4af37" /> {[kd.region, kd.residential_address].filter(Boolean).join(', ')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div style={{ fontSize: '0.85rem', color: '#818cf8', marginTop: 2 }}>{p.headline || 'Instructor Applicant'}</div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button
-                            onClick={() => setKycDialog({ profile: p, action: 'approved' })}
-                            style={{ padding: '0.5rem 1rem', borderRadius: 8, background: '#10b981', border: 'none', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
-                          >
-                            Approve Profile
-                          </button>
-                          <button
-                            onClick={() => setKycDialog({ profile: p, action: 'rejected' })}
-                            style={{ padding: '0.5rem 1rem', borderRadius: 8, background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </div>
 
-                      {p.bio && <p style={{ fontSize: '0.88rem', color: '#94a3b8', marginBottom: '1rem' }}>{p.bio}</p>}
+                          {/* Action Buttons */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <button
+                              onClick={() => setKycDialog({ profile: p, action: 'approved' })}
+                              style={{
+                                padding: '0.55rem 1.25rem', borderRadius: 10,
+                                background: '#10b981', border: 'none',
+                                color: '#ffffff', fontWeight: 700, cursor: 'pointer',
+                                fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                boxShadow: '0 4px 12px rgba(16,185,129,0.25)',
+                              }}
+                            >
+                              <CheckCircle2 size={15} /> Approve Instructor
+                            </button>
+                            <button
+                              onClick={() => setKycDialog({ profile: p, action: 'rejected' })}
+                              style={{
+                                padding: '0.55rem 1.1rem', borderRadius: 10,
+                                background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                                color: '#f87171', fontWeight: 700, cursor: 'pointer',
+                                fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                              }}
+                            >
+                              <XCircle size={15} /> Reject
+                            </button>
+                          </div>
+                        </div>
 
-                      {p.signedKycDocs && p.signedKycDocs.length > 0 && (
-                        <div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', marginBottom: '0.4rem' }}>Uploaded Verification Documents:</div>
-                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            {p.signedKycDocs.map((doc, idx) => (
-                              <a
-                                key={idx}
-                                href={doc.url || '#'}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ padding: '0.4rem 0.8rem', borderRadius: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#818cf8', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 600 }}
+                        {/* Highlighted Fayda FAN & National Identification Banner */}
+                        <div style={{
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          borderRadius: 14, padding: '1rem 1.25rem',
+                          display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center',
+                        }}>
+                          {/* Fayda FAN Badge */}
+                          <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                            background: fan ? 'rgba(212, 175, 55, 0.12)' : 'rgba(255,255,255,0.04)',
+                            border: `1px solid ${fan ? 'rgba(212, 175, 55, 0.35)' : 'rgba(255,255,255,0.08)'}`,
+                            borderRadius: 10, padding: '0.4rem 0.85rem',
+                          }}>
+                            <span>🇪🇹</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d4af37', textTransform: 'uppercase' }}>
+                              Fayda FAN:
+                            </span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff', letterSpacing: '0.04em' }}>
+                              {fan || 'Not Provided'}
+                            </span>
+                            {fan && (
+                              <button
+                                onClick={() => copyToClipboard(fan, `fan-${p.id}`)}
+                                title="Copy Fayda Access Number"
+                                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
                               >
-                                📄 View Document #{idx + 1}
-                              </a>
+                                {copiedKey === `fan-${p.id}` ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* TIN Badge */}
+                          {tin && (
+                            <div style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                              background: 'rgba(99, 102, 241, 0.12)', border: '1px solid rgba(99, 102, 241, 0.35)',
+                              borderRadius: 10, padding: '0.4rem 0.85rem',
+                            }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#818cf8', textTransform: 'uppercase' }}>
+                                Taxpayer ID (TIN):
+                              </span>
+                              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>
+                                {tin}
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard(tin, `tin-${p.id}`)}
+                                title="Copy TIN"
+                                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
+                              >
+                                {copiedKey === `tin-${p.id}` ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
+                              </button>
+                            </div>
+                          )}
+
+                          {/* ID Document Type & Number */}
+                          <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                            background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '0.4rem 0.8rem',
+                            fontSize: '0.8rem', color: '#cbd5e1',
+                          }}>
+                            <FileText size={14} color="#38bdf8" />
+                            <strong style={{ color: '#f8fafc' }}>{kd.id_type || 'National ID'}</strong>
+                            {kd.id_number && <span>· #{kd.id_number}</span>}
+                            {kd.id_expiry && <span>· Exp: {kd.id_expiry}</span>}
+                          </div>
+
+                          {/* DOB & Gender */}
+                          {(kd.date_of_birth || kd.gender) && (
+                            <div style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                              background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '0.4rem 0.8rem',
+                              fontSize: '0.8rem', color: '#cbd5e1',
+                            }}>
+                              <Calendar size={14} color="#f59e0b" />
+                              <span>DOB: {kd.date_of_birth || 'N/A'} ({kd.gender || 'Not specified'})</span>
+                            </div>
+                          )}
+
+                          {/* Academic Qualification */}
+                          {(kd.education_level || kd.institution) && (
+                            <div style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                              background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '0.4rem 0.8rem',
+                              fontSize: '0.8rem', color: '#cbd5e1',
+                            }}>
+                              <Award size={14} color="#a855f7" />
+                              <span>{kd.education_level || 'Degree'} {kd.institution ? `— ${kd.institution}` : ''}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Document Inspection Gallery */}
+                        <div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <ShieldCheck size={14} color="#d4af37" /> Official Verification Documents & Biometric Selfie:
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                            {/* Front ID Card */}
+                            <div style={{
+                              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: 12, padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#34d399' }}>
+                                  🪪 ID / Fayda Front
+                                </span>
+                                {docs.id_front?.url && (
+                                  <button
+                                    onClick={() => setDocModal({ url: docs.id_front!.url!, title: `${legalName} — National ID Front` })}
+                                    style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}
+                                  >
+                                    <Eye size={12} /> Inspect
+                                  </button>
+                                )}
+                              </div>
+                              {docs.id_front?.url ? (
+                                <div
+                                  onClick={() => setDocModal({ url: docs.id_front!.url!, title: `${legalName} — National ID Front` })}
+                                  style={{ height: 110, borderRadius: 8, overflow: 'hidden', background: '#020617', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <img src={docs.id_front.url} alt="ID Front" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              ) : (
+                                <div style={{ height: 110, borderRadius: 8, background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '0.75rem' }}>
+                                  Not uploaded
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Back ID Card */}
+                            <div style={{
+                              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: 12, padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#818cf8' }}>
+                                  🪪 ID / Fayda Back
+                                </span>
+                                {docs.id_back?.url && (
+                                  <button
+                                    onClick={() => setDocModal({ url: docs.id_back!.url!, title: `${legalName} — National ID Back` })}
+                                    style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}
+                                  >
+                                    <Eye size={12} /> Inspect
+                                  </button>
+                                )}
+                              </div>
+                              {docs.id_back?.url ? (
+                                <div
+                                  onClick={() => setDocModal({ url: docs.id_back!.url!, title: `${legalName} — National ID Back` })}
+                                  style={{ height: 110, borderRadius: 8, overflow: 'hidden', background: '#020617', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <img src={docs.id_back.url} alt="ID Back" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              ) : (
+                                <div style={{ height: 110, borderRadius: 8, background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '0.75rem' }}>
+                                  Not uploaded
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Verification Selfie */}
+                            <div style={{
+                              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: 12, padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fbbf24' }}>
+                                  🤳 Verification Selfie
+                                </span>
+                                {docs.selfie?.url && (
+                                  <button
+                                    onClick={() => setDocModal({ url: docs.selfie!.url!, title: `${legalName} — Verification Selfie` })}
+                                    style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}
+                                  >
+                                    <Eye size={12} /> Inspect
+                                  </button>
+                                )}
+                              </div>
+                              {docs.selfie?.url ? (
+                                <div
+                                  onClick={() => setDocModal({ url: docs.selfie!.url!, title: `${legalName} — Verification Selfie` })}
+                                  style={{ height: 110, borderRadius: 8, overflow: 'hidden', background: '#020617', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <img src={docs.selfie.url} alt="Verification Selfie" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              ) : (
+                                <div style={{ height: 110, borderRadius: 8, background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '0.75rem' }}>
+                                  Not uploaded
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Certificate / Degree */}
+                            <div style={{
+                              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: 12, padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#d4af37' }}>
+                                  📜 Degree / Certificate
+                                </span>
+                                {docs.certificate?.url && (
+                                  <button
+                                    onClick={() => setDocModal({ url: docs.certificate!.url!, title: `${legalName} — Degree / Certificate` })}
+                                    style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}
+                                  >
+                                    <Eye size={12} /> Inspect
+                                  </button>
+                                )}
+                              </div>
+                              {docs.certificate?.url ? (
+                                <div
+                                  onClick={() => setDocModal({ url: docs.certificate!.url!, title: `${legalName} — Degree / Certificate` })}
+                                  style={{ height: 110, borderRadius: 8, overflow: 'hidden', background: '#020617', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  {docs.certificate.url.match(/\.pdf($|\?)/i) ? (
+                                    <div style={{ color: '#d4af37', textAlign: 'center', padding: '0.5rem' }}>
+                                      <FileText size={32} style={{ margin: '0 auto 4px' }} />
+                                      <span style={{ fontSize: '0.75rem' }}>View PDF Document</span>
+                                    </div>
+                                  ) : (
+                                    <img src={docs.certificate.url} alt="Certificate" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  )}
+                                </div>
+                              ) : (
+                                <div style={{ height: 110, borderRadius: 8, background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '0.75rem' }}>
+                                  Not uploaded
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Extra Documents Link Bar if any */}
+                        {p.signedKycDocs && p.signedKycDocs.length > 0 && (
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', paddingTop: '0.25rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>All Attached Files:</span>
+                            {p.signedKycDocs.map((doc, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => doc.url && setDocModal({ url: doc.url, title: `Document #${idx + 1}` })}
+                                style={{
+                                  padding: '0.35rem 0.75rem', borderRadius: 8,
+                                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                  color: '#818cf8', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600,
+                                  display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                }}
+                              >
+                                📄 File #{idx + 1}
+                              </button>
                             ))}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        )}
+
+                        {/* Applicant Notes / Qualifications */}
+                        {(kd.notes || p.bio) && (
+                          <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '0.85rem 1rem', fontSize: '0.82rem', color: '#cbd5e1' }}>
+                            <strong style={{ color: '#94a3b8' }}>Applicant Statement: </strong>
+                            {kd.notes || p.bio}
+                          </div>
+                        )}
+
+                        {/* Rejection Feedback Note if previously rejected */}
+                        {p.kyc_rejection_reason && (
+                          <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)',
+                            borderRadius: 10, padding: '0.75rem 1rem', fontSize: '0.82rem', color: '#fca5a5',
+                          }}>
+                            <strong>Previous Review Feedback: </strong> {p.kyc_rejection_reason}
+                            {p.kyc_reviewed_by && <span style={{ color: '#94a3b8', marginLeft: '0.5rem' }}>— By {p.kyc_reviewed_by}</span>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

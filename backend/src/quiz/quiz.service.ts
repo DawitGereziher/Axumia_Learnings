@@ -215,30 +215,76 @@ export class QuizService {
     });
   }
 
-  // ─── Student: Get quiz for a lesson ──────────────────────────────────────────
-  // Returns the quiz and questions but NOT the correct answers (so students can't cheat).
+  // ─── Get quiz for a lesson ───────────────────────────────────────────────────
+  // Returns full quiz with correct answers and explanations for instructors/admins;
+  // Sanitizes out answers and explanations for students to prevent cheating.
 
-  async getQuizForLesson(lessonId: string) {
+  async getQuizForLesson(lessonId: string, userId?: string) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { lesson_id: lessonId },
       include: {
+        lesson: {
+          include: {
+            course: {
+              include: { instructor: true },
+            },
+          },
+        },
         questions: {
           orderBy: { position: 'asc' },
-          select: {
-            id:          true,
-            question:    true,
-            type:        true,
-            options:     true,
-            points:      true,
-            position:    true,
-            // explanation is NOT included here — shown only after submitting
-          },
         },
       },
     });
 
     if (!quiz) throw new NotFoundException('No quiz for this lesson');
-    return quiz;
+
+    let isInstructorOrAdmin = false;
+    if (userId) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (user?.role === 'admin' || quiz.lesson.course.instructor.user_id === userId) {
+        isInstructorOrAdmin = true;
+      }
+    }
+
+    if (isInstructorOrAdmin) {
+      // Full quiz data for editing in instructor studio
+      return quiz;
+    }
+
+    // Gate access for non-preview lessons: user must have purchased the course
+    if (!quiz.lesson.is_free_preview) {
+      if (!userId) {
+        throw new ForbiddenException('Purchase this course to take this quiz');
+      }
+      const purchase = await this.prisma.coursePurchase.findUnique({
+        where: { user_id_course_id: { user_id: userId, course_id: quiz.lesson.course_id } },
+      });
+      if (!purchase) {
+        throw new ForbiddenException('Purchase this course to take this quiz');
+      }
+    }
+
+    // Sanitized quiz data for student quiz player
+    return {
+      id: quiz.id,
+      lesson_id: quiz.lesson_id,
+      title: quiz.title,
+      description: quiz.description,
+      pass_score: quiz.pass_score,
+      time_limit: quiz.time_limit,
+      max_attempts: quiz.max_attempts,
+      is_gating: quiz.is_gating,
+      created_at: quiz.created_at,
+      updated_at: quiz.updated_at,
+      questions: quiz.questions.map((q) => ({
+        id: q.id,
+        question: q.question,
+        type: q.type,
+        options: q.options,
+        points: q.points,
+        position: q.position,
+      })),
+    };
   }
 
   // ─── Student: Submit attempt ──────────────────────────────────────────────────
@@ -247,9 +293,32 @@ export class QuizService {
     // Load quiz with full questions (including correct answers for grading)
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
-      include: { questions: true },
+      include: {
+        questions: true,
+        lesson: {
+          include: {
+            course: { select: { id: true, instructor: { select: { user_id: true } } } },
+          },
+        },
+      },
     });
     if (!quiz) throw new NotFoundException('Quiz not found');
+
+    // Gate access for non-preview lessons: user must have purchased the course
+    if (!quiz.lesson.is_free_preview) {
+      const isInstructorOrAdmin =
+        quiz.lesson.course.instructor?.user_id === userId ||
+        (await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } }))?.role === 'admin';
+
+      if (!isInstructorOrAdmin) {
+        const purchase = await this.prisma.coursePurchase.findUnique({
+          where: { user_id_course_id: { user_id: userId, course_id: quiz.lesson.course_id } },
+        });
+        if (!purchase) {
+          throw new ForbiddenException('Purchase this course to submit quiz attempts');
+        }
+      }
+    }
 
     // Check attempt limit
     if (quiz.max_attempts > 0) {

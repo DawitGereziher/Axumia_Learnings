@@ -32,9 +32,9 @@ export class QuizController {
   @Get('lesson/:lessonId')
   @UseGuards(DAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get the quiz for a specific lesson' })
-  getQuizForLesson(@Param('lessonId') lessonId: string) {
-    return this.quiz.getQuizForLesson(lessonId);
+  @ApiOperation({ summary: 'Get the quiz for a specific lesson (instructor receives full editing details; students receive sanitized questions)' })
+  getQuizForLesson(@Param('lessonId') lessonId: string, @CurrentUser() user: AuthUser) {
+    return this.quiz.getQuizForLesson(lessonId, user.id);
   }
 
   // ─── Student: Submit an attempt ───────────────────────────────────────────────

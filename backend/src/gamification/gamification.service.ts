@@ -104,7 +104,7 @@ export class GamificationService {
   async getLeaderboard() {
     const top = await this.prisma.userStats.findMany({
       orderBy: { total_xp: 'desc' },
-      take:    10,
+      take:    50,
     });
 
     // Attach display names from users table
@@ -135,19 +135,102 @@ export class GamificationService {
     const baseXP = XP_TABLE[dto.reason] ?? 0;
     if (baseXP === 0) return { awarded: 0, message: 'Unknown reason — no XP awarded' };
 
-    // Duplicate prevention: for lesson_complete and quiz_passed, only award once per item
-    if (dto.metadata?.lesson_id && dto.reason === 'lesson_complete') {
+    // Security & Anti-Cheat Validation: Verify every action against actual DB records
+    if ((dto.reason as string) === 'streak_bonus') {
+      return { awarded: 0, message: 'Streak bonuses are calculated and awarded internally' };
+    }
+
+    if (dto.reason === 'lesson_complete') {
+      const lessonId = dto.metadata?.lesson_id;
+      if (!lessonId) return { awarded: 0, message: 'lesson_id is required' };
+
+      // Verify that the lesson is actually completed by the student in LessonProgress
+      const progress = await this.prisma.lessonProgress.findFirst({
+        where: {
+          lesson_id: lessonId,
+          completed: true,
+          purchase: { user_id: userId },
+        },
+      });
+      if (!progress) {
+        return { awarded: 0, message: 'Lesson has not been completed by the student' };
+      }
+
+      // Duplicate prevention: only once per lesson
       const already = await this.prisma.xPLog.findFirst({
-        where: { user_id: userId, reason: 'lesson_complete', metadata: { path: ['lesson_id'], equals: dto.metadata.lesson_id } },
+        where: { user_id: userId, reason: 'lesson_complete', metadata: { path: ['lesson_id'], equals: lessonId } },
       });
       if (already) return { awarded: 0, message: 'XP already awarded for this lesson' };
     }
 
-    if (dto.metadata?.quiz_id && (dto.reason === 'quiz_passed' || dto.reason === 'quiz_perfect')) {
+    if (dto.reason === 'quiz_passed' || dto.reason === 'quiz_perfect') {
+      const quizId = dto.metadata?.quiz_id;
+      if (!quizId) return { awarded: 0, message: 'quiz_id is required' };
+
+      // Verify authentic passing quiz attempt
+      const attempt = await this.prisma.quizAttempt.findFirst({
+        where: {
+          quiz_id: quizId,
+          user_id: userId,
+          ...(dto.reason === 'quiz_perfect' ? { score: 100 } : { passed: true }),
+        },
+      });
+      if (!attempt) {
+        return { awarded: 0, message: `No verified ${dto.reason === 'quiz_perfect' ? '100% score' : 'passing'} attempt found` };
+      }
+
+      // Duplicate prevention: only once per quiz
       const already = await this.prisma.xPLog.findFirst({
-        where: { user_id: userId, reason: { in: ['quiz_passed', 'quiz_perfect'] }, metadata: { path: ['quiz_id'], equals: dto.metadata.quiz_id } },
+        where: { user_id: userId, reason: { in: ['quiz_passed', 'quiz_perfect'] }, metadata: { path: ['quiz_id'], equals: quizId } },
       });
       if (already) return { awarded: 0, message: 'XP already awarded for this quiz' };
+    }
+
+    if (dto.reason === 'course_complete') {
+      const courseId = dto.metadata?.course_id;
+      if (!courseId) return { awarded: 0, message: 'course_id is required' };
+
+      const purchase = await this.prisma.coursePurchase.findFirst({
+        where: {
+          user_id: userId,
+          course_id: courseId,
+          OR: [{ completion_pct: { gte: 100 } }, { completed_at: { not: null } }],
+        },
+      });
+      if (!purchase) {
+        return { awarded: 0, message: 'Course completion requirements not yet satisfied' };
+      }
+
+      const already = await this.prisma.xPLog.findFirst({
+        where: { user_id: userId, reason: 'course_complete', metadata: { path: ['course_id'], equals: courseId } },
+      });
+      if (already) return { awarded: 0, message: 'XP already awarded for this course' };
+    }
+
+    if (dto.reason === 'daily_checkin') {
+      const startOfToday = new Date();
+      startOfToday.setUTCHours(0, 0, 0, 0);
+      const already = await this.prisma.xPLog.findFirst({
+        where: { user_id: userId, reason: 'daily_checkin', created_at: { gte: startOfToday } },
+      });
+      if (already) return { awarded: 0, message: 'Daily check-in XP already claimed today' };
+    }
+
+    if (dto.reason === 'session_booked') {
+      const bookingId = dto.metadata?.booking_id;
+      if (!bookingId) return { awarded: 0, message: 'booking_id is required' };
+
+      const booking = await this.prisma.booking.findFirst({
+        where: { id: bookingId, student_id: userId, status: { in: ['pending', 'confirmed', 'completed'] } },
+      });
+      if (!booking) {
+        return { awarded: 0, message: 'No valid booking found' };
+      }
+
+      const already = await this.prisma.xPLog.findFirst({
+        where: { user_id: userId, reason: 'session_booked', metadata: { path: ['booking_id'], equals: bookingId } },
+      });
+      if (already) return { awarded: 0, message: 'XP already awarded for this booking' };
     }
 
     // Run everything in a transaction for consistency

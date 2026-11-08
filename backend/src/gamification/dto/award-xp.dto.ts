@@ -1,20 +1,50 @@
-// DTO for awarding XP to the current user after a learning event.
-// The frontend sends this after: lesson completed, quiz passed, course done, etc.
+import { IsString, IsNotEmpty, IsIn, IsOptional, IsObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
 export class AwardXPDto {
-  // What triggered this award
-  reason!:
+  @ApiProperty({
+    description: 'What triggered this award',
+    enum: [
+      'lesson_complete',
+      'quiz_passed',
+      'quiz_perfect',
+      'course_complete',
+      'session_booked',
+      'daily_checkin',
+      'streak_bonus',
+    ],
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsIn([
+    'lesson_complete',
+    'quiz_passed',
+    'quiz_perfect',
+    'course_complete',
+    'session_booked',
+    'daily_checkin',
+    'streak_bonus',
+  ])
+  reason:
     | 'lesson_complete'
     | 'quiz_passed'
     | 'quiz_perfect'
     | 'course_complete'
     | 'session_booked'
-    | 'daily_checkin';
+    | 'daily_checkin'
+    | 'streak_bonus';
 
-  // Optional context — used for duplicate prevention and analytics
+  @ApiPropertyOptional({
+    description: 'Optional context metadata (lesson_id, quiz_id, etc.)',
+  })
+  @IsOptional()
+  @IsObject()
   metadata?: {
     lesson_id?: string;
     course_id?: string;
     quiz_id?: string;
-    score?: number;      // quiz score percentage (used to detect quiz_perfect)
+    booking_id?: string;
+    score?: number;
+    [key: string]: any;
   };
 }

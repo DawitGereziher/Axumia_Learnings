@@ -8,7 +8,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 
-import { Settings, LogOut, ShieldCheck, Wallet, Search } from 'lucide-react';
+import { Settings, LogOut, ShieldCheck, Wallet, Search, Heart, Trophy } from 'lucide-react';
 
 const getFullUrl = (url?: string | null) => {
   if (!url) return null;
@@ -33,6 +33,7 @@ export default function Navbar() {
     { href: '/instructors',   label: t.nav.instructors },
     { href: '/book-session',  label: t.nav.bookSession },
     { href: '/help-requests', label: 'Help Requests' },
+    { href: '/leaderboard',   label: 'Leaderboard' },
   ];
 
   const settingsPath = user?.role === 'instructor' || user?.role === 'admin'
@@ -187,6 +188,12 @@ export default function Navbar() {
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Signed in as</div>
                       <div style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
                     </div>
+                    <Link id="nav-wishlist-link" href="/wishlist" style={dropdownItemStyle}>
+                      <Heart size={15} /> My Wishlist
+                    </Link>
+                    <Link id="nav-leaderboard-link" href="/leaderboard" style={dropdownItemStyle}>
+                      <Trophy size={15} /> Leaderboard
+                    </Link>
                     <Link id="nav-settings-link" href={settingsPath} style={dropdownItemStyle}>
                       <Settings size={15} /> Settings
                     </Link>
@@ -344,6 +351,9 @@ export default function Navbar() {
               </div>
               <Link href="/my-courses" className="btn-primary" style={{ textAlign: 'center', padding: '0.65rem' }}>
                 My Learning
+              </Link>
+              <Link href="/wishlist" className="btn-ghost" style={{ textAlign: 'center', padding: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <Heart size={16} /> My Wishlist
               </Link>
               <Link href="/dashboard" className="btn-ghost" style={{ textAlign: 'center', padding: '0.65rem' }}>
                 {t.nav.dashboard}
