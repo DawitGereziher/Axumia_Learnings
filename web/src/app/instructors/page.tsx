@@ -136,17 +136,10 @@ export default function InstructorsPage() {
                 lineHeight: 1.2, letterSpacing: '-0.02em',
               }}>
                 Meet our professional{' '}
-                <span style={{ position: 'relative', display: 'inline-block', color: 'var(--text-primary)' }}>
+                <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
                   mentors.
-                  {/* Figma green doodle loop around mentors */}
-                  <svg style={{ position: 'absolute', top: '-15%', left: '-12%', width: '124%', height: '135%', pointerEvents: 'none' }} viewBox="0 0 160 55" fill="none">
-                    <path
-                      d="M10 28 C 10 10, 150 5, 150 28 C 150 48, 15 50, 15 28 C 15 15, 140 18, 140 28"
-                      stroke="#0c3b2e"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      fill="none"
-                    />
+                  <svg style={{ position: 'absolute', bottom: -6, left: 0, width: '100%', height: 10 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                    <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3.5" fill="none" strokeLinecap="round" />
                   </svg>
                 </span>
               </h2>

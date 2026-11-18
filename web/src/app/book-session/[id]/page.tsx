@@ -199,8 +199,14 @@ export default function BookInstructorSessionPage() {
 
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.75rem', fontWeight: 700 }}>
-                      Book a Session with {instructor.user?.first_name} {instructor.user?.last_name}
+                    <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.75rem', fontWeight: 800 }}>
+                      Book a Session with{' '}
+                      <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
+                        {instructor.user?.first_name} {instructor.user?.last_name}.
+                        <svg style={{ position: 'absolute', bottom: -6, left: 0, width: '100%', height: 10 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                          <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+                        </svg>
+                      </span>
                     </h1>
                     <span className="badge badge-accent" style={{ fontSize: '0.75rem', background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>Verified Instructor</span>
                   </div>

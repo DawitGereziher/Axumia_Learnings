@@ -100,7 +100,13 @@ export default async function HomePage() {
       <section style={{ padding: '4rem 0', width: '100%' }}>
         <div style={{ padding: '0 clamp(1.5rem, 3.5vw, 4rem)', width: '100%', boxSizing: 'border-box' }}>
           <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', color: 'var(--text-primary)', marginBottom: '2rem' }}>
-            Explore by Category
+            Explore by{' '}
+            <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
+              Category.
+              <svg style={{ position: 'absolute', bottom: -6, left: 0, width: '100%', height: 10 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              </svg>
+            </span>
           </h2>
           <div style={{
             display: 'grid',

@@ -189,7 +189,13 @@ export default function NewHelpRequestPage() {
                 <Sparkles size={13} /> 1 - O N - 1  A S S I S T A N C E  J O B
               </div>
               <h1 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: 'clamp(1.8rem,3.5vw,2.5rem)', color: '#ffffff', margin: '0 0 0.5rem', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-                Post a New Tutoring Request
+                Post a New{' '}
+                <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
+                  Tutoring Request.
+                  <svg style={{ position: 'absolute', bottom: -6, left: 0, width: '100%', height: 10 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                    <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+                  </svg>
+                </span>
               </h1>
               <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', margin: 0, maxWidth: 680, lineHeight: 1.5 }}>
                 Detail your learning roadblock, desired deadline, and hourly rate. Certified educators across Ethiopia will review and submit custom proposals.

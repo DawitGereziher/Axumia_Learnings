@@ -105,9 +105,25 @@ function RegisterContent() {
               color: '#ffffff', lineHeight: 1.2, marginBottom: '1rem',
             }}>
               {isInstructor ? (
-                <>Teach, Mentor &<br /><span style={{ color: '#fde047' }}>Earn Online</span></>
+                <>
+                  Teach, Mentor &amp;<br />
+                  <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
+                    Earn Online.
+                    <svg style={{ position: 'absolute', bottom: -6, left: 0, width: '100%', height: 10 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                      <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                </>
               ) : (
-                <>Knowledge Meets<br /><span style={{ color: '#fde047' }}>Innovation</span></>
+                <>
+                  Knowledge Meets<br />
+                  <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
+                    Innovation.
+                    <svg style={{ position: 'absolute', bottom: -6, left: 0, width: '100%', height: 10 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                      <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                </>
               )}
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.92rem', lineHeight: 1.65, marginBottom: '1.75rem', maxWidth: 380 }}>

@@ -33,14 +33,20 @@ export function FeaturedCoursesSection({ courses }: FeaturedCoursesSectionProps)
       <div className="container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#0c3b2e', marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#fde047', marginBottom: '0.5rem' }}>
               Live on Platform
             </div>
-            <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', letterSpacing: '-0.02em', color: '#0f172a' }}>
-              Featured Courses
+            <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+              Featured{' '}
+              <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
+                Courses.
+                <svg style={{ position: 'absolute', bottom: -6, left: 0, width: '100%', height: 10 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                  <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
             </h2>
           </div>
-          <Link href="/courses" style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0c3b2e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Link href="/courses" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
             View all →
           </Link>
         </div>
