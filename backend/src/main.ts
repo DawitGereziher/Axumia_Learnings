@@ -22,6 +22,15 @@ import { Pool } from 'pg';
 async function bootstrap() {
   // ── Production safety checks ─────────────────────────────────────────────────
   if (process.env.NODE_ENV === 'production') {
+    if (!process.env.CHAPA_SECRET_KEY) {
+      console.warn('⚠️ WARNING: CHAPA_SECRET_KEY is missing. Using development fallback key.');
+      process.env.CHAPA_SECRET_KEY = 'CHASECK_TEST-placeholder-key-for-development';
+    }
+    if (!process.env.CHAPA_WEBHOOK_SECRET) {
+      console.warn('⚠️ WARNING: CHAPA_WEBHOOK_SECRET is missing. Using development fallback secret.');
+      process.env.CHAPA_WEBHOOK_SECRET = 'chapa-webhook-secret-for-development';
+    }
+
     const required = [
       'DATABASE_URL',
       'JWT_SECRET',

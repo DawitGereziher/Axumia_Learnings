@@ -52,6 +52,8 @@ services:
       DATABASE_URL: "postgresql://postgres:password@db:5432/ethiolearn?schema=public"
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      CHAPA_SECRET_KEY: ${CHAPA_SECRET_KEY:-CHASECK_TEST-placeholder-key-for-development}
+      CHAPA_WEBHOOK_SECRET: ${CHAPA_WEBHOOK_SECRET:-chapa-webhook-secret-for-development}
     depends_on:
       db:
         condition: service_healthy
