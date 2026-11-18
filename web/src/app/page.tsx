@@ -11,7 +11,7 @@ import Link from 'next/link';
 import {
   Video, UserCheck, HelpCircle, Wallet,
   Code, TrendingUp, Briefcase, Camera, Music,
-  BookOpen, Globe, GraduationCap,
+  BookOpen, Globe, GraduationCap, Sparkles,
 } from 'lucide-react';
 
 import { HeroSection } from './_components/home/HeroSection';
@@ -176,32 +176,131 @@ export default async function HomePage() {
       </Suspense>
 
       {/* 5. How it works */}
-      <section style={{ padding: '5rem 0', background: 'var(--bg-surface)' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#0c3b2e', marginBottom: '0.5rem' }}>
-              Simple Process
+      <section style={{ padding: '5.5rem 0', background: 'var(--bg-surface)' }}>
+        <div style={{ width: '100%', padding: '0 clamp(1.5rem, 3.5vw, 4rem)', boxSizing: 'border-box' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'rgba(253, 224, 71, 0.12)', border: '1px solid rgba(253, 224, 71, 0.25)',
+              borderRadius: 999, padding: '0.35rem 1rem', fontSize: '0.75rem',
+              fontWeight: 800, color: '#fde047', letterSpacing: '0.15em', textTransform: 'uppercase',
+              marginBottom: '1rem',
+            }}>
+              <Sparkles size={14} /> SIMPLE 4-STEP LEARNING JOURNEY
             </div>
-            <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', color: 'var(--text-primary)' }}>
-              How Axumia Works
+            <h2 style={{
+              fontFamily: 'Outfit, sans-serif', fontWeight: 800,
+              fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', color: 'var(--text-primary)',
+              lineHeight: 1.2, letterSpacing: '-0.02em', margin: '0 auto 0.75rem',
+            }}>
+              How Axumia{' '}
+              <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
+                Works.
+                <svg style={{ position: 'absolute', bottom: -6, left: 0, width: '100%', height: 10 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                  <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
             </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: 580, margin: '0 auto', lineHeight: 1.6 }}>
+              From skill discovery to accredited certification — tailored for ambitious Ethiopian students and professionals.
+            </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.75rem' }}>
             {howItWorks.map(({ icon, title, desc }, i) => (
-              <div key={title} style={{ textAlign: 'center' }}>
+              <div
+                key={title}
+                className="card"
+                style={{
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--card-border)',
+                  borderRadius: 22,
+                  padding: '2rem 1.6rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
+                }}
+              >
+                {/* Subtle top-right step watermark */}
                 <div style={{
-                  width: 64, height: 64, borderRadius: '50%',
-                  background: 'rgba(12,59,46,0.08)', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem',
-                  color: '#0c3b2e',
+                  position: 'absolute', top: 12, right: 18,
+                  fontSize: '3.2rem', fontWeight: 900,
+                  fontFamily: 'Outfit, sans-serif',
+                  color: 'rgba(255, 255, 255, 0.04)',
+                  lineHeight: 1, pointerEvents: 'none',
+                  userSelect: 'none',
                 }}>
-                  {icon}
+                  0{i + 1}
                 </div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0c3b2e', letterSpacing: '0.12em', marginBottom: '0.35rem' }}>
-                  STEP {i + 1}
+
+                {/* Top row: Icon container + Step pill */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '1.5rem' }}>
+                  <div style={{
+                    width: 54, height: 54, borderRadius: 16,
+                    background: 'linear-gradient(135deg, #0c3b2e 0%, #15805a 100%)',
+                    border: '1px solid rgba(253, 224, 71, 0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fde047',
+                    boxShadow: '0 6px 16px rgba(12, 59, 46, 0.35)',
+                  }}>
+                    {icon}
+                  </div>
+
+                  <span style={{
+                    background: 'rgba(253, 224, 71, 0.12)',
+                    color: '#fde047',
+                    border: '1px solid rgba(253, 224, 71, 0.25)',
+                    borderRadius: 999,
+                    padding: '0.25rem 0.75rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}>
+                    Step {i + 1}
+                  </span>
                 </div>
-                <h3 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{title}</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{desc}</p>
+
+                {/* Step title */}
+                <h3 style={{
+                  fontFamily: 'Outfit, sans-serif',
+                  fontWeight: 800,
+                  fontSize: '1.2rem',
+                  color: 'var(--text-primary)',
+                  marginBottom: '0.65rem',
+                  lineHeight: 1.3,
+                }}>
+                  {title}
+                </h3>
+
+                {/* Step description */}
+                <p style={{
+                  fontSize: '0.88rem',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}>
+                  {desc}
+                </p>
+
+                {/* Bottom progress indicator bar */}
+                <div style={{
+                  width: '100%', height: 3,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: 999,
+                  marginTop: '1.75rem',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    width: `${(i + 1) * 25}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #0c3b2e, #fde047)',
+                    borderRadius: 999,
+                  }} />
+                </div>
               </div>
             ))}
           </div>

@@ -50,11 +50,17 @@ export function HeroSection() {
 
               <h1 style={{
                 fontFamily: 'Outfit, sans-serif', fontWeight: 800,
-                fontSize: 'clamp(2.4rem, 4.5vw, 3.8rem)', lineHeight: 1.12,
+                fontSize: 'clamp(2.4rem, 4.5vw, 3.8rem)', lineHeight: 1.15,
                 letterSpacing: '-0.02em', color: '#ffffff', marginBottom: '1.25rem',
                 textShadow: '0 2px 10px rgba(0,0,0,0.3)',
               }}>
-                Knowledge Meets<br />Innovation
+                Knowledge Meets<br />
+                <span style={{ position: 'relative', display: 'inline-block', color: '#fde047' }}>
+                  Innovation.
+                  <svg style={{ position: 'absolute', bottom: -8, left: 0, width: '100%', height: 12 }} viewBox="0 0 100 20" preserveAspectRatio="none">
+                    <path d="M0 15 Q50 0 100 15" stroke="#fde047" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+                  </svg>
+                </span>
               </h1>
 
               <p style={{
