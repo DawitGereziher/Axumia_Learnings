@@ -1,4 +1,8 @@
-# 🎓 Axumia Learnings (Ethio Learn)
+<p align="center">
+  <img src="assets/hero.png" alt="Axumia Learnings Hero Banner" width="100%" />
+</p>
+
+# Axumia Learnings (Ethio Learn)
 
 > **Next-Generation Two-Sided EdTech & Live Tutoring Ecosystem for Ethiopia and Emerging Markets**  
 > *Empowering learners with low-bandwidth-optimized video courses, 1-on-1 verified mentorship, escrow-protected peer tutoring, and native Ethiopian payment rails.*
@@ -23,22 +27,23 @@
 
 1. [Executive Overview](#-executive-overview)
 2. [Key Product Pillars](#-key-product-pillars)
-3. [System Architecture](#-system-architecture)
-4. [Platform Core Flows](#-platform-core-flows)
+3. [Learning & Mentorship Categories](#-learning--mentorship-categories)
+4. [System Architecture](#-system-architecture)
+5. [Platform Core Flows](#-platform-core-flows)
    - [A. Asynchronous Course Purchase & Video Access Flow](#a-asynchronous-course-purchase--video-access-flow)
    - [B. Synchronous 1-on-1 Tutoring & Escrow Release Flow](#b-synchronous-1-on-1-tutoring--escrow-release-flow)
    - [C. Peer-to-Peer Help Request & Bidding Flow](#c-peer-to-peer-help-request--bidding-flow)
    - [D. Gamification, Quizzes & Verified Certificates](#d-gamification-quizzes--verified-certificates)
-5. [Security, Anti-Tamper & Zero-Leakage Architecture](#-security-anti-tamper--zero-leakage-architecture)
-6. [Monorepo Codebase Layout](#-monorepo-codebase-layout)
-7. [Release Gateway & Regression Test Suite](#-release-gateway--regression-test-suite)
-8. [Local Development & Quickstart](#-local-development--quickstart)
+6. [Security, Anti-Tamper & Zero-Leakage Architecture](#-security-anti-tamper--zero-leakage-architecture)
+7. [Monorepo Codebase Layout](#-monorepo-codebase-layout)
+8. [Release Gateway & Regression Test Suite](#-release-gateway--regression-test-suite)
+9. [Local Development & Quickstart](#-local-development--quickstart)
    - [Using Docker Compose (Recommended)](#1-docker-compose-all-in-one-recommended)
    - [Running the Flutter Mobile Application](#2-running-the-flutter-mobile-app)
    - [Bare-Metal Local Setup](#3-bare-metal-manual-setup)
-9. [Environment Variables Reference](#-environment-variables-reference)
-10. [Kubernetes Production Deployment](#-kubernetes-production-deployment)
-11. [License & Acknowledgments](#-license--acknowledgments)
+10. [Environment Variables Reference](#-environment-variables-reference)
+11. [Kubernetes Production Deployment](#-kubernetes-production-deployment)
+12. [License & Acknowledgments](#-license--acknowledgments)
 
 ---
 
@@ -66,6 +71,16 @@ Axumia Learnings unites **asynchronous on-demand learning** and **synchronous li
 | **Assessment & Certification** | Timed anti-cheat quiz engine with client-side answer scrubbing, pass threshold gating, and tamper-proof SVG/PDF certificate generation. | Globally verifiable certificate URLs with unique cryptographic lookup hashes. |
 | **Gamification Engine** | Experience points (XP), streak tracking, multi-tier badges (*First Step*, *Perfect Score*, *Knowledge Seeker*), dynamic level progression, public leaderboards. | Anti-tamper server verification: XP cannot be claimed for uncompleted lessons or fabricated streak bonuses. |
 | **Community Resources** | Free and premium study guides, past exams, and cheat sheets with strict MIME-type whitelisting and rate-limited CDN downloads. | Strict path traversal defenses and executable binary filtering (`.exe`, `.msi` blocked). |
+
+---
+
+## 📚 Learning & Mentorship Categories
+
+Explore high-demand course tracks and live 1-on-1 mentorship sessions across diverse academic and vocational disciplines:
+
+| <img src="assets/dev.jfif" width="280" alt="Software Development" /><br/>**💻 Software Development**<br/><sub>Web, Mobile (Flutter), Cloud APIs & Backend Architecture</sub> | <img src="assets/ui.jpg" width="280" alt="UI/UX Design" /><br/>**🎨 UI/UX & Product Design**<br/><sub>Figma, Visual Systems, User Research & Prototyping</sub> | <img src="assets/finance.jpg" width="280" alt="Finance & Business" /><br/>**📈 Finance & Business**<br/><sub>Accounting, Ethiopian Markets, Financial Planning</sub> |
+| :---: | :---: | :---: |
+| <img src="assets/language.jfif" width="280" alt="Language & Communication" /><br/>**🗣 Language & Communication**<br/><sub>Amharic, Academic & Professional English Mastery</sub> | <img src="assets/exam.jpg" width="280" alt="National Exam Preparation" /><br/>**📝 National Exam Preparation**<br/><sub>Grade 12 Matriculation, University Entrance & STEM</sub> | <img src="assets/music.jfif" width="280" alt="Music & Arts" /><br/>**🎵 Music & Creative Arts**<br/><sub>Traditional Ethiopian Instruments, Audio & Theory</sub> |
 
 ---
 
