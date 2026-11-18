@@ -194,7 +194,7 @@ body {
 }
 
 .gradient-indigo-text {
-  background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 50%, #818cf8 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #fde047 50%, #22c55e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -406,7 +406,7 @@ body {
   text-transform: uppercase;
 }
 
-.badge-accent  { background: var(--accent-soft); color: #818cf8; border: 1px solid var(--accent-border); }
+.badge-accent  { background: var(--accent-soft); color: #22c55e; border: 1px solid var(--accent-border); }
 .badge-gold    { background: var(--gold-soft);   color: var(--gold);   border: 1px solid rgba(245, 158, 11, 0.25); }
 .badge-success { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
 
@@ -732,7 +732,7 @@ body {
 }
 
 .hero-title-highlight2 {
-  color: #818cf8;
+  color: #fde047;
 }
 
 .hero-subtitle {
@@ -742,7 +742,7 @@ body {
 .hero-trust-badge {
   background: var(--accent-soft);
   border: 1px solid var(--accent-border);
-  color: #a5b4fc;
+  color: #fde047;
   border-radius: 999px;
 }
 
@@ -776,7 +776,7 @@ body {
 }
 
 [data-theme="light"] .hero-title-highlight2 {
-  color: #4f46e5 !important;
+  color: #0c3b2e !important;
 }
 
 [data-theme="light"] .hero-subtitle {
@@ -784,9 +784,9 @@ body {
 }
 
 [data-theme="light"] .hero-trust-badge {
-  background: rgba(79, 70, 229, 0.08) !important;
-  border: 1px solid rgba(79, 70, 229, 0.2) !important;
-  color: #4f46e5 !important;
+  background: rgba(12, 59, 46, 0.08) !important;
+  border: 1px solid rgba(12, 59, 46, 0.2) !important;
+  color: #0c3b2e !important;
 }
 
 [data-theme="light"] .hero-trust-item {

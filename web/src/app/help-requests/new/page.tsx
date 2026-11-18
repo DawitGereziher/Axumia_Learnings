@@ -26,14 +26,17 @@ import {
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const SUBJECTS = [
-  { value: 'math',     label: 'Mathematics',      emoji: '📐' },
-  { value: 'physics',  label: 'Physics',           emoji: '⚛️' },
-  { value: 'cs',       label: 'Computer Science',  emoji: '💻' },
-  { value: 'english',  label: 'English',           emoji: '📖' },
-  { value: 'chemistry',label: 'Chemistry',         emoji: '🧪' },
-  { value: 'biology',  label: 'Biology',           emoji: '🧬' },
-  { value: 'history',  label: 'History',           emoji: '🏛️' },
-  { value: 'other',    label: 'Other',             emoji: '🎯' },
+  { value: 'software-engineering', label: 'Software Engineering', emoji: '💻' },
+  { value: 'web-dev',             label: 'Web Development',      emoji: '🌐' },
+  { value: 'mobile-dev',          label: 'Mobile Apps (Flutter)',emoji: '📱' },
+  { value: 'data-ai',             label: 'Data Science & AI',    emoji: '🤖' },
+  { value: 'ui-ux',               label: 'UI/UX & Design',       emoji: '🎨' },
+  { value: 'business',            label: 'Business & Startups',  emoji: '💼' },
+  { value: 'finance',             label: 'Finance & Accounting', emoji: '📊' },
+  { value: 'english',             label: 'English Mastery',      emoji: '🗣️' },
+  { value: 'exam-prep',           label: 'National Exam Prep',   emoji: '📝' },
+  { value: 'cloud-devops',        label: 'Cloud & DevOps',       emoji: '☁️' },
+  { value: 'other',               label: 'Other Skills',         emoji: '🎯' },
 ];
 
 const TIPS = [
@@ -67,7 +70,7 @@ export default function NewHelpRequestPage() {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    subject_area: 'cs',
+    subject_area: 'software-engineering',
     budget_max_per_hour: '300',
     estimated_hours: '1',
     deadline: defaultDeadline,

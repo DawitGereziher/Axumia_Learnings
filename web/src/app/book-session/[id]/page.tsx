@@ -173,9 +173,9 @@ export default function BookInstructorSessionPage() {
 
       <div style={{ paddingTop: '80px', flex: 1, paddingBottom: '4rem' }}>
         {/* Header section */}
-        <div style={{ background: 'linear-gradient(180deg, rgba(99,102,241,0.08) 0%, transparent 100%)', padding: '2.5rem 1.5rem 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
-          <div className="container" style={{ maxWidth: 960 }}>
-            <Link href="/book-session" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#818cf8', fontSize: '0.9rem', marginBottom: '1rem', textDecoration: 'none', fontWeight: 500 }}>
+        <div style={{ background: 'linear-gradient(180deg, rgba(12,59,46,0.18) 0%, transparent 100%)', padding: '2.5rem clamp(1.5rem, 3.5vw, 4rem) 1.5rem', borderBottom: '1px solid var(--card-border)' }}>
+          <div style={{ width: '100%' }}>
+            <Link href="/book-session" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#fde047', fontSize: '0.9rem', marginBottom: '1rem', textDecoration: 'none', fontWeight: 500 }}>
               <ArrowLeft size={16} /> Back to All Instructors
             </Link>
 
@@ -185,9 +185,10 @@ export default function BookInstructorSessionPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
                 <div style={{
                   width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
-                  background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#6366f1,#a78bfa)',
+                  background: avatarUrl ? 'transparent' : 'linear-gradient(135deg, #0c3b2e 0%, #15805a 100%)',
+                  border: avatarUrl ? 'none' : '2px solid rgba(253, 224, 71, 0.4)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.5rem', fontWeight: 700, color: '#fff', overflow: 'hidden',
+                  fontSize: '1.5rem', fontWeight: 700, color: '#fde047', overflow: 'hidden',
                 }}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={instructor.user?.first_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -201,7 +202,7 @@ export default function BookInstructorSessionPage() {
                     <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.75rem', fontWeight: 700 }}>
                       Book a Session with {instructor.user?.first_name} {instructor.user?.last_name}
                     </h1>
-                    <span className="badge badge-accent" style={{ fontSize: '0.75rem' }}>Verified Instructor</span>
+                    <span className="badge badge-accent" style={{ fontSize: '0.75rem', background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>Verified Instructor</span>
                   </div>
                   <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginTop: '0.25rem' }}>
                     {instructor.headline || 'Expert Educator & Tutor'}
@@ -210,14 +211,14 @@ export default function BookInstructorSessionPage() {
 
                 <div style={{ textAlign: 'right' }}>
                   {instructor?.avg_rating ? (
-                    <div style={{ color: '#f59e0b', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem', justifyContent: 'flex-end', marginBottom: '0.25rem' }}>
-                      <Star size={16} fill="#f59e0b" color="#f59e0b" /> {Number(instructor.avg_rating).toFixed(1)}
+                    <div style={{ color: '#fde047', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem', justifyContent: 'flex-end', marginBottom: '0.25rem' }}>
+                      <Star size={16} fill="#fde047" color="#fde047" /> {Number(instructor.avg_rating).toFixed(1)}
                       {instructor.total_students > 0 && <span style={{ color: '#94a3b8', fontWeight: 400 }}>({instructor.total_students} students)</span>}
                     </div>
                   ) : (
                     <div style={{ color: '#64748b', fontSize: '0.82rem', marginBottom: '0.25rem' }}>New Instructor</div>
                   )}
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#818cf8' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fde047' }}>
                     {baseRate} ETB <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 400 }}>base rate / hr</span>
                   </div>
                 </div>
@@ -227,7 +228,7 @@ export default function BookInstructorSessionPage() {
         </div>
 
         {/* Form Container */}
-        <div className="container" style={{ maxWidth: 960, marginTop: '2rem' }}>
+        <div style={{ width: '100%', padding: '2rem clamp(1.5rem, 3.5vw, 4rem) 0' }}>
           {error && (
             <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', padding: '1rem 1.25rem', borderRadius: 12, color: '#ef4444', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <AlertCircle size={18} /> {error}
@@ -241,7 +242,7 @@ export default function BookInstructorSessionPage() {
               {/* Step 1: Choose Session Type */}
               <div className="card" style={{ padding: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Sparkles size={18} color="#818cf8" /> 1. Select Session Format
+                  <Sparkles size={18} color="#fde047" /> 1. Select Session Format
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
                   Choose the learning environment that best fits your goals and budget.
@@ -252,8 +253,8 @@ export default function BookInstructorSessionPage() {
                   <div
                     onClick={() => setSessionType('1-on-1')}
                     style={{
-                      border: sessionType === '1-on-1' ? '2px solid #6366f1' : '1px solid var(--card-border)',
-                      background: sessionType === '1-on-1' ? 'rgba(99,102,241,0.06)' : 'var(--bg-secondary)',
+                      border: sessionType === '1-on-1' ? '2px solid #22c55e' : '1px solid var(--card-border)',
+                      background: sessionType === '1-on-1' ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)',
                       borderRadius: 12,
                       padding: '1rem 1.25rem',
                       cursor: 'pointer',
@@ -263,18 +264,18 @@ export default function BookInstructorSessionPage() {
                       gap: '0.85rem',
                     }}
                   >
-                    <div style={{ padding: '0.5rem', borderRadius: 8, background: sessionType === '1-on-1' ? '#6366f1' : 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                    <div style={{ padding: '0.5rem', borderRadius: 8, background: sessionType === '1-on-1' ? '#0c3b2e' : 'rgba(255,255,255,0.06)', color: sessionType === '1-on-1' ? '#fde047' : '#fff' }}>
                       <User size={20} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                         <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>1-on-1 Private Session</span>
-                        <span className="badge badge-accent" style={{ fontSize: '0.7rem' }}>Standard Rate</span>
+                        <span className="badge badge-accent" style={{ fontSize: '0.7rem', background: 'rgba(253,224,71,0.15)', color: '#fde047' }}>Standard Rate</span>
                       </div>
                       <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>
                         Dedicated 1-on-1 live video tutoring tailored 100% to your personal learning pace.
                       </p>
-                      <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: 700, color: '#818cf8' }}>
+                      <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: 700, color: '#fde047' }}>
                         {baseRate} ETB <span style={{ fontWeight: 400, color: '#94a3b8' }}>/ hour</span>
                       </div>
                     </div>
@@ -284,8 +285,8 @@ export default function BookInstructorSessionPage() {
                   <div
                     onClick={() => setSessionType('1-on-many')}
                     style={{
-                      border: sessionType === '1-on-many' ? '2px solid #6366f1' : '1px solid var(--card-border)',
-                      background: sessionType === '1-on-many' ? 'rgba(99,102,241,0.06)' : 'var(--bg-secondary)',
+                      border: sessionType === '1-on-many' ? '2px solid #22c55e' : '1px solid var(--card-border)',
+                      background: sessionType === '1-on-many' ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)',
                       borderRadius: 12,
                       padding: '1rem 1.25rem',
                       cursor: 'pointer',
@@ -295,7 +296,7 @@ export default function BookInstructorSessionPage() {
                       gap: '0.85rem',
                     }}
                   >
-                    <div style={{ padding: '0.5rem', borderRadius: 8, background: sessionType === '1-on-many' ? '#6366f1' : 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                    <div style={{ padding: '0.5rem', borderRadius: 8, background: sessionType === '1-on-many' ? '#0c3b2e' : 'rgba(255,255,255,0.06)', color: sessionType === '1-on-many' ? '#fde047' : '#fff' }}>
                       <Users size={20} />
                     </div>
                     <div style={{ flex: 1 }}>
@@ -316,8 +317,8 @@ export default function BookInstructorSessionPage() {
                   <div
                     onClick={() => setSessionType('group-class')}
                     style={{
-                      border: sessionType === 'group-class' ? '2px solid #6366f1' : '1px solid var(--card-border)',
-                      background: sessionType === 'group-class' ? 'rgba(99,102,241,0.06)' : 'var(--bg-secondary)',
+                      border: sessionType === 'group-class' ? '2px solid #22c55e' : '1px solid var(--card-border)',
+                      background: sessionType === 'group-class' ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)',
                       borderRadius: 12,
                       padding: '1rem 1.25rem',
                       cursor: 'pointer',
@@ -327,18 +328,18 @@ export default function BookInstructorSessionPage() {
                       gap: '0.85rem',
                     }}
                   >
-                    <div style={{ padding: '0.5rem', borderRadius: 8, background: sessionType === 'group-class' ? '#6366f1' : 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                    <div style={{ padding: '0.5rem', borderRadius: 8, background: sessionType === 'group-class' ? '#0c3b2e' : 'rgba(255,255,255,0.06)', color: sessionType === 'group-class' ? '#fde047' : '#fff' }}>
                       <GraduationCap size={20} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                         <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Group Class / Masterclass</span>
-                        <span style={{ background: 'rgba(168,85,247,0.15)', color: '#a855f7', fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: 999, fontWeight: 600 }}>Save 60%</span>
+                        <span style={{ background: 'rgba(253,224,71,0.15)', color: '#fde047', fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: 999, fontWeight: 600 }}>Save 60%</span>
                       </div>
                       <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>
                         Interactive webinar-style masterclass (6+ students) with open structured lecture.
                       </p>
-                      <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: 700, color: '#a855f7' }}>
+                      <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: 700, color: '#fde047' }}>
                         {Math.round(baseRate * 0.4)} ETB <span style={{ fontWeight: 400, color: '#94a3b8' }}>/ student (60% discount)</span>
                       </div>
                     </div>
@@ -349,7 +350,7 @@ export default function BookInstructorSessionPage() {
               {/* Step 2: Select Date & Slot */}
               <div className="card" style={{ padding: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Calendar size={18} color="#818cf8" /> 2. Pick Available Date & Slot
+                  <Calendar size={18} color="#fde047" /> 2. Pick Available Date & Slot
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1rem' }}>
                   Select an open time slot from the instructor&apos;s active calendar.
@@ -370,8 +371,8 @@ export default function BookInstructorSessionPage() {
                           type="button"
                           onClick={() => setSelectedSlotId(s.id)}
                           style={{
-                            border: isSelected ? '2px solid #6366f1' : '1px solid var(--card-border)',
-                            background: isSelected ? 'rgba(99,102,241,0.15)' : 'var(--bg-secondary)',
+                            border: isSelected ? '2px solid #22c55e' : '1px solid var(--card-border)',
+                            background: isSelected ? 'rgba(34,197,94,0.15)' : 'var(--bg-secondary)',
                             color: isSelected ? '#fff' : 'inherit',
                             padding: '0.75rem 1rem',
                             borderRadius: 10,
@@ -383,7 +384,7 @@ export default function BookInstructorSessionPage() {
                           <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
                             {startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: isSelected ? '#a5b4fc' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
+                          <div style={{ fontSize: '0.8rem', color: isSelected ? '#fde047' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
                             <Clock size={12} />
                             {startDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                           </div>
@@ -445,7 +446,7 @@ export default function BookInstructorSessionPage() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--card-border)', paddingTop: '1rem', marginTop: '0.5rem', fontWeight: 700, fontSize: '1.2rem', color: '#fff' }}>
                     <span>Total Amount:</span>
-                    <span style={{ color: '#818cf8' }}>{calculatedPrice} ETB</span>
+                    <span style={{ color: '#fde047' }}>{calculatedPrice} ETB</span>
                   </div>
                 </div>
 

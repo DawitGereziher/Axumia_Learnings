@@ -68,9 +68,9 @@ const QUICK_ACTIONS = [
     icon: <Heart size={22} />,
     label: 'My Wishlist',
     desc: 'Saved courses',
-    gradient: 'linear-gradient(135deg,#f43f5e,#fb7185)',
-    glow: 'rgba(244,63,94,0.3)',
-    border: 'rgba(244,63,94,0.25)',
+    gradient: 'linear-gradient(135deg,#0c3b2e,#15805a)',
+    glow: 'rgba(12,59,46,0.3)',
+    border: 'rgba(12,59,46,0.25)',
   },
 ];
 
@@ -144,14 +144,14 @@ function StudentDashboardView({ purchases, bookings, helpRequests, t }: any) {
           <h2 style={{ fontSize: '1.35rem', fontWeight: 700, fontFamily: 'Outfit, sans-serif' }}>
             {t.dashboard.myCourses} ({purchases.length})
           </h2>
-          <Link href="/courses" style={{ color: '#818cf8', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/courses" style={{ color: '#fde047', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none' }}>
             Browse Catalog →
           </Link>
         </div>
 
         {purchases.length === 0 ? (
           <div className="glass" style={{ borderRadius: 16, padding: '3rem', textAlign: 'center', color: '#64748b' }}>
-            <BookOpen size={36} color="#6366f1" style={{ marginBottom: '0.75rem', opacity: 0.8 }} />
+            <BookOpen size={36} color="#22c55e" style={{ marginBottom: '0.75rem', opacity: 0.8 }} />
             <p style={{ marginBottom: '1.25rem', fontSize: '0.95rem' }}>{t.dashboard.noCourses}</p>
             <Link href="/courses" className="btn-primary" style={{ padding: '0.65rem 1.5rem', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
               {t.hero.exploreCourses} <ArrowRight size={16} />
@@ -177,10 +177,10 @@ function StudentDashboardView({ purchases, bookings, helpRequests, t }: any) {
                     <div style={{ marginBottom: '0.4rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.35rem' }}>
                         <span>{done}/{total} lessons</span>
-                        <span style={{ color: isComplete ? '#10b981' : '#818cf8', fontWeight: 700 }}>{pct}%</span>
+                        <span style={{ color: isComplete ? '#10b981' : '#fde047', fontWeight: 700 }}>{pct}%</span>
                       </div>
                       <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: isComplete ? '#10b981' : 'linear-gradient(90deg,#6366f1,#818cf8)', borderRadius: 99, transition: 'width 0.5s' }} />
+                        <div style={{ width: `${pct}%`, height: '100%', background: isComplete ? '#10b981' : 'linear-gradient(90deg, #0c3b2e, #22c55e)', borderRadius: 99, transition: 'width 0.5s' }} />
                       </div>
                     </div>
                   </div>
@@ -213,7 +213,7 @@ function StudentDashboardView({ purchases, bookings, helpRequests, t }: any) {
               <div key={b.id} className="card" style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '1rem' }}>Live Session with Instructor</div>
-                  <div style={{ color: '#818cf8', fontSize: '0.88rem', marginTop: 2 }}>
+                  <div style={{ color: '#fde047', fontSize: '0.88rem', marginTop: 2 }}>
                     {b.slot?.starts_at ? new Date(b.slot.starts_at).toLocaleString() : 'Scheduled'}
                   </div>
                   {b.notes && <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: 4 }}>Note: {b.notes}</div>}
@@ -282,7 +282,7 @@ function InstructorDashboardView({ user }: any) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
         <div className="card" style={{ padding: '1.5rem' }}>
           <div style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>Created Courses</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#818cf8', fontFamily: 'Outfit, sans-serif' }}>{myCourses.length}</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fde047', fontFamily: 'Outfit, sans-serif' }}>{myCourses.length}</div>
         </div>
 
         <div className="card" style={{ padding: '1.5rem' }}>
@@ -398,7 +398,7 @@ function InstructorDashboardView({ user }: any) {
                     {course.is_published ? 'Published' : 'Draft'}
                   </span>
                 </div>
-                <div style={{ color: '#818cf8', fontWeight: 700 }}>{Number(course.price) === 0 ? 'Free' : `${course.price} ETB`}</div>
+                <div style={{ color: '#fde047', fontWeight: 700 }}>{Number(course.price) === 0 ? 'Free' : `${course.price} ETB`}</div>
                 <div style={{ color: '#94a3b8' }}>{course._count?.purchases || 0}</div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <Link href={`/courses/${course.slug || course.id}`} style={{ color: '#94a3b8' }} title="View Course Page">
@@ -465,7 +465,7 @@ function DashboardContent() {
   if (loading || !user) {
     return (
       <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #6366f1', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #22c55e', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </main>
     );
@@ -558,7 +558,7 @@ export default function DashboardPage() {
   return (
     <Suspense fallback={
       <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #6366f1', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #22c55e', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
       </main>
     }>
       <DashboardContent />

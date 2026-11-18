@@ -157,10 +157,10 @@ export default function VideoIntegrationPanel() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{
             width: 46, height: 46, borderRadius: 12,
-            background: 'rgba(99,102,241,0.15)',
-            border: '1px solid rgba(99,102,241,0.3)',
+            background: 'rgba(253, 224, 71, 0.15)',
+            border: '1px solid rgba(253, 224, 71, 0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#818cf8', flexShrink: 0,
+            color: '#fde047', flexShrink: 0,
           }}>
             <Tv size={24} />
           </div>

@@ -34,13 +34,13 @@ export default function CertificateVerificationPage() {
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         paddingTop: 100, paddingBottom: 60, paddingLeft: '1rem', paddingRight: '1rem',
-        background: 'radial-gradient(circle at 50% 30%, rgba(99,102,241,0.12) 0%, transparent 70%)',
+        background: 'radial-gradient(circle at 50% 30%, rgba(12,59,46,0.2) 0%, transparent 70%)',
       }}>
         <div style={{ maxWidth: 640, width: '100%' }}>
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>
-              <Award size={48} className="animate-pulse" style={{ margin: '0 auto 1rem', color: '#818cf8' }} />
+              <Award size={48} className="animate-pulse" style={{ margin: '0 auto 1rem', color: '#fde047' }} />
               <p>Verifying certificate authenticity...</p>
             </div>
           ) : errorMsg ? (
@@ -98,7 +98,7 @@ export default function CertificateVerificationPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2.5rem' }}>
 
                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <User size={24} color="#818cf8" />
+                  <User size={24} color="#fde047" />
                   <div>
                     <div style={{ fontSize: '0.78rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Recipient</div>
                     <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>{certData.student_name}</div>

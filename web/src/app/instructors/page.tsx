@@ -125,7 +125,7 @@ export default function InstructorsPage() {
         </div>
 
         {/* Instructors list (Figma KnowledgePulse LMS 4-Column Layout) */}
-        <div className="container" style={{ paddingTop: '2.5rem', paddingBottom: '5rem' }}>
+        <div style={{ width: '100%', padding: '2.5rem clamp(1.5rem, 3.5vw, 4rem) 5rem', boxSizing: 'border-box' }}>
           
           {/* Section Heading with Doodle Loop on "mentors." & Geometric Polygon Accent (from Figma KnowledgePulse) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem', position: 'relative' }}>
@@ -173,7 +173,7 @@ export default function InstructorsPage() {
           )}
 
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.75rem' }}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} style={{ height: 340, borderRadius: 16, background: 'var(--card-bg)', border: '1px solid var(--card-border)', animation: 'pulse 1.5s infinite' }} />
               ))}
@@ -184,7 +184,7 @@ export default function InstructorsPage() {
             </div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.75rem' }}>
                 {filtered.map(i => {
                   const avatarUrl = getFullUrl(i.profile_image || i.user?.image);
                   const instructorName = `${i.user?.first_name || ''} ${i.user?.last_name || ''}`.trim() || 'Verified Mentor';

@@ -173,8 +173,8 @@ export default function SecurityPanel() {
             TLS 1.3 Active
           </span>
           <span style={{
-            background: 'rgba(99,102,241,0.15)', color: '#818cf8',
-            border: '1px solid rgba(99,102,241,0.3)', borderRadius: 999,
+            background: 'rgba(253, 224, 71, 0.15)', color: '#fde047',
+            border: '1px solid rgba(253, 224, 71, 0.3)', borderRadius: 999,
             padding: '0.25rem 0.75rem', fontSize: '0.75rem', fontWeight: 700,
           }}>
             D-Auth 256-bit
@@ -198,7 +198,7 @@ export default function SecurityPanel() {
               fontWeight: 800, fontSize: '1.1rem', margin: 0,
               display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)',
             }}>
-              <Lock size={18} color="#818cf8" /> Change Password
+              <Lock size={18} color="#fde047" /> Change Password
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0.35rem 0 0' }}>
               Update your account password with standard cryptographic security.
@@ -391,7 +391,7 @@ export default function SecurityPanel() {
                       setCopiedKey(true);
                       setTimeout(() => setCopiedKey(false), 2000);
                     }}
-                    style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer' }}
+                    style={{ background: 'none', border: 'none', color: '#fde047', cursor: 'pointer' }}
                   >
                     {copiedKey ? <Check size={14} /> : <Copy size={14} />}
                   </button>

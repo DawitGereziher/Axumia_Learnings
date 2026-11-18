@@ -217,9 +217,10 @@ function BookingCard({ booking, onUpdated, onCancelled }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
           <div style={{
             width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg,#6366f1,#a78bfa)',
+            background: 'linear-gradient(135deg, #0c3b2e 0%, #15805a 100%)',
+            border: '2px solid rgba(253, 224, 71, 0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1rem', fontWeight: 700, color: '#fff',
+            fontSize: '1rem', fontWeight: 700, color: '#fde047',
           }}>
             {booking.student?.first_name?.[0]?.toUpperCase() || <User size={18} />}
           </div>
@@ -230,7 +231,7 @@ function BookingCard({ booking, onUpdated, onCancelled }: {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, padding: '0.3rem 0.7rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', color: '#fde047', background: 'rgba(253,224,71,0.1)', border: '1px solid rgba(253,224,71,0.2)', borderRadius: 8, padding: '0.3rem 0.7rem' }}>
             <Calendar size={13} /> {scheduledAt}
           </div>
           <span style={{

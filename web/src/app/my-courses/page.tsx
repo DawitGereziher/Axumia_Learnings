@@ -193,11 +193,11 @@ export default function StudentMyLearningPage() {
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
                         padding: '0.45rem 0.85rem', fontSize: '0.8rem', borderRadius: 8,
-                        background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)',
-                        color: '#818cf8', fontWeight: 600, cursor: 'pointer',
+                        background: 'rgba(253, 224, 71, 0.15)', border: '1px solid rgba(253, 224, 71, 0.3)',
+                        color: '#fde047', fontWeight: 600, cursor: 'pointer',
                       }}
                     >
-                      <Star size={13} fill="#818cf8" /> Rate Teacher Style
+                      <Star size={13} fill="#fde047" /> Rate Teacher Style
                     </button>
                   </div>
                 </div>
@@ -292,7 +292,7 @@ export default function StudentMyLearningPage() {
                         e.currentTarget.src = '/assets/course-icon.png';
                       }}
                     />
-                    <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(15,23,42,0.9)', padding: '0.2rem 0.6rem', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700, color: '#818cf8', textTransform: 'uppercase' }}>
+                    <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(15,23,42,0.9)', padding: '0.2rem 0.6rem', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700, color: '#fde047', textTransform: 'uppercase' }}>
                       {course.level || 'Course'}
                     </div>
                   </div>
@@ -316,7 +316,7 @@ export default function StudentMyLearningPage() {
                         <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}>
                           <div style={{
                             height: '100%', width: `${progressPct}%`,
-                            background: isCompleted ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #4f46e5, #818cf8)',
+                            background: isCompleted ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #0c3b2e, #22c55e)',
                             borderRadius: 999, transition: 'width 0.3s ease',
                           }} />
                         </div>

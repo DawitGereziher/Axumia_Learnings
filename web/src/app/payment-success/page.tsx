@@ -249,14 +249,14 @@ function PaymentSuccessContent() {
           borderRadius: 12,
           padding: '0.85rem 1rem',
           fontSize: '0.82rem',
-          color: '#a5b4fc',
+          color: '#fde047',
           textAlign: 'left',
           marginBottom: '2rem',
           display: 'flex',
           gap: '0.75rem',
           alignItems: 'flex-start',
         }}>
-          <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: 2, color: '#818cf8' }} />
+          <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: 2, color: '#22c55e' }} />
           <span>
             <strong>Axumia Escrow Protection:</strong> Your payment remains securely locked in platform escrow. The helper receives compensation only after you verify and mark the task complete.
           </span>

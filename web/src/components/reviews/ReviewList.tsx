@@ -227,7 +227,7 @@ export default function ReviewList({ courseId, showWriteReview, onWriteReview, u
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#818cf8',
+                color: '#fde047',
                 cursor: 'pointer',
                 marginLeft: '0.5rem',
                 fontSize: '0.9rem',
@@ -316,10 +316,10 @@ export default function ReviewList({ courseId, showWriteReview, onWriteReview, u
             padding: '1rem',
             marginBottom: '1rem',
           }}>
-            <div style={{ fontWeight: 600, color: '#818cf8', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+            <div style={{ fontWeight: 600, color: '#fde047', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
               Instructor Response
             </div>
-            <div style={{ color: '#c7d2fe', fontSize: '0.9rem', lineHeight: 1.5 }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
               {review.instructorResponse.response}
             </div>
           </div>

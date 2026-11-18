@@ -97,12 +97,17 @@ export default async function HomePage() {
       </section>
 
       {/* 3. Category browse */}
-      <section style={{ padding: '4rem 0' }}>
-        <div className="container">
+      <section style={{ padding: '4rem 0', width: '100%' }}>
+        <div style={{ padding: '0 clamp(1.5rem, 3.5vw, 4rem)', width: '100%', boxSizing: 'border-box' }}>
           <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', color: 'var(--text-primary)', marginBottom: '2rem' }}>
             Explore by Category
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '1.25rem' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+            gap: '1.25rem',
+            width: '100%',
+          }}>
             {categories.map(({ id, label, image, icon, href }) => (
               <Link key={id} href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="card card-hover" style={{

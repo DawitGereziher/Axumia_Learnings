@@ -461,8 +461,8 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
         <style>{`
           .learn-spinner {
             width: 44px; height: 44px; border-radius: 50%;
-            border: 3px solid rgba(99,102,241,0.2);
-            border-top-color: #6366f1;
+            border: 3px solid rgba(34,197,94,0.2);
+            border-top-color: #22c55e;
             animation: learnSpin 0.7s linear infinite;
           }
           @keyframes learnSpin { to { transform: rotate(360deg); } }
@@ -476,7 +476,7 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
     <main style={{ minHeight: '100vh', background: '#07090f', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
       <div style={{ fontSize: '3rem' }}>⚠️</div>
       <h1 style={{ color: '#f87171', fontWeight: 700, fontSize: '1.2rem' }}>{pageError}</h1>
-      <Link href="/courses" style={{ color: '#818cf8', textDecoration: 'none', fontSize: '0.9rem' }}>← Back to courses</Link>
+      <Link href="/courses" style={{ color: '#fde047', textDecoration: 'none', fontSize: '0.9rem' }}>← Back to courses</Link>
     </main>
   );
 
@@ -488,7 +488,7 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
 
       {/* ── Top Bar ────────────────────────────────────────────────────────── */}
       <header style={{
-        height: 56, background: 'rgba(13,17,23,0.98)', borderBottom: '1px solid rgba(99,102,241,0.12)',
+        height: 56, background: 'rgba(13,17,23,0.98)', borderBottom: '1px solid rgba(255,255,255,0.08)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 1rem', flexShrink: 0, zIndex: 60,
         backdropFilter: 'blur(12px)',
@@ -496,9 +496,9 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
         {/* Left: back + title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
           <Link href={`/courses/${slug}`} style={{
-            color: '#6366f1', textDecoration: 'none', fontSize: '0.82rem', fontWeight: 600,
-            padding: '0.3rem 0.6rem', borderRadius: 8, background: 'rgba(99,102,241,0.08)',
-            border: '1px solid rgba(99,102,241,0.2)', whiteSpace: 'nowrap', flexShrink: 0,
+            color: '#fde047', textDecoration: 'none', fontSize: '0.82rem', fontWeight: 600,
+            padding: '0.3rem 0.6rem', borderRadius: 8, background: 'rgba(253,224,71,0.08)',
+            border: '1px solid rgba(253,224,71,0.2)', whiteSpace: 'nowrap', flexShrink: 0,
           }}>
             ← Back
           </Link>
@@ -514,7 +514,7 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
           <div style={{ flex: 1, height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
               width: `${completionPct}%`, height: '100%',
-              background: completionPct >= 100 ? '#10b981' : 'linear-gradient(90deg,#6366f1,#818cf8)',
+              background: completionPct >= 100 ? '#10b981' : 'linear-gradient(90deg, #0c3b2e, #22c55e)',
               borderRadius: 99, transition: 'width 0.5s ease',
             }} />
           </div>
@@ -533,8 +533,8 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
             }
           }}
           style={{
-            background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
-            borderRadius: 8, padding: '0.35rem 0.75rem', color: '#818cf8',
+            background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+            borderRadius: 8, padding: '0.35rem 0.75rem', color: '#22c55e',
             cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
           }}
         >
@@ -574,8 +574,8 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                       rel="noreferrer"
                       style={{
                         fontSize: '0.78rem', padding: '0.3rem 0.6rem', borderRadius: 6,
-                        background: 'rgba(99,102,241,0.15)', color: '#818cf8', textDecoration: 'none',
-                        border: '1px solid rgba(99,102,241,0.3)', fontWeight: 600,
+                        background: 'rgba(34,197,94,0.15)', color: '#22c55e', textDecoration: 'none',
+                        border: '1px solid rgba(34,197,94,0.3)', fontWeight: 600,
                       }}
                     >
                       ↗ Open Full Window
@@ -594,7 +594,7 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                 background: '#0a0d14', color: '#e2e8f0', display: 'flex', flexDirection: 'column',
               }}>
                 <div style={{ maxWidth: 750, margin: '0 auto', width: '100%' }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 20, background: 'rgba(99,102,241,0.12)', color: '#818cf8', fontSize: '0.78rem', fontWeight: 600, marginBottom: '1rem' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 20, background: 'rgba(34,197,94,0.12)', color: '#22c55e', fontSize: '0.78rem', fontWeight: 600, marginBottom: '1rem' }}>
                     📖 Reading &amp; Lecture Notes
                   </div>
                   <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginBottom: '1rem', fontFamily: 'Outfit, sans-serif' }}>
@@ -643,7 +643,7 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     gap: '1.25rem', padding: '1.5rem', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#818cf8', fontWeight: 800 }}>
+                    <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#fde047', fontWeight: 800 }}>
                       Up Next in {autoAdvanceCountdown}s
                     </div>
                     <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc', maxWidth: 520, lineHeight: 1.3 }}>
@@ -666,9 +666,9 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                           if (nextLesson) doLoadLesson(nextLesson);
                         }}
                         style={{
-                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)', border: 'none',
-                          color: '#fff', padding: '0.55rem 1.6rem', borderRadius: 10, fontWeight: 700,
-                          cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 4px 16px rgba(99,102,241,0.45)',
+                          background: 'linear-gradient(135deg, #0c3b2e, #15805a)', border: 'none',
+                          color: '#fde047', padding: '0.55rem 1.6rem', borderRadius: 10, fontWeight: 700,
+                          cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 4px 16px rgba(12,59,46,0.45)',
                           transition: 'all 0.15s ease',
                         }}
                       >
@@ -706,7 +706,7 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     gap: '1.25rem', padding: '1.5rem', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#818cf8', fontWeight: 800 }}>
+                    <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#fde047', fontWeight: 800 }}>
                       Up Next in {autoAdvanceCountdown}s
                     </div>
                     <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc', maxWidth: 520, lineHeight: 1.3 }}>
@@ -729,9 +729,9 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                           if (nextLesson) doLoadLesson(nextLesson);
                         }}
                         style={{
-                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)', border: 'none',
-                          color: '#fff', padding: '0.55rem 1.6rem', borderRadius: 10, fontWeight: 700,
-                          cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 4px 16px rgba(99,102,241,0.45)',
+                          background: 'linear-gradient(135deg, #0c3b2e, #15805a)', border: 'none',
+                          color: '#fde047', padding: '0.55rem 1.6rem', borderRadius: 10, fontWeight: 700,
+                          cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 4px 16px rgba(12,59,46,0.45)',
                           transition: 'all 0.15s ease',
                         }}
                       >
@@ -757,9 +757,9 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
               onClick={() => prevLesson && doLoadLesson(prevLesson)}
               disabled={!prevLesson}
               style={{
-                background: prevLesson ? 'rgba(99,102,241,0.1)' : 'transparent',
-                border: `1px solid ${prevLesson ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: 8, color: prevLesson ? '#818cf8' : '#374151',
+                background: prevLesson ? 'rgba(253,224,71,0.1)' : 'transparent',
+                border: `1px solid ${prevLesson ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: 8, color: prevLesson ? '#fde047' : '#374151',
                 padding: '0.35rem 0.85rem', cursor: prevLesson ? 'pointer' : 'not-allowed',
                 fontSize: '0.82rem', fontWeight: 600, transition: 'all 0.15s',
                 flexShrink: 0,
@@ -806,9 +806,9 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
               onClick={() => nextLesson && doLoadLesson(nextLesson)}
               disabled={!nextLesson}
               style={{
-                background: nextLesson ? 'rgba(99,102,241,0.1)' : 'transparent',
-                border: `1px solid ${nextLesson ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: 8, color: nextLesson ? '#818cf8' : '#374151',
+                background: nextLesson ? 'rgba(253,224,71,0.1)' : 'transparent',
+                border: `1px solid ${nextLesson ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: 8, color: nextLesson ? '#fde047' : '#374151',
                 padding: '0.35rem 0.85rem', cursor: nextLesson ? 'pointer' : 'not-allowed',
                 fontSize: '0.82rem', fontWeight: 600, transition: 'all 0.15s',
                 flexShrink: 0,
@@ -837,10 +837,10 @@ export default function CourseLearnPage({ params }: { params: Promise<{ slug: st
                   onClick={() => setActiveTab(tab)}
                   style={{
                     flex: 1, border: 'none', background: 'transparent',
-                    color: activeTab === tab ? '#818cf8' : '#64748b',
+                    color: activeTab === tab ? '#fde047' : '#64748b',
                     fontWeight: activeTab === tab ? 700 : 500,
                     fontSize: '0.8rem', cursor: 'pointer',
-                    borderBottom: activeTab === tab ? '2px solid #6366f1' : '2px solid transparent',
+                    borderBottom: activeTab === tab ? '2px solid #fde047' : '2px solid transparent',
                     transition: 'all 0.15s', letterSpacing: '0.01em',
                   }}
                 >

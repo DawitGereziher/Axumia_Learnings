@@ -189,9 +189,8 @@ export default function StudentSettingsPage() {
       <div style={{ paddingTop: '80px', flex: 1 }}>
         <div style={{
           width: '100%',
-          maxWidth: 1720,
-          margin: '0 auto',
-          padding: '1.5rem clamp(1rem, 2.5vw, 2.5rem) 5rem',
+          maxWidth: '100%',
+          padding: '1.5rem clamp(1.5rem, 3.5vw, 4rem) 5rem',
           boxSizing: 'border-box',
         }}>
 
@@ -535,8 +534,8 @@ export default function StudentSettingsPage() {
                           style={{
                             display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
                             padding: '0.75rem 1rem', borderRadius: 12,
-                            background: studyGoal === g.id ? 'rgba(99,102,241,0.1)' : 'var(--card-bg)',
-                            border: `1px solid ${studyGoal === g.id ? '#6366f1' : 'var(--card-border)'}`,
+                            background: studyGoal === g.id ? 'rgba(34,197,94,0.1)' : 'var(--card-bg)',
+                            border: `1px solid ${studyGoal === g.id ? '#22c55e' : 'var(--card-border)'}`,
                             cursor: 'pointer', transition: 'all 0.15s',
                           }}
                         >
@@ -638,9 +637,9 @@ export default function StudentSettingsPage() {
                             onClick={() => isAdded ? removeInterest(s) : addInterest(s)}
                             style={{
                               padding: '3px 9px', borderRadius: 999, fontSize: '0.75rem',
-                              background: isAdded ? 'rgba(99,102,241,0.2)' : 'var(--card-bg)',
-                              color: isAdded ? '#818cf8' : 'var(--text-secondary)',
-                              border: `1px solid ${isAdded ? 'rgba(99,102,241,0.4)' : 'var(--card-border)'}`,
+                              background: isAdded ? 'rgba(34,197,94,0.2)' : 'var(--card-bg)',
+                              color: isAdded ? '#22c55e' : 'var(--text-secondary)',
+                              border: `1px solid ${isAdded ? 'rgba(34,197,94,0.4)' : 'var(--card-border)'}`,
                               cursor: 'pointer', fontWeight: isAdded ? 700 : 500,
                             }}
                           >
@@ -657,15 +656,15 @@ export default function StudentSettingsPage() {
                       {interests.map(s => (
                         <span key={s} style={{
                           display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: 'rgba(99,102,241,0.15)', color: '#818cf8',
-                          border: '1px solid rgba(99,102,241,0.3)', borderRadius: 999,
+                          background: 'rgba(34,197,94,0.15)', color: '#22c55e',
+                          border: '1px solid rgba(34,197,94,0.3)', borderRadius: 999,
                           padding: '0.35rem 0.85rem', fontSize: '0.82rem', fontWeight: 700,
                         }}>
                           {s}
                           <button
                             type="button"
                             onClick={() => removeInterest(s)}
-                            style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', padding: 0 }}
+                            style={{ background: 'none', border: 'none', color: '#22c55e', cursor: 'pointer', padding: 0 }}
                           >
                             <X size={13} />
                           </button>

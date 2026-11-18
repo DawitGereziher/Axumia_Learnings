@@ -16,9 +16,18 @@ const getFullUrl = (url?: string | null) => {
 };
 
 const SUBJECT_FILTERS = [
-  'All Subjects', 'Mathematics', 'Physics', 'Chemistry', 'Biology',
-  'Computer Science', 'Python', 'JavaScript', 'Machine Learning',
-  'English', 'Economics', 'History',
+  'All Subjects',
+  'Software Engineering',
+  'Web Development',
+  'Mobile Apps (Flutter)',
+  'Data Science & AI',
+  'UI/UX & Product Design',
+  'Business & Startups',
+  'Finance & Accounting',
+  'English Mastery',
+  'Ethiopian Languages',
+  'National Exam Prep',
+  'Cloud & DevOps',
 ];
 
 export default function BookSessionPage() {
@@ -121,7 +130,7 @@ export default function BookSessionPage() {
                 {[
                   { icon: <User size={13} />, label: '1-on-1 Private Mentoring', color: '#fde047', bg: 'rgba(253, 224, 71, 0.15)' },
                   { icon: <Users size={13} />, label: 'Small Group (Save 40%)', color: '#86efac', bg: 'rgba(134, 239, 172, 0.15)' },
-                  { icon: <GraduationCap size={13} />, label: 'Group Masterclass (Save 60%)', color: '#93c5fd', bg: 'rgba(147, 197, 253, 0.15)' },
+                  { icon: <GraduationCap size={13} />, label: 'Group Masterclass (Save 60%)', color: '#fde047', bg: 'rgba(253, 224, 71, 0.15)' },
                 ].map(c => (
                   <span key={c.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: c.bg, color: c.color, border: `1px solid ${c.color}40`, borderRadius: 999, padding: '0.4rem 1rem', fontSize: '0.8rem', fontWeight: 700 }}>
                     {c.icon} {c.label}
@@ -134,11 +143,12 @@ export default function BookSessionPage() {
                 display: 'flex', alignItems: 'center', background: '#ffffff',
                 borderRadius: 999, padding: '0.4rem 0.5rem 0.4rem 1.4rem',
                 boxShadow: '0 8px 30px rgba(0,0,0,0.18)', maxWidth: 540, margin: '0 auto',
+                border: '1px solid rgba(253, 224, 71, 0.4)',
               }}>
                 <Search size={18} color="#0c3b2e" style={{ flexShrink: 0, marginRight: '0.75rem' }} />
                 <input
                   type="search"
-                  placeholder="Search mentors by topic, subject, or name…"
+                  placeholder="Search mentors by topic, skill, or name…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   style={{
@@ -162,14 +172,14 @@ export default function BookSessionPage() {
         </div>
 
         {/* ── Filter bar ──────────────────────────────────── */}
-        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(8,10,15,0.9)', padding: '0.75rem 0', position: 'sticky', top: 64, zIndex: 10 }}>
-          <div className="container" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(10,24,20,0.95)', padding: '0.75rem 0', position: 'sticky', top: 64, zIndex: 10 }}>
+          <div style={{ padding: '0 clamp(1.5rem, 3.5vw, 4rem)', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => setShowFilters(f => !f)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: showFilters ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${showFilters ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 10, padding: '0.45rem 0.9rem', color: showFilters ? '#818cf8' : '#94a3b8', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: showFilters ? 'rgba(253,224,71,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${showFilters ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 10, padding: '0.45rem 0.9rem', color: showFilters ? '#fde047' : '#94a3b8', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
             >
               <SlidersHorizontal size={14} /> Filters
-              {hasFilters && <span style={{ background: '#6366f1', color: '#fff', borderRadius: 999, padding: '0.05rem 0.45rem', fontSize: '0.68rem', fontWeight: 800 }}>!</span>}
+              {hasFilters && <span style={{ background: '#fde047', color: '#0c3b2e', borderRadius: 999, padding: '0.05rem 0.45rem', fontSize: '0.68rem', fontWeight: 800 }}>!</span>}
             </button>
 
             {/* Subject pills */}
@@ -181,9 +191,9 @@ export default function BookSessionPage() {
                   style={{
                     padding: '0.35rem 0.85rem', borderRadius: 999, border: '1px solid',
                     fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-                    background: subject === s ? 'rgba(99,102,241,0.15)' : 'transparent',
-                    borderColor: subject === s ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)',
-                    color: subject === s ? '#818cf8' : '#64748b',
+                    background: subject === s ? 'rgba(253,224,71,0.15)' : 'transparent',
+                    borderColor: subject === s ? '#fde047' : 'rgba(255,255,255,0.08)',
+                    color: subject === s ? '#fde047' : '#94a3b8',
                     transition: 'all 0.15s',
                   }}
                 >
@@ -201,17 +211,17 @@ export default function BookSessionPage() {
 
           {/* Expanded filters */}
           {showFilters && (
-            <div className="container" style={{ paddingTop: '0.75rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ padding: '0.75rem clamp(1.5rem, 3.5vw, 4rem) 0', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All Subjects</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All Subjects</label>
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
                   {SUBJECT_FILTERS.slice(7).map(s => (
-                    <button key={s} onClick={() => setSubject(s)} style={{ padding: '0.3rem 0.75rem', borderRadius: 999, border: '1px solid', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', background: subject === s ? 'rgba(99,102,241,0.15)' : 'transparent', borderColor: subject === s ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)', color: subject === s ? '#818cf8' : '#64748b', transition: 'all 0.15s' }}>{s}</button>
+                    <button key={s} onClick={() => setSubject(s)} style={{ padding: '0.3rem 0.75rem', borderRadius: 999, border: '1px solid', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', background: subject === s ? 'rgba(253,224,71,0.15)' : 'transparent', borderColor: subject === s ? '#fde047' : 'rgba(255,255,255,0.08)', color: subject === s ? '#fde047' : '#94a3b8', transition: 'all 0.15s' }}>{s}</button>
                   ))}
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Max Rate (ETB/hr)</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Max Rate (ETB/hr)</label>
                 <input
                   type="number"
                   placeholder="e.g. 1000"
@@ -224,19 +234,19 @@ export default function BookSessionPage() {
           )}
         </div>
 
-        {/* ── Results ──────────────────────────────────────── */}
-        <div className="container" style={{ paddingTop: '2rem', paddingBottom: '5rem', maxWidth: 1200 }}>
+        {/* ── Results (Full Width) ─────────────────────────── */}
+        <div style={{ padding: '2rem clamp(1.5rem, 3.5vw, 4rem) 5rem', width: '100%', boxSizing: 'border-box' }}>
 
           {/* Result count */}
           {!loading && (
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1.25rem' }}>
               {filtered.length === 0 ? 'No instructors match your filters' : `${filtered.length} instructor${filtered.length !== 1 ? 's' : ''} found`}
-              {hasFilters && <span> · <button onClick={clearFilters} style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontWeight: 600 }}>Clear filters</button></span>}
+              {hasFilters && <span> · <button onClick={clearFilters} style={{ background: 'none', border: 'none', color: '#fde047', cursor: 'pointer', fontWeight: 700 }}>Clear filters</button></span>}
             </div>
           )}
 
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '1.5rem', width: '100%' }}>
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} style={{ height: 280, borderRadius: 16, background: 'rgba(255,255,255,0.04)', animation: 'pulse 1.5s infinite' }} />
               ))}
@@ -244,12 +254,12 @@ export default function BookSessionPage() {
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '5rem 2rem', background: 'rgba(15,23,42,0.5)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 20 }}>
               <Search size={48} color="#334155" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ color: '#475569', fontWeight: 700 }}>{t.instructors.noInstructors}</h3>
-              <p style={{ color: '#334155', fontSize: '0.88rem', marginTop: '0.5rem' }}>Try adjusting your search or removing filters.</p>
-              {hasFilters && <button onClick={clearFilters} className="btn-primary" style={{ marginTop: '1.5rem', padding: '0.65rem 1.4rem', borderRadius: 12 }}>Clear Filters</button>}
+              <h3 style={{ color: '#94a3b8', fontWeight: 700 }}>{t.instructors.noInstructors}</h3>
+              <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '0.5rem' }}>Try adjusting your search or removing filters.</p>
+              {hasFilters && <button onClick={clearFilters} className="btn-primary" style={{ marginTop: '1.5rem', padding: '0.65rem 1.4rem', borderRadius: 12, background: 'var(--pine-deep)' }}>Clear Filters</button>}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(290px,1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '1.5rem', width: '100%' }}>
               {filtered.map((inst: any) => {
                 const avatarUrl = getFullUrl(inst.profile_image || inst.user?.image);
                 const rate = Number(inst.hourly_rate || 500);
@@ -258,31 +268,37 @@ export default function BookSessionPage() {
 
                 return (
                   <div key={inst.id} style={{
-                    background: 'rgba(15,23,42,0.7)', border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'var(--card-bg)', border: '1px solid var(--card-border)',
                     borderRadius: 18, padding: '1.75rem',
                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                    transition: 'transform 0.2s, border-color 0.2s',
+                    transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.3)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(253,224,71,0.4)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.2)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--card-border)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
                     <div>
                       {/* Avatar + name */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ width: 54, height: 54, borderRadius: '50%', flexShrink: 0, background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#6366f1,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 700, color: '#fff', overflow: 'hidden' }}>
+                        <div style={{
+                          width: 54, height: 54, borderRadius: '50%', flexShrink: 0,
+                          background: avatarUrl ? 'transparent' : 'linear-gradient(135deg, #0c3b2e 0%, #15805a 100%)',
+                          border: '2px solid rgba(253, 224, 71, 0.4)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '1.3rem', fontWeight: 800, color: '#fde047', overflow: 'hidden',
+                        }}>
                           {avatarUrl ? <img src={avatarUrl} alt={inst.user?.first_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : inst.user?.first_name?.[0] || 'I'}
                         </div>
                         <div>
-                          <h3 style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f8fafc', margin: 0 }}>
+                          <h3 style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', margin: 0 }}>
                             {inst.user?.first_name} {inst.user?.last_name}
                           </h3>
-                          <div style={{ color: '#818cf8', fontSize: '0.82rem', fontWeight: 500, marginTop: '0.1rem' }}>
+                          <div style={{ color: '#fde047', fontSize: '0.82rem', fontWeight: 600, marginTop: '0.1rem' }}>
                             {inst.headline || t.instructors.verified}
                           </div>
                         </div>
                       </div>
 
-                      <p style={{ color: '#94a3b8', fontSize: '0.83rem', lineHeight: 1.55, marginBottom: '1rem' }}>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.55, marginBottom: '1rem' }}>
                         {inst.bio ? (inst.bio.length > 110 ? `${inst.bio.slice(0, 110)}…` : inst.bio) : 'Experienced tutor ready to accelerate your learning journey.'}
                       </p>
 
@@ -290,28 +306,28 @@ export default function BookSessionPage() {
                       {inst.skills?.length > 0 && (
                         <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                           {inst.skills.slice(0, 4).map((sk: string) => (
-                            <span key={sk} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc', borderRadius: 6, padding: '0.18rem 0.55rem', fontSize: '0.72rem', fontWeight: 600 }}>{sk}</span>
+                            <span key={sk} style={{ background: 'rgba(253,224,71,0.1)', border: '1px solid rgba(253,224,71,0.25)', color: '#fde047', borderRadius: 6, padding: '0.2rem 0.6rem', fontSize: '0.72rem', fontWeight: 700 }}>{sk}</span>
                           ))}
-                          {inst.skills.length > 4 && <span style={{ color: '#475569', fontSize: '0.72rem', alignSelf: 'center' }}>+{inst.skills.length - 4}</span>}
+                          {inst.skills.length > 4 && <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', alignSelf: 'center' }}>+{inst.skills.length - 4}</span>}
                         </div>
                       )}
                     </div>
 
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                           {avgRating ? (
-                            <span style={{ color: '#f59e0b', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
-                              <Star size={14} fill="#f59e0b" color="#f59e0b" /> {avgRating}
+                            <span style={{ color: '#fde047', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 700 }}>
+                              <Star size={14} fill="#fde047" color="#fde047" /> {avgRating}
                             </span>
                           ) : (
-                            <span style={{ fontSize: '0.78rem', color: '#475569' }}>New</span>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>New</span>
                           )}
                           {totalStudents !== null && totalStudents > 0 && (
-                            <span style={{ fontSize: '0.75rem', color: '#475569' }}>{totalStudents} student{totalStudents !== 1 ? 's' : ''}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{totalStudents} student{totalStudents !== 1 ? 's' : ''}</span>
                           )}
                         </div>
-                        <span style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '1rem' }}>
+                        <span style={{ fontWeight: 800, color: '#fde047', fontSize: '1rem' }}>
                           {rate.toLocaleString()} {t.instructors.perHour}
                         </span>
                       </div>

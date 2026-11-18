@@ -28,15 +28,25 @@ import { useAuth } from '@/context/AuthContext';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const SUBJECT_OPTIONS = [
-  'All', 'Mathematics', 'Physics', 'Computer Science', 'English',
-  'Chemistry', 'Biology', 'History', 'Other',
+  'All',
+  'Software Engineering',
+  'Web Development',
+  'Mobile Apps (Flutter)',
+  'Data Science & AI',
+  'UI/UX & Product Design',
+  'Business & Startups',
+  'Finance & Accounting',
+  'English Mastery',
+  'National Exam Prep',
+  'Cloud & DevOps',
+  'Other Skills',
 ];
 
 const STATUS_COLORS: Record<string, { color: string; bg: string; border: string }> = {
-  open:        { color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' },
-  in_progress: { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)' },
-  completed:   { color: '#818cf8', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)' },
-  cancelled:   { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.3)'  },
+  open:        { color: '#22c55e', bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.3)' },
+  in_progress: { color: '#fde047', bg: 'rgba(253,224,71,0.12)', border: 'rgba(253,224,71,0.3)' },
+  completed:   { color: '#22c55e', bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.3)' },
+  cancelled:   { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.3)' },
 };
 
 export default function HelpRequestMarketplacePage() {
@@ -51,7 +61,7 @@ export default function HelpRequestMarketplacePage() {
   // Post Request Modal
   const [showModal, setShowModal] = useState(false);
   const [subject, setSubject] = useState('');
-  const [subjectArea, setSubjectArea] = useState('Mathematics');
+  const [subjectArea, setSubjectArea] = useState('Software Engineering');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('300');
   const [deadlineDays, setDeadlineDays] = useState('7');

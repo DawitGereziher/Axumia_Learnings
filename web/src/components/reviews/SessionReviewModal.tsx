@@ -164,7 +164,7 @@ export default function SessionReviewModal({
                     Patience, clarity of explanation, interactive approach
                   </div>
                 </div>
-                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#6366f1' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fde047' }}>
                   {hoverStyle || teachingStyleRating} / 5
                 </span>
               </div>
@@ -180,8 +180,8 @@ export default function SessionReviewModal({
                   >
                     <Star
                       size={22}
-                      fill={(hoverStyle || teachingStyleRating) >= star ? '#6366f1' : 'none'}
-                      color="#6366f1"
+                      fill={(hoverStyle || teachingStyleRating) >= star ? '#fde047' : 'none'}
+                      color="#fde047"
                     />
                   </button>
                 ))}

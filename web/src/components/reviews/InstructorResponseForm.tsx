@@ -109,7 +109,7 @@ export default function InstructorResponseForm({
       borderRadius: 12,
       marginTop: '1rem',
     }}>
-      <h4 style={{ fontWeight: 600, color: '#818cf8', marginBottom: '1rem', fontSize: '1rem' }}>
+      <h4 style={{ fontWeight: 600, color: '#fde047', marginBottom: '1rem', fontSize: '1rem' }}>
         {existingResponse ? 'Edit Your Response' : 'Respond as Instructor'}
       </h4>
 
@@ -137,7 +137,7 @@ export default function InstructorResponseForm({
             width: '100%',
             padding: '0.75rem',
             borderRadius: 8,
-            border: '1px solid #6366f1',
+            border: '1px solid #22c55e',
             background: '#09090b',
             color: '#fff',
             fontSize: '0.95rem',
@@ -152,9 +152,9 @@ export default function InstructorResponseForm({
             id="isPublic"
             checked={isPublic}
             onChange={(e) => setIsPublic(e.target.checked)}
-            style={{ accentColor: '#6366f1' }}
+            style={{ accentColor: '#22c55e' }}
           />
-          <label htmlFor="isPublic" style={{ color: '#c7d2fe', fontSize: '0.9rem', cursor: 'pointer' }}>
+          <label htmlFor="isPublic" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer' }}>
             Make response visible to all students
           </label>
         </div>
