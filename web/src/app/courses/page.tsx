@@ -521,13 +521,15 @@ function CatalogContent() {
                         <div className="course-card-lms">
                           {/* Thumbnail with Zoom & Gleam on Hover */}
                           <div className="course-thumb-wrap">
-                            {imgUrl ? (
-                              <img className="course-thumb-img" src={imgUrl} alt={c.title} />
-                            ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(12,59,46,0.15), var(--card-bg))' }}>
-                                <BookOpen size={38} color="var(--accent)" style={{ opacity: 0.7 }} />
-                              </div>
-                            )}
+                            <img
+                              className="course-thumb-img"
+                              src={imgUrl || '/assets/course-icon.png'}
+                              alt={c.title}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/assets/course-icon.png';
+                              }}
+                            />
 
                             {c.category && (
                               <div style={{

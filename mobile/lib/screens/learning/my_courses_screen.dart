@@ -131,9 +131,15 @@ class _EnrolledCourseCard extends StatelessWidget {
                           ? Image.network(
                               item.course.fullThumbnailUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.menu_book_rounded, color: AppColors.primaryLight),
+                              errorBuilder: (_, __, ___) => Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: Image.asset('assets/course-icon.png', fit: BoxFit.contain),
+                              ),
                             )
-                          : const Icon(Icons.menu_book_rounded, color: AppColors.primaryLight),
+                          : Padding(
+                              padding: const EdgeInsets.all(6.0),
+                              child: Image.asset('assets/course-icon.png', fit: BoxFit.contain),
+                            ),
                     ),
                     const SizedBox(width: 14),
 

@@ -157,9 +157,27 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   ? Image.network(
                       _course!.fullThumbnailUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(color: AppColors.surfaceElevated),
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppColors.surfaceElevated,
+                        padding: const EdgeInsets.all(24),
+                        child: Center(
+                          child: Image.asset(
+                            'assets/course-icon.png',
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
                     )
-                  : Container(color: AppColors.surfaceElevated),
+                  : Container(
+                      color: AppColors.surfaceElevated,
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/course-icon.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
             ),
           ),
 

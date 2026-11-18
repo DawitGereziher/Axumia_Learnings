@@ -806,8 +806,11 @@ export default function CourseSlugPage({ params }: { params: Promise<{ slug: str
                   }}
                 >
                   <img
-                    src={course.thumbnail_url || course.thumbnail || '/assets/hero-course-cover1.jpg'}
-                    onError={(e) => { e.currentTarget.src = '/assets/hero-course-cover2.jpg'; }}
+                    src={course.thumbnail_url || course.thumbnail || '/assets/course-icon.png'}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/assets/course-icon.png';
+                    }}
                     alt={course.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />

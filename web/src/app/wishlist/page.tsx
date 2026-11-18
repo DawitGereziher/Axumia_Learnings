@@ -148,11 +148,15 @@ export default function WishlistPage() {
                 <div key={course.id} className="course-card-lms" style={{ opacity: isRemoving ? 0.5 : 1 }}>
                   {/* Thumbnail */}
                   <div className="course-thumb-wrap" style={{ height: 170 }}>
-                    {thumb ? (
-                      <img className="course-thumb-img" src={thumb} alt={course.title} />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>📚</div>
-                    )}
+                    <img
+                      className="course-thumb-img"
+                      src={thumb || '/assets/course-icon.png'}
+                      alt={course.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/assets/course-icon.png';
+                      }}
+                    />
                     {/* Remove button overlay */}
                     <button
                       onClick={() => handleRemove(course.id)}

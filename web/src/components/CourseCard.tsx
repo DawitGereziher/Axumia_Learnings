@@ -67,21 +67,15 @@ export default function CourseCard({ course, initialWishlisted = false }: Course
       <div className="course-card-lms">
         {/* Thumbnail & Badges */}
         <div className="course-thumb-wrap" style={{ aspectRatio: '16/9', height: 'auto' }}>
-          {course.thumbnail ? (
-            <img
-              className="course-thumb-img"
-              src={course.thumbnail}
-              alt={course.title}
-            />
-          ) : (
-            <div style={{
-              width: '100%', height: '100%',
-              background: 'var(--bg-surface)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)',
-            }}>
-              <BookOpen size={40} opacity={0.3} />
-            </div>
-          )}
+          <img
+            className="course-thumb-img"
+            src={course.thumbnail || '/assets/course-icon.png'}
+            alt={course.title}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = '/assets/course-icon.png';
+            }}
+          />
 
           {/* Category Pill */}
           {course.category?.name && (

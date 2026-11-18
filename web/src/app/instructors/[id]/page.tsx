@@ -401,9 +401,12 @@ export default function InstructorPublicProfilePage() {
                         <div className="course-thumb-wrap">
                           <img
                             className="course-thumb-img"
-                            src={getFullUrl(course.thumbnail_url) || '/placeholder-course.jpg'}
+                            src={getFullUrl(course.thumbnail_url) || '/assets/course-icon.png'}
                             alt={course.title}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = '/assets/course-icon.png';
+                            }}
                           />
                           <div style={{
                             position: 'absolute', top: 10, right: 10,

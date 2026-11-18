@@ -107,9 +107,15 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                       ? Image.network(
                                           thumbUrl,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => const Icon(Icons.book_rounded, color: AppColors.textMuted),
+                                          errorBuilder: (_, __, ___) => Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Image.asset('assets/course-icon.png', fit: BoxFit.contain),
+                                          ),
                                         )
-                                      : const Icon(Icons.book_rounded, color: AppColors.textMuted),
+                                      : Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Image.asset('assets/course-icon.png', fit: BoxFit.contain),
+                                        ),
                                 ),
                               ),
                               const SizedBox(width: 14),

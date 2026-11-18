@@ -284,10 +284,13 @@ export default function StudentMyLearningPage() {
                   {/* Thumbnail & Level */}
                   <div style={{ height: 150, background: 'rgba(30,41,59,0.8)', position: 'relative' }}>
                     <img
-                      src={getFullUrl(course.thumbnail_url || course.thumbnail) || '/placeholder-course.jpg'}
+                      src={getFullUrl(course.thumbnail_url || course.thumbnail) || '/assets/course-icon.png'}
                       alt={course.title}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/assets/course-icon.png';
+                      }}
                     />
                     <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(15,23,42,0.9)', padding: '0.2rem 0.6rem', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700, color: '#818cf8', textTransform: 'uppercase' }}>
                       {course.level || 'Course'}

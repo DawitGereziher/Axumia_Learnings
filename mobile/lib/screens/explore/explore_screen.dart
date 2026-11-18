@@ -260,12 +260,24 @@ class _CourseCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             color: AppColors.surfaceElevated,
-                            child: const Center(child: Icon(Icons.school_rounded, size: 40, color: AppColors.textMuted)),
+                            padding: const EdgeInsets.all(16),
+                            child: Center(
+                              child: Image.asset(
+                                'assets/course-icon.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
                           ),
                         )
                       : Container(
                           color: AppColors.surfaceElevated,
-                          child: const Center(child: Icon(Icons.school_rounded, size: 40, color: AppColors.textMuted)),
+                          padding: const EdgeInsets.all(16),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/course-icon.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                   // Price Tag Overlay
                   Positioned(

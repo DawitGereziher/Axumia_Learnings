@@ -67,16 +67,16 @@ export function FeaturedCoursesSection({ courses }: FeaturedCoursesSectionProps)
                     background: 'linear-gradient(135deg, #0c3b2e 0%, #1a5c45 100%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    {course.thumbnail_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={course.thumbnail_url}
-                        alt={course.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: '3.5rem' }}>📚</span>
-                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={course.thumbnail_url || '/assets/course-icon.png'}
+                      alt={course.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/assets/course-icon.png';
+                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
                   </div>
 
                   {/* Content */}
