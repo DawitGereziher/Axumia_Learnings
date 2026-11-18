@@ -107,10 +107,26 @@ export function HeroSection() {
             <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
               <div style={{
                 width: 'clamp(280px, 32vw, 420px)', height: 'clamp(280px, 32vw, 420px)',
-                borderRadius: '50%', background: '#fde047',
+                borderRadius: '50%', background: 'linear-gradient(135deg, #fde047 0%, #facc15 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden',
+                boxShadow: '0 20px 45px rgba(0,0,0,0.22)',
+                border: '4px solid rgba(255,255,255,0.2)',
               }}>
-                <span style={{ fontSize: 'clamp(5rem, 12vw, 9rem)' }}>🎓</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/assets/hero.png"
+                  alt="Axumia Learnings Hero"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/assets/course-icon.png';
+                  }}
+                />
               </div>
             </div>
           </div>

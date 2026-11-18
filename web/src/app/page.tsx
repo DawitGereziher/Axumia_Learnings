@@ -49,12 +49,12 @@ async function getFeaturedCourses() {
 // ── Static section data ───────────────────────────────────────────────────────
 
 const categories = [
-  { id: 'tech', label: 'Development & Tech', icon: <Code size={22} />, href: '/courses?category=tech' },
-  { id: 'lang', label: 'Ethiopian Languages', icon: <Globe size={22} />, href: '/courses?category=lang' },
-  { id: 'exams', label: 'Academics & Exam Prep', icon: <GraduationCap size={22} />, href: '/courses?category=exams' },
-  { id: 'business', label: 'Business & Finance', icon: <TrendingUp size={22} />, href: '/courses?category=business' },
-  { id: 'design', label: 'UX/UI & Design', icon: <Camera size={22} />, href: '/courses?category=design' },
-  { id: 'music', label: 'Arts & Music', icon: <Music size={22} />, href: '/courses?category=music' },
+  { id: 'tech', label: 'Development & Tech', image: '/assets/dev.jfif', icon: <Code size={20} />, href: '/courses?category=tech' },
+  { id: 'lang', label: 'Ethiopian Languages', image: '/assets/language.jfif', icon: <Globe size={20} />, href: '/courses?category=lang' },
+  { id: 'exams', label: 'Academics & Exam Prep', image: '/assets/exam.jpg', icon: <GraduationCap size={20} />, href: '/courses?category=exams' },
+  { id: 'business', label: 'Business & Finance', image: '/assets/finance.jpg', icon: <TrendingUp size={20} />, href: '/courses?category=business' },
+  { id: 'design', label: 'UX/UI & Design', image: '/assets/ui.jpg', icon: <Camera size={20} />, href: '/courses?category=design' },
+  { id: 'music', label: 'Arts & Music', image: '/assets/music.jfif', icon: <Music size={20} />, href: '/courses?category=music' },
 ];
 
 const howItWorks = [
@@ -102,17 +102,62 @@ export default async function HomePage() {
           <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', color: 'var(--text-primary)', marginBottom: '2rem' }}>
             Explore by Category
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
-            {categories.map(({ id, label, icon, href }) => (
-              <Link key={id} href={href} style={{ textDecoration: 'none' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '1.25rem' }}>
+            {categories.map(({ id, label, image, icon, href }) => (
+              <Link key={id} href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="card card-hover" style={{
-                  padding: '1.5rem 1rem', textAlign: 'center',
-                  border: '1px solid var(--card-border)', borderRadius: 16,
-                  background: 'var(--card-bg)', display: 'flex',
-                  flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
+                  padding: 0,
+                  overflow: 'hidden',
+                  border: '1px solid var(--card-border)',
+                  borderRadius: 16,
+                  background: 'var(--card-bg)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
                 }}>
-                  <span style={{ color: '#0c3b2e' }}>{icon}</span>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>{label}</span>
+                  {/* Category Image */}
+                  <div style={{
+                    width: '100%',
+                    height: 125,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    background: 'rgba(12, 59, 46, 0.08)',
+                  }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={image}
+                      alt={label}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: 'rgba(255, 255, 255, 0.92)',
+                      backdropFilter: 'blur(4px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#0c3b2e',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
+                    }}>
+                      {icon}
+                    </div>
+                  </div>
+
+                  {/* Category Title */}
+                  <div style={{ padding: '0.85rem 0.75rem', textAlign: 'center', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                      {label}
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
